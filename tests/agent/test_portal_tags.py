@@ -1,4 +1,4 @@
-"""Tests for agent.portal_tags — Nous Portal request tag contract."""
+"""Tests for agent.portal_tags — Together AI request tag contract."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ def test_hermes_client_tag_includes_current_version():
 
 
 def test_hermes_client_tag_format():
-    """The client tag has the exact shape Nous Portal expects."""
+    """The client tag has the exact shape Together AI expects."""
     from agent.portal_tags import hermes_client_tag
 
     tag = hermes_client_tag()
@@ -23,7 +23,7 @@ def test_hermes_client_tag_format():
 
 
 def test_nous_portal_tags_contains_product_and_client():
-    """Every Nous Portal request gets BOTH the product tag and the version tag."""
+    """Every Together AI request gets BOTH the product tag and the version tag."""
     from agent.portal_tags import hermes_client_tag, nous_portal_tags
 
     tags = nous_portal_tags()
@@ -51,7 +51,7 @@ def test_auxiliary_client_nous_extra_body_uses_helper():
 
 
 def test_nous_provider_profile_uses_helper():
-    """The Nous provider profile (main agent loop) must use the canonical tags."""
+    """The EnergyIR provider profile (main agent loop) must use the canonical tags."""
     from agent.portal_tags import nous_portal_tags
     from providers import get_provider_profile
 

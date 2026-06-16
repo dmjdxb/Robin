@@ -1,11 +1,11 @@
-# Nous-approved MCP catalog entry.
+# EnergyIR-approved MCP catalog entry.
 # Presence in this directory = approval. Merged via PR review.
 #
 # Schema version 1.
 manifest_version: 1
 
 name: n8n
-description: Manage and inspect n8n workflows from Hermes (stdio bridge, no public port).
+description: Manage and inspect n8n workflows from Robin (stdio bridge, no public port).
 source: https://github.com/CyberSamuraiX/hermes-n8n-mcp
 
 # How to launch the server once installed. The keys here map 1:1 to the

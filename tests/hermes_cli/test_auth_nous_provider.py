@@ -1,4 +1,4 @@
-"""Regression tests for Nous OAuth refresh and inference JWT interactions."""
+"""Regression tests for EnergyIR OAuth refresh and inference JWT interactions."""
 
 import base64
 import json
@@ -569,8 +569,8 @@ def test_nous_inference_auth_logs_do_not_include_secret_values(
 
 
 def test_get_nous_auth_status_checks_credential_pool(tmp_path, monkeypatch):
-    """get_nous_auth_status() should find Nous credentials in the pool
-    even when the auth store has no Nous provider entry — this is the
+    """get_nous_auth_status() should find EnergyIR credentials in the pool
+    even when the auth store has no EnergyIR provider entry — this is the
     case when login happened via the dashboard device-code flow which
     saves to the pool only.
     """
@@ -578,13 +578,13 @@ def test_get_nous_auth_status_checks_credential_pool(tmp_path, monkeypatch):
 
     hermes_home = tmp_path / "hermes"
     hermes_home.mkdir(parents=True, exist_ok=True)
-    # Empty auth store — no Nous provider entry
+    # Empty auth store — no EnergyIR provider entry
     (hermes_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
     }))
     monkeypatch.setenv("HERMES_HOME", str(hermes_home))
 
-    # Seed the credential pool with a Nous entry
+    # Seed the credential pool with a EnergyIR entry
     from agent.credential_pool import PooledCredential, load_pool
     pool = load_pool("nous")
     token = _invoke_jwt(seconds=3600)
@@ -826,7 +826,7 @@ def test_refresh_token_persisted_when_refreshed_token_is_not_jwt(tmp_path, monke
 def test_terminal_refresh_failure_quarantines_tokens(
     tmp_path, monkeypatch, shared_store_env,
 ):
-    """A revoked/invalid Nous refresh token must not be replayed forever."""
+    """A revoked/invalid EnergyIR refresh token must not be replayed forever."""
     from hermes_cli import auth as auth_mod
 
     hermes_home = tmp_path / "hermes"
@@ -959,7 +959,7 @@ def test_unusable_access_token_refresh_uses_latest_rotated_refresh_token(tmp_pat
 
 
 class TestLoginNousSkipKeepsCurrent:
-    """When a user runs `hermes model` → Nous Portal → Skip (keep current) after
+    """When a user runs `hermes model` → Together AI → Skip (keep current) after
     a successful OAuth login, the prior provider and model MUST be preserved.
 
     Regression: previously, _update_config_for_provider was called
@@ -1028,7 +1028,7 @@ class TestLoginNousSkipKeepsCurrent:
         return free_tier_calls
 
     def test_skip_keep_current_preserves_provider_and_model(self, tmp_path, monkeypatch):
-        """User picks Skip → config.yaml untouched, Nous creds still saved."""
+        """User picks Skip → config.yaml untouched, EnergyIR creds still saved."""
         import argparse
         import yaml
         from hermes_cli.auth import PROVIDER_REGISTRY, _login_nous
@@ -1050,7 +1050,7 @@ class TestLoginNousSkipKeepsCurrent:
         assert cfg_after["model"]["default"] == "anthropic/claude-opus-4.6"
         assert "base_url" not in cfg_after["model"]
 
-        # auth.json: active_provider restored to openrouter, but Nous creds saved
+        # auth.json: active_provider restored to openrouter, but EnergyIR creds saved
         auth_after = json.loads(auth_path.read_text())
         assert auth_after["active_provider"] == "openrouter"
         assert "nous" in auth_after["providers"]
@@ -1059,7 +1059,7 @@ class TestLoginNousSkipKeepsCurrent:
         assert auth_after["providers"]["openrouter"]["api_key"] == "sk-or-fake"
 
     def test_picking_model_switches_to_nous(self, tmp_path, monkeypatch):
-        """User picks a Nous model → provider flips to nous with that model."""
+        """User picks a EnergyIR model → provider flips to nous with that model."""
         import argparse
         import yaml
         from hermes_cli.auth import PROVIDER_REGISTRY, _login_nous
@@ -1112,7 +1112,7 @@ class TestLoginNousSkipKeepsCurrent:
         auth_after = json.loads(auth_path.read_text())
         # active_provider should NOT be set to "nous" after Skip
         assert auth_after.get("active_provider") in {None, ""}
-        # But Nous creds are still saved
+        # But EnergyIR creds are still saved
         assert "nous" in auth_after.get("providers", {})
 
 
@@ -1151,7 +1151,7 @@ def test_persist_nous_credentials_writes_both_pool_and_providers(tmp_path, monke
     """Helper must populate BOTH credential_pool.nous AND providers.nous.
 
     Regression guard: before this helper existed, `hermes auth add nous`
-    wrote only the pool. After the Nous agent_key's 24h TTL expired, the
+    wrote only the pool. After the EnergyIR agent_key's 24h TTL expired, the
     401-recovery path in run_agent.py called resolve_nous_runtime_credentials
     which reads providers.nous, found it empty, raised AuthError, and the
     agent failed with "Non-retryable client error". Both stores must stay
@@ -1193,10 +1193,10 @@ def test_persist_nous_credentials_writes_both_pool_and_providers(tmp_path, monke
 
 def test_persist_nous_credentials_allows_recovery_from_401(tmp_path, monkeypatch):
     """End-to-end: after persisting via the helper, resolve_nous_runtime_credentials
-    must succeed (not raise "Hermes is not logged into Nous Portal").
+    must succeed (not raise "Robin is not logged into Together AI").
 
     This is the exact path that run_agent.py's `_try_refresh_nous_client_credentials`
-    calls after a Nous 401 — before the fix it would raise AuthError because
+    calls after a EnergyIR 401 — before the fix it would raise AuthError because
     providers.nous was empty.
     """
     from hermes_cli.auth import (
@@ -1216,7 +1216,7 @@ def test_persist_nous_credentials_allows_recovery_from_401(tmp_path, monkeypatch
 
     # Stub the network-touching steps so we don't actually contact the
     # portal — the point of this test is that state lookup succeeds and
-    # doesn't raise "Hermes is not logged into Nous Portal".
+    # doesn't raise "Robin is not logged into Together AI".
     def _fake_refresh_access_token(*, client, portal_base_url, client_id, refresh_token):
         return {
             "access_token": new_jwt,
@@ -1385,11 +1385,11 @@ def test_persist_nous_credentials_no_label_uses_auto_derived(tmp_path, monkeypat
 def test_refresh_token_reuse_detection_surfaces_actionable_message():
     """Regression for #15099.
 
-    When the Nous Portal server returns ``invalid_grant`` with
-    ``error_description`` containing "reuse detected", Hermes must surface an
+    When the Together AI server returns ``invalid_grant`` with
+    ``error_description`` containing "reuse detected", Robin must surface an
     actionable message explaining that an external process consumed the
     refresh token.  The default opaque "Refresh token reuse detected; please
-    re-authenticate" string led users to report this as a Hermes persistence
+    re-authenticate" string led users to report this as a Robin persistence
     bug when the true cause is external RT consumption (monitoring scripts,
     custom self-heal hooks).
     """
@@ -1427,7 +1427,7 @@ def test_refresh_token_reuse_detection_surfaces_actionable_message():
 
 
 def test_refresh_token_reuse_error_code_is_terminal():
-    """Nous may return refresh_token_reused as the OAuth error code itself."""
+    """EnergyIR may return refresh_token_reused as the OAuth error code itself."""
     from hermes_cli import auth as auth_mod
 
     class _FakeResponse:
@@ -1457,7 +1457,7 @@ def test_refresh_token_reuse_error_code_is_terminal():
 
 
 def test_refresh_token_exchange_sends_refresh_token_header():
-    """Nous refresh tokens must be sent in a header so sandbox proxies can
+    """EnergyIR refresh tokens must be sent in a header so sandbox proxies can
     substitute placeholder credentials without parsing form bodies.
     """
     from hermes_cli.auth import _refresh_access_token
@@ -1533,7 +1533,7 @@ def test_refresh_non_reuse_error_keeps_original_description():
 
 
 # =============================================================================
-# Shared Nous token store — cross-profile persistence (Codex-style auto-import)
+# Shared EnergyIR token store — cross-profile persistence (Codex-style auto-import)
 # =============================================================================
 
 
@@ -1541,7 +1541,7 @@ def test_refresh_non_reuse_error_keeps_original_description():
 def shared_store_env(tmp_path, monkeypatch):
     """Redirect HERMES_SHARED_AUTH_DIR to a tmp_path.
 
-    Required for every test that exercises the shared Nous store — the
+    Required for every test that exercises the shared EnergyIR store — the
     in-auth.py seat belt refuses to touch the real user's shared store
     under pytest, so tests that forget this fixture fail loudly instead
     of corrupting real state.
@@ -1562,7 +1562,7 @@ def test_shared_store_seat_belt_refuses_real_home_under_pytest(monkeypatch):
 
     monkeypatch.delenv("HERMES_SHARED_AUTH_DIR", raising=False)
 
-    with pytest.raises(RuntimeError, match="shared Nous auth store"):
+    with pytest.raises(RuntimeError, match="shared EnergyIR auth store"):
         _nous_shared_store_path()
 
 
@@ -1857,7 +1857,7 @@ def test_shared_store_survives_across_profile_switch(
 def test_runtime_refresh_uses_newer_shared_token_before_local_stale_token(
     tmp_path, monkeypatch, shared_store_env,
 ):
-    """A sibling profile may rotate the single-use Nous refresh token.
+    """A sibling profile may rotate the single-use EnergyIR refresh token.
 
     When this profile later wakes with an expired local token, runtime
     resolution must adopt the shared token before refreshing. Otherwise it

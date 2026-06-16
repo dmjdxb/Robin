@@ -54,7 +54,7 @@ if _race_path.exists():
     exec(compile(open(_race_path).read(), str(_race_path), 'exec'), _caller_globals)
 
 # ═══════════════════════════════════════════════════════════════════
-# Hermes config paths
+# Robin config paths
 # ═══════════════════════════════════════════════════════════════════
 
 HERMES_HOME = Path(os.getenv("HERMES_HOME", Path.home() / ".hermes"))
@@ -178,7 +178,7 @@ MODEL_STRATEGIES = {
             ),
         },
     },
-    # Nous/Hermes models — already uncensored, just needs clean prompt
+    # EnergyIR/Robin models — already uncensored, just needs clean prompt
     "hermes": {
         "order": ["prefill_only"],
         "system_templates": {},
@@ -319,7 +319,7 @@ def _detect_model_family(model: str) -> str:
 
 
 def _get_current_model() -> tuple:
-    """Read current model and provider from Hermes config.yaml.
+    """Read current model and provider from Robin config.yaml.
     Returns (model_str, base_url)."""
     if not CONFIG_PATH.exists():
         return None, None

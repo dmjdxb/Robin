@@ -34,7 +34,7 @@ export interface Translations {
       loadingSettings: string
       loadingSessions: string
       startingDesktopConnection: string
-      startingHermesDesktop: string
+      startingRobinDesktop: string
     }
     errors: {
       backgroundExited: string
@@ -80,7 +80,7 @@ export interface Translations {
     copyDetailFailed: string
     backendOutOfDateTitle: string
     backendOutOfDateMessage: string
-    updateHermes: string
+    updateRobin: string
     updateReadyTitle: string
     updateReadyMessage: (count: number) => string
     seeWhatsNew: string
@@ -259,7 +259,7 @@ export interface Translations {
     gatewayStopped: string
     hermesActiveSessions: (version: string, count: number) => string
     restartMessaging: string
-    updateHermes: string
+    updateRobin: string
     actionRunning: string
     actionDone: string
     actionFailed: string

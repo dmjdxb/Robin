@@ -49,7 +49,7 @@ def _run_apply_profile_override(
     return os.environ.get("HERMES_HOME")
 
 
-class TestApplyProfileOverrideHermesHomeGuard:
+class TestApplyProfileOverrideRobinHomeGuard:
     """Regression guard for issue #22502.
 
     Verifies that HERMES_HOME pointing to the hermes root does NOT suppress

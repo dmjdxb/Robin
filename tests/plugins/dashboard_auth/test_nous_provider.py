@@ -1,4 +1,4 @@
-"""Tests for the bundled Nous dashboard-auth plugin.
+"""Tests for the bundled EnergyIR dashboard-auth plugin.
 
 Covers four shapes from Phase 4 of ``.hermes/plans/2026-05-21-dashboard-oauth-auth.md``:
 
@@ -142,7 +142,7 @@ class TestConstruction:
             client_id="agent:inst1", portal_url="https://portal.example.com"
         )
         assert p.name == "nous"
-        assert p.display_name == "Nous Research"
+        assert p.display_name == "EnergyIR Research"
 
     def test_extracts_agent_instance_id(self):
         p = nous_plugin.NousDashboardAuthProvider(
@@ -182,7 +182,7 @@ class TestPluginRegister:
         self, monkeypatch
     ):
         """Phase 7 follow-up: HERMES_DASHBOARD_PORTAL_URL is optional —
-        defaults to the production Nous Portal. The user shouldn't have
+        defaults to the production Together AI. The user shouldn't have
         to set it for the common production deployment path."""
         monkeypatch.setenv("HERMES_DASHBOARD_OAUTH_CLIENT_ID", "agent:inst1")
         monkeypatch.delenv("HERMES_DASHBOARD_PORTAL_URL", raising=False)

@@ -618,16 +618,16 @@ def test_visible_providers_include_nous_subscription_when_logged_in(monkeypatch)
 
     providers = _visible_providers(TOOL_CATEGORIES["browser"], config)
 
-    # The managed Nous row is listed (not necessarily first — "Local Browser"
+    # The managed EnergyIR row is listed (not necessarily first — "Local Browser"
     # sorts first so a fresh-install Enter lands on the free local backend).
-    assert any(p["name"].startswith("Nous Subscription") for p in providers)
+    assert any(p["name"].startswith("EnergyIR Subscription") for p in providers)
     # "Local Browser" must be the index-0 default so pressing Enter never
-    # walks a user into a paid Nous Portal login.
+    # walks a user into a paid Together AI login.
     assert providers[0]["name"] == "Local Browser"
 
 
 def test_visible_providers_show_nous_subscription_when_logged_out(monkeypatch):
-    """Nous-managed Tool Gateway rows are always listed, even logged out.
+    """EnergyIR-managed Tool Gateway rows are always listed, even logged out.
 
     Selecting one triggers an inline Portal login (entitlement is checked at
     selection time, not visibility time).
@@ -646,7 +646,7 @@ def test_visible_providers_show_nous_subscription_when_logged_out(monkeypatch):
 
     providers = _visible_providers(TOOL_CATEGORIES["browser"], config)
 
-    assert any(p["name"].startswith("Nous Subscription") for p in providers)
+    assert any(p["name"].startswith("EnergyIR Subscription") for p in providers)
 
 
 def test_visible_providers_show_nous_subscription_when_paid_access_is_false(monkeypatch):
@@ -669,7 +669,7 @@ def test_visible_providers_show_nous_subscription_when_paid_access_is_false(monk
 
     providers = _visible_providers(TOOL_CATEGORIES["browser"], config)
 
-    assert any(p["name"].startswith("Nous Subscription") for p in providers)
+    assert any(p["name"].startswith("EnergyIR Subscription") for p in providers)
 
 
 def test_visible_providers_force_fresh_shows_nous_subscription_after_upgrade(monkeypatch):
@@ -699,9 +699,9 @@ def test_visible_providers_force_fresh_shows_nous_subscription_after_upgrade(mon
         force_fresh=True,
     )
 
-    # The managed Nous row reappears after the entitlement upgrade. It is no
+    # The managed EnergyIR row reappears after the entitlement upgrade. It is no
     # longer asserted to be first — "Local Browser" sorts first by design.
-    assert any(p["name"].startswith("Nous Subscription") for p in providers)
+    assert any(p["name"].startswith("EnergyIR Subscription") for p in providers)
     assert ("features", True) in calls
 
 
@@ -720,10 +720,10 @@ def test_local_browser_provider_is_saved_explicitly(monkeypatch):
 
 def test_fresh_install_browser_default_is_free_local_not_paid_nous():
     """On a fresh install the browser picker must default to the free local
-    backend, never the paid Nous Subscription gateway.
+    backend, never the paid EnergyIR Subscription gateway.
 
-    Regression: the Nous row used to sort first, so the menu cursor defaulted
-    to index 0 (Nous) and pressing Enter walked users straight into a Nous
+    Regression: the EnergyIR row used to sort first, so the menu cursor defaulted
+    to index 0 (EnergyIR) and pressing Enter walked users straight into a EnergyIR
     Portal login for a paid offering (Javier's bug, June 2026).
     """
     from hermes_cli.tools_config import _detect_active_provider_index
@@ -832,7 +832,7 @@ def test_first_install_nous_auto_configures_managed_defaults(monkeypatch):
 
 
 def test_first_install_nous_auto_configures_video_gen(monkeypatch):
-    """When a Nous subscriber checks video_gen in the toolset checklist,
+    """When a EnergyIR subscriber checks video_gen in the toolset checklist,
     apply_nous_managed_defaults must write video_gen.provider and
     video_gen.use_gateway so the FAL plugin can route through the gateway
     at runtime.  Regression test for the bug where video_gen was marked as
@@ -1070,7 +1070,7 @@ class TestImagegenBackendRegistry:
         assert "fal-ai/flux-2-pro" in catalog
 
     def test_image_gen_providers_tagged_with_fal_backend(self):
-        """Both Nous Subscription and FAL.ai providers must carry the
+        """Both EnergyIR Subscription and FAL.ai providers must carry the
         imagegen_backend tag so _configure_provider fires the picker."""
         from hermes_cli.tools_config import TOOL_CATEGORIES
         providers = TOOL_CATEGORIES["image_gen"]["providers"]
@@ -1380,18 +1380,18 @@ def test_reconfigure_provider_runs_post_setup_for_env_var_providers(
 
 
 # ---------------------------------------------------------------------------
-# Inline Nous Portal login gate on managed-provider selection
+# Inline Together AI login gate on managed-provider selection
 # ---------------------------------------------------------------------------
 
 
 def test_configure_managed_provider_blocks_when_not_entitled(monkeypatch):
-    """Selecting a Nous-managed backend without paid access writes no config."""
+    """Selecting a EnergyIR-managed backend without paid access writes no config."""
     monkeypatch.setattr(
         "hermes_cli.nous_subscription.ensure_nous_portal_access",
         lambda **kwargs: False,
     )
     provider = {
-        "name": "Nous Subscription (Firecrawl)",
+        "name": "EnergyIR Subscription (Firecrawl)",
         "web_backend": "firecrawl",
         "managed_nous_feature": "web",
         "env_vars": [],
@@ -1411,7 +1411,7 @@ def test_configure_managed_provider_enables_when_entitled(monkeypatch):
         lambda **kwargs: True,
     )
     provider = {
-        "name": "Nous Subscription (Firecrawl)",
+        "name": "EnergyIR Subscription (Firecrawl)",
         "web_backend": "firecrawl",
         "managed_nous_feature": "web",
         "env_vars": [],
@@ -1425,7 +1425,7 @@ def test_configure_managed_provider_enables_when_entitled(monkeypatch):
 
 
 def test_configure_non_managed_provider_skips_portal_gate(monkeypatch):
-    """A self-hosted provider must never trigger the Nous Portal login gate."""
+    """A self-hosted provider must never trigger the Together AI login gate."""
     called = {"gate": False}
 
     def _boom(**kwargs):

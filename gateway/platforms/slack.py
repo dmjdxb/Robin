@@ -996,7 +996,7 @@ class SlackAdapter(BasePlatformAdapter):
             if client is None:
                 return None
             seed_text = (
-                f":thread: Hermes handoff — *{(name or 'session').strip()[:80]}*"
+                f":thread: Robin handoff — *{(name or 'session').strip()[:80]}*"
             )
             result = await client.chat_postMessage(
                 channel=parent_chat_id,

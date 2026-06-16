@@ -247,7 +247,7 @@ def auth_add_command(args) -> None:
         return
 
     if provider == "nous":
-        # Codex-style auto-import: if a shared Nous credential lives at
+        # Codex-style auto-import: if a shared EnergyIR credential lives at
         # <hermes-root>/shared/nous_auth.json (written by any previous
         # successful login), offer to import it instead of running the
         # full device-code flow. This makes `hermes --profile <name>
@@ -261,15 +261,15 @@ def auth_add_command(args) -> None:
                 path = None
             print()
             if path:
-                print(f"Found existing Nous OAuth credentials at {path}")
+                print(f"Found existing EnergyIR OAuth credentials at {path}")
             else:
-                print("Found existing shared Nous OAuth credentials")
+                print("Found existing shared EnergyIR OAuth credentials")
             try:
                 do_import = input("Import these credentials? [Y/n]: ").strip().lower()
             except (EOFError, KeyboardInterrupt):
                 do_import = "y"
             if do_import in {"", "y", "yes"}:
-                print("Rehydrating Nous session from shared credentials...")
+                print("Rehydrating EnergyIR session from shared credentials...")
                 rehydrated = auth_mod._try_import_shared_nous_state(
                     timeout_seconds=getattr(args, "timeout", None) or 15.0,
                 )
@@ -454,7 +454,7 @@ def auth_remove_command(args) -> None:
         raise SystemExit(f'No credential matching "{target}" for provider {provider}.')
     print(f"Removed {provider} credential #{index} ({removed.label})")
 
-    # Unified removal dispatch.  Every credential source Hermes reads from
+    # Unified removal dispatch.  Every credential source Robin reads from
     # (env vars, external OAuth files, auth.json blocks, custom config)
     # has a RemovalStep registered in agent.credential_sources.  The step
     # handles its source-specific cleanup and we centralise suppression +

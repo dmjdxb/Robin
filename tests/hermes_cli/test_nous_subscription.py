@@ -1,4 +1,4 @@
-"""Tests for Nous subscription feature detection."""
+"""Tests for EnergyIR subscription feature detection."""
 
 from hermes_cli.nous_account import NousPortalAccountInfo, NousToolAccessInfo
 from hermes_cli import nous_subscription as ns
@@ -478,7 +478,7 @@ def test_prompt_enable_tool_gateway_paid_user_offers_video(monkeypatch):
 
 def test_apply_nous_managed_defaults_writes_video_gen_config(monkeypatch):
     """apply_nous_managed_defaults must write video_gen.provider and
-    video_gen.use_gateway when a Nous subscriber selects video_gen
+    video_gen.use_gateway when a EnergyIR subscriber selects video_gen
     without a direct FAL_KEY."""
     monkeypatch.setattr(ns, "managed_nous_tools_enabled", lambda **kw: True)
     monkeypatch.delenv("FAL_KEY", raising=False)
@@ -500,7 +500,7 @@ def test_apply_nous_managed_defaults_writes_video_gen_config(monkeypatch):
 
 def test_apply_nous_managed_defaults_writes_image_gen_config(monkeypatch):
     """apply_nous_managed_defaults must write image_gen.use_gateway
-    when a Nous subscriber selects image_gen without a direct FAL_KEY."""
+    when a EnergyIR subscriber selects image_gen without a direct FAL_KEY."""
     monkeypatch.setattr(ns, "managed_nous_tools_enabled", lambda **kw: True)
     monkeypatch.delenv("FAL_KEY", raising=False)
     monkeypatch.setattr(ns, "fal_key_is_configured", lambda: False)

@@ -1,4 +1,4 @@
-"""Hermes CLI skin/theme engine.
+"""Robin CLI skin/theme engine.
 
 A data-driven skin system that lets users customize the CLI's visual appearance.
 Skins are defined as YAML files in ~/.hermes/skins/ or as built-in presets.
@@ -68,7 +68,7 @@ All fields are optional. Missing values inherit from the ``default`` skin.
       agent_name: "Robin"          # Banner title, status display
       welcome: "Welcome message"          # Shown at CLI startup
       goodbye: "Goodbye! ⚕"              # Shown on exit
-      response_label: " ⚕ Hermes "       # Response box header label
+      response_label: " ⚕ Robin "       # Response box header label
       prompt_symbol: "❯"                 # Input prompt symbol (bare token; renderers add trailing space)
       help_header: "(^_^)? Commands"      # /help header text
 
@@ -98,7 +98,7 @@ USAGE
 BUILT-IN SKINS
 ==============
 
-- ``default`` — Classic Hermes gold/kawaii (the current look)
+- ``default`` — Classic Robin gold/kawaii (the current look)
 - ``ares``    — Crimson/bronze war-god theme with custom spinner wings
 - ``mono``    — Clean grayscale monochrome
 - ``slate``   — Cool blue developer-focused theme

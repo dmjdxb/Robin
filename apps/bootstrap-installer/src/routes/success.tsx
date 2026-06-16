@@ -10,7 +10,7 @@ import { Rocket, AlertCircle } from 'lucide-react'
  * with a status line below.
  *
  * Launching the desktop can fail (e.g. Stage-Desktop was skipped and
- * Hermes.exe doesn't exist). We catch the Tauri error and surface it
+ * Robin.exe doesn't exist). We catch the Tauri error and surface it
  * inline rather than silently doing nothing — the previous version
  * had `onClick={() => void launchHermesDesktop()}` which swallowed
  * the rejection and left the user staring at an unresponsive button.
@@ -67,7 +67,7 @@ export default function Success() {
         className="inline-flex items-center gap-2 px-6"
       >
         <Rocket size={18} />
-        {launching ? 'Launching…' : 'Launch Hermes'}
+        {launching ? 'Launching…' : 'Launch Robin'}
       </Button>
 
       {error && (

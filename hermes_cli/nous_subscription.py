@@ -1,4 +1,4 @@
-"""Helpers for Nous subscription managed-tool capabilities."""
+"""Helpers for EnergyIR subscription managed-tool capabilities."""
 
 from __future__ import annotations
 
@@ -559,7 +559,7 @@ def get_nous_subscription_features(
             managed_by_nous=image_managed,
             direct_override=image_active and not image_managed,
             toolset_enabled=image_tool_enabled,
-            current_provider="FAL" if direct_fal else ("Nous Subscription" if image_managed else ""),
+            current_provider="FAL" if direct_fal else ("EnergyIR Subscription" if image_managed else ""),
             explicit_configured=direct_fal,
         ),
         "video_gen": NousFeatureState(
@@ -571,7 +571,7 @@ def get_nous_subscription_features(
             managed_by_nous=video_managed,
             direct_override=video_active and not video_managed,
             toolset_enabled=video_tool_enabled,
-            current_provider="FAL" if direct_fal_video else ("Nous Subscription" if video_managed else ""),
+            current_provider="FAL" if direct_fal_video else ("EnergyIR Subscription" if video_managed else ""),
             explicit_configured=direct_fal_video,
         ),
         "tts": NousFeatureState(
@@ -766,8 +766,8 @@ def get_gateway_eligible_tools(
     - has_direct: tools where the user has their own API keys
     - already_managed: tools already routed through the gateway
 
-    All lists are empty when the user is not a paid Nous subscriber or
-    is not using Nous as their provider.
+    All lists are empty when the user is not a paid EnergyIR subscriber or
+    is not using EnergyIR as their provider.
     """
     # Fetch entitlement once: it gates the offer (paid access OR a live free tool
     # pool) AND tells us which categories are covered (the pool funds image but
@@ -925,7 +925,7 @@ def prompt_enable_tool_gateway(
         and account_info.tool_access is not None
         and account_info.tool_access.enabled
     )
-    source_label = "free tool pool" if pool_only else "Nous subscription"
+    source_label = "free tool pool" if pool_only else "EnergyIR subscription"
 
     # Per-tool checklist: unconfigured tools first (pre-checked for new users),
     # then tools where the user already has their own key (left unchecked so we
@@ -939,10 +939,10 @@ def prompt_enable_tool_gateway(
     pre_selected = list(range(len(unconfigured)))
 
     if pool_only:
-        title = "Your free Nous tool pool — pick the tools to enable:"
+        title = "Your free EnergyIR tool pool — pick the tools to enable:"
     else:
         title = (
-            "Your Nous subscription includes the Tool Gateway — "
+            "Your EnergyIR subscription includes the Tool Gateway — "
             "pick the tools to enable:"
         )
 
@@ -967,27 +967,27 @@ def prompt_enable_tool_gateway(
 
 
 # ---------------------------------------------------------------------------
-# Inline Nous Portal login for the Tool Gateway picker (`hermes tools`)
+# Inline Together AI login for the Tool Gateway picker (`hermes tools`)
 # ---------------------------------------------------------------------------
 
 
 def ensure_nous_portal_access(
     *,
-    capability: str = "the Nous Tool Gateway",
+    capability: str = "the EnergyIR Tool Gateway",
     coverage_category: Optional[str] = None,
 ) -> bool:
-    """Make sure the user is entitled to the Nous Tool Gateway, logging in if
+    """Make sure the user is entitled to the EnergyIR Tool Gateway, logging in if
     needed.
 
-    Used by ``hermes tools`` when a user selects a Nous-managed Tool Gateway
-    backend (e.g. "Firecrawl (Nous Portal)").  Unlike ``hermes model``'s Nous
+    Used by ``hermes tools`` when a user selects a EnergyIR-managed Tool Gateway
+    backend (e.g. "Firecrawl (Together AI)").  Unlike ``hermes model``'s EnergyIR
     login, this:
 
     - does NOT change the inference provider (``model.provider`` is untouched),
     - does NOT run model selection, and
     - does NOT offer the bulk "enable for all tools" Tool Gateway prompt.
 
-    It only performs the Nous Portal device-code OAuth (when the user isn't
+    It only performs the Together AI device-code OAuth (when the user isn't
     already logged in) and refreshes entitlement, so the caller can enable the
     single tool the user picked.
 
@@ -1040,7 +1040,7 @@ def ensure_nous_portal_access(
 
 
 def _run_nous_portal_login_only(*, capability: str) -> bool:
-    """Run the Nous Portal device-code OAuth and persist credentials only.
+    """Run the Together AI device-code OAuth and persist credentials only.
 
     No model selection, no provider switch, no Tool Gateway bulk prompt.
     Returns ``True`` on a successful login, ``False`` if the user declined or
@@ -1059,23 +1059,23 @@ def _run_nous_portal_login_only(*, capability: str) -> bool:
             _write_shared_nous_state,
         )
     except Exception as exc:  # pragma: no cover - defensive
-        print(f"  Could not start Nous Portal login: {exc}")
+        print(f"  Could not start Together AI login: {exc}")
         return False
 
     print()
-    print(f"  {capability} requires a Nous Portal login.")
+    print(f"  {capability} requires a Together AI login.")
     try:
-        proceed = input("  Log in to Nous Portal now? [Y/n]: ").strip().lower()
+        proceed = input("  Log in to Together AI now? [Y/n]: ").strip().lower()
     except (EOFError, KeyboardInterrupt):
         print()
         return False
     if proceed not in {"", "y", "yes"}:
-        print("  Skipped Nous Portal login.")
+        print("  Skipped Together AI login.")
         return False
 
     try:
         # Snapshot the active_provider so a tool-config login never silently
-        # switches the user's inference provider to Nous.
+        # switches the user's inference provider to EnergyIR.
         with _auth_store_lock():
             prior_active_provider = _load_auth_store().get("active_provider")
 
@@ -1084,7 +1084,7 @@ def _run_nous_portal_login_only(*, capability: str) -> bool:
         if shared:
             try:
                 do_import = input(
-                    "  Found existing Nous OAuth credentials. Import them? [Y/n]: "
+                    "  Found existing EnergyIR OAuth credentials. Import them? [Y/n]: "
                 ).strip().lower()
             except (EOFError, KeyboardInterrupt):
                 do_import = "y"
@@ -1107,7 +1107,7 @@ def _run_nous_portal_login_only(*, capability: str) -> bool:
 
         _write_shared_nous_state(auth_state)
         _sync_nous_pool_from_auth_store()
-        print("  Nous Portal login successful.")
+        print("  Together AI login successful.")
         return True
     except KeyboardInterrupt:
         print("\n  Login cancelled.")
@@ -1117,5 +1117,5 @@ def _run_nous_portal_login_only(*, capability: str) -> bool:
         # it already printed billing guidance.
         return False
     except Exception as exc:
-        print(f"  Nous Portal login failed: {exc}")
+        print(f"  Together AI login failed: {exc}")
         return False

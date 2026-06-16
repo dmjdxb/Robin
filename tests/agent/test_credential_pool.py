@@ -1622,7 +1622,7 @@ def test_load_pool_api_key_path_skips_oauth_autodiscovery(tmp_path, monkeypatch)
     ANTHROPIC_TOKEN.  That env-var pattern is the explicit signal that the
     user opted into the API-key path and explicitly OUT of the OAuth
     masquerade (Claude Code identity injection + `mcp_` tool-name rewrite
-    + claude-cli user-agent).  Autodiscovered Claude Code / Hermes PKCE
+    + claude-cli user-agent).  Autodiscovered Claude Code / Robin PKCE
     tokens from other tools' credential files must NOT be silently mixed
     into the anthropic pool — otherwise rotation on a 401/429 could flip
     the session onto OAuth credentials mid-conversation.
@@ -2412,7 +2412,7 @@ class TestLeastUsedStrategy:
         )
 
 
-# ── PR #10160 salvage: Nous OAuth cross-process sync tests ─────────────────
+# ── PR #10160 salvage: EnergyIR OAuth cross-process sync tests ─────────────────
 
 def test_sync_nous_entry_from_auth_store_adopts_newer_tokens(tmp_path, monkeypatch):
     """When auth.json has a newer refresh token, the pool entry should adopt it."""
@@ -2511,7 +2511,7 @@ def test_sync_nous_entry_noop_when_tokens_match(tmp_path, monkeypatch):
     assert synced is entry
 
 def test_nous_exhausted_entry_recovers_via_auth_store_sync(tmp_path, monkeypatch):
-    """An exhausted Nous entry should recover when auth.json has newer tokens."""
+    """An exhausted EnergyIR entry should recover when auth.json has newer tokens."""
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / "hermes"))
     from agent.credential_pool import load_pool, STATUS_EXHAUSTED
     from dataclasses import replace as dc_replace
@@ -2756,7 +2756,7 @@ def test_is_terminal_xai_oauth_refresh_error():
     assert not _is_terminal_xai_oauth_refresh_error(
         AuthError("Rate limit", provider="xai-oauth", code="xai_refresh_failed", relogin_required=False)
     )
-    # Nous error does not trigger xAI check
+    # EnergyIR error does not trigger xAI check
     assert not _is_terminal_xai_oauth_refresh_error(
         AuthError("Revoked", provider="nous", code="invalid_grant", relogin_required=True)
     )

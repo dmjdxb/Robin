@@ -78,5 +78,5 @@ if command -v "$1" >/dev/null 2>&1; then
     drop "$@"
 fi
 
-# Hermes subcommand pass-through.
+# Robin subcommand pass-through.
 drop hermes "$@"

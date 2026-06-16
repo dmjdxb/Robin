@@ -185,7 +185,7 @@ FAL_MODELS: Dict[str, Dict[str, Any]] = {
             "output_format": "png",
             "safety_tolerance": "5",
             # "1K" is the cheapest tier; 4K doubles the per-image cost.
-            # Users on Nous Subscription should stay at 1K for predictable billing.
+            # Users on EnergyIR Subscription should stay at 1K for predictable billing.
             "resolution": "1K",
         },
         "supports": {
@@ -236,7 +236,7 @@ FAL_MODELS: Dict[str, Dict[str, Any]] = {
             "portrait": "portrait_4_3",       # 768x1024
         },
         "defaults": {
-            # Same quality pinning as gpt-image-1.5: medium keeps Nous
+            # Same quality pinning as gpt-image-1.5: medium keeps EnergyIR
             # Portal billing predictable. "high" is 3-4x the per-image
             # cost at the same size; "low" is too rough for production use.
             "quality": "medium",
@@ -321,7 +321,7 @@ FAL_MODELS: Dict[str, Dict[str, Any]] = {
     # Krea 2 — Krea's first foundation image model, day-0 partner launch on
     # fal (2026-05-27). Same model family as our direct ``plugins/image_gen/krea``
     # backend, exposed here for users who prefer to bill through their
-    # existing FAL key / Nous Portal subscription rather than register
+    # existing FAL key / Together AI subscription rather than register
     # directly with Krea.  Both variants share the same parameter schema —
     # only model id, price, and recommended use case differ.
     "fal-ai/krea/v2/medium/text-to-image": {
@@ -396,7 +396,7 @@ _managed_fal_client_lock = threading.Lock()
 
 
 # ---------------------------------------------------------------------------
-# Managed FAL gateway (Nous Subscription)
+# Managed FAL gateway (EnergyIR Subscription)
 # ---------------------------------------------------------------------------
 def _resolve_managed_fal_gateway():
     """Return managed fal-queue gateway config when the user prefers the gateway
@@ -463,9 +463,9 @@ def _submit_fal_request(model: str, arguments: Dict[str, Any]):
                     )
                 )
             raise ValueError(
-                f"Nous Subscription gateway rejected model '{model}' "
+                f"EnergyIR Subscription gateway rejected model '{model}' "
                 f"(HTTP {status}). This model may not yet be enabled on "
-                f"the Nous Portal's FAL proxy. Either:\n"
+                f"the Together AI's FAL proxy. Either:\n"
                 f"  • Set FAL_KEY in your environment to use FAL.ai directly, or\n"
                 f"  • Pick a different model via `hermes tools` → Image Generation."
                 f"{gateway_message}"
@@ -766,7 +766,7 @@ def _build_no_backend_setup_message() -> str:
 
     Used by the in-tree FAL path. Mentions:
       - FAL_KEY signup link
-      - managed-gateway status (if Nous tools are enabled)
+      - managed-gateway status (if EnergyIR tools are enabled)
       - plugin alternative pointer (so users on a stale ``image_gen.provider``
         know the registry exists and how to inspect it)
     """
@@ -791,7 +791,7 @@ def _build_no_backend_setup_message() -> str:
     )
     if managed_nous_tools_enabled():
         lines.append(
-            "  2. Sign in to a Nous account that has the managed FAL "
+            "  2. Sign in to a EnergyIR account that has the managed FAL "
             "gateway enabled (`hermes setup`)"
         )
     lines.append(

@@ -97,7 +97,7 @@ def test_setup_syncs_openrouter_from_disk(tmp_path, monkeypatch):
 
 
 def test_setup_syncs_nous_from_disk(tmp_path, monkeypatch):
-    """Nous OAuth writes config to disk; wizard config dict must pick it up."""
+    """EnergyIR OAuth writes config to disk; wizard config dict must pick it up."""
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     _clear_provider_env(monkeypatch)
     _stub_tts(monkeypatch)

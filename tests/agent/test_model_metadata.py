@@ -200,7 +200,7 @@ class TestDefaultContextLengths:
 
         # Longest-first substring matching must resolve both the bare V4
         # ids (native DeepSeek) and the vendor-prefixed forms (OpenRouter
-        # / Nous Portal) to 1M without probing down to the legacy 128K
+        # / Together AI) to 1M without probing down to the legacy 128K
         # ``deepseek`` substring fallback.
         with mock_patch("agent.model_metadata.fetch_model_metadata", return_value={}), \
              mock_patch("agent.model_metadata.fetch_endpoint_model_metadata", return_value={}), \
@@ -439,11 +439,11 @@ class TestCodexOAuthContextLength:
 
 
 # =========================================================================
-# Nous Portal context-window resolution (provider="nous")
+# Together AI context-window resolution (provider="nous")
 # =========================================================================
 
 class TestNousPortalContextResolution:
-    """Nous Portal /v1/models is authoritative for what Nous infra enforces
+    """Together AI /v1/models is authoritative for what EnergyIR infra enforces
     and may diverge from the OpenRouter catalog.
 
     Invariants this class pins down:
@@ -469,7 +469,7 @@ class TestNousPortalContextResolution:
         self, mock_or, mock_portal, tmp_path, monkeypatch
     ):
         """The motivating case: OR catalog says 1M for qwen3.6-plus, but
-        the Nous portal correctly enforces 262144.  Portal must win."""
+        the EnergyIR portal correctly enforces 262144.  Portal must win."""
         import agent.model_metadata as mm
         cache_file = tmp_path / "context_length_cache.yaml"
         monkeypatch.setattr(mm, "_get_context_cache_path", lambda: cache_file)
@@ -640,8 +640,8 @@ class TestNousPortalContextResolution:
         self, mock_or, mock_portal, tmp_path, monkeypatch
     ):
         """Some call sites pass ``provider=""`` or ``provider="openrouter"``
-        when the user is really on Nous Portal (e.g. cred-pool fallback).
-        The Nous-URL bypass must trigger off the URL host, not the provider
+        when the user is really on Together AI (e.g. cred-pool fallback).
+        The EnergyIR-URL bypass must trigger off the URL host, not the provider
         string, so the portal-first resolver still runs in that case."""
         import agent.model_metadata as mm
         cache_file = tmp_path / "context_length_cache.yaml"
@@ -667,7 +667,7 @@ class TestNousPortalContextResolution:
                 provider=provider_arg,
             )
             assert ctx == 262_144, (
-                f"URL-based Nous detection must fire for provider={provider_arg!r}; "
+                f"URL-based EnergyIR detection must fire for provider={provider_arg!r}; "
                 f"got {ctx}"
             )
 

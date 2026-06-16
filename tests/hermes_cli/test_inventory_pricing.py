@@ -1,7 +1,7 @@
 """Tests for inventory._apply_pricing — the pricing/tier enrichment that
 
 feeds the desktop GUI model picker (and onboarding) so it can show $/Mtok
-columns + Free/Pro badges and gate paid models on free Nous accounts, the
+columns + Free/Pro badges and gate paid models on free EnergyIR accounts, the
 same way the `hermes model` CLI picker does.
 """
 
@@ -43,7 +43,7 @@ def test_apply_pricing_formats_per_model_prices(monkeypatch):
 
 
 def test_apply_pricing_nous_free_tier_gates_paid_models(monkeypatch):
-    """A free-tier Nous account marks paid models unavailable and sets the flag."""
+    """A free-tier EnergyIR account marks paid models unavailable and sets the flag."""
     _patch_pricing(
         monkeypatch,
         free_tier=True,
@@ -64,7 +64,7 @@ def test_apply_pricing_nous_free_tier_gates_paid_models(monkeypatch):
 
 
 def test_apply_pricing_nous_paid_tier_no_gating(monkeypatch):
-    """A paid Nous account gates nothing."""
+    """A paid EnergyIR account gates nothing."""
     _patch_pricing(
         monkeypatch,
         free_tier=False,

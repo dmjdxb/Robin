@@ -462,8 +462,8 @@ class TestErrorResponseShapes:
             firecrawl_provider._raise_web_backend_configuration_error()
 
         message = str(exc_info.value)
-        assert "With your Nous subscription you can also use the Tool Gateway" in message
-        assert "select Nous Subscription as the web provider" in message
+        assert "With your EnergyIR subscription you can also use the Tool Gateway" in message
+        assert "select EnergyIR Subscription as the web provider" in message
         assert "managed Firecrawl web tools is unavailable" not in message
 
     def test_firecrawl_config_error_uses_entitlement_message_when_not_paid(self, monkeypatch):

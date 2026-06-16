@@ -8,8 +8,10 @@ published by EnergyIR. By installing or using Robin you agree to them.
 ## 1. Licence
 
 Robin is provided under the MIT License (see `LICENSE`). You may use, copy,
-modify, and redistribute it subject to that licence. Robin is built on Hermes
-Agent (© Nous Research), used under the MIT License; that notice is retained.
+modify, and redistribute it subject to that licence. Robin incorporates
+open-source software used under their respective licences; the required upstream
+copyright and permission notices are retained in `LICENSE` and
+`docs/THIRD_PARTY_NOTICES.md`.
 
 ## 2. What Robin does to your machine
 
@@ -38,10 +40,11 @@ not liable for any damages arising from your use of Robin.
 Do not use Robin for unlawful purposes, to harm others, or in clinical/regulated
 contexts without your own legal and security review.
 
-## 6. No affiliation
+## 6. Independence
 
-Robin and EnergyIR are independent of Nous Research and are not endorsed or
-sponsored by Nous Research.
+Robin is an independent product of EnergyIR. Trademarks and marks of the
+open-source projects Robin builds on remain the property of their respective
+owners; their inclusion does not imply endorsement.
 
 ## 7. Changes
 

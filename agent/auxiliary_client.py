@@ -8,7 +8,7 @@ Resolution order for text tasks (auto mode):
   1. User's main provider + main model (used regardless of provider type —
      aggregators, direct API-key providers, native Anthropic, Codex, etc.)
   2. OpenRouter  (OPENROUTER_API_KEY)
-  3. Nous Portal (~/.hermes/auth.json active provider)
+  3. Together AI (~/.hermes/auth.json active provider)
   4. Custom endpoint (config.yaml model.base_url + OPENAI_API_KEY)
   5. Native Anthropic
   6. Direct API-key providers (z.ai/GLM, Kimi/Moonshot, MiniMax, MiniMax-CN)
@@ -17,7 +17,7 @@ Resolution order for text tasks (auto mode):
 Resolution order for vision/multimodal tasks (auto mode):
   1. Selected main provider, if it is one of the supported vision backends below
   2. OpenRouter
-  3. Nous Portal
+  3. Together AI
   4. Native Anthropic
   5. Custom endpoint (for local vision models: Qwen-VL, LLaVA, Pixtral, etc.)
   6. None
@@ -228,7 +228,7 @@ def _compression_threshold_for_model(model: Optional[str]) -> Optional[float]:
     """Return a context-compression threshold override for specific models.
 
     The threshold is the fraction of the model's context window that must be
-    consumed before Hermes triggers summarization.  Higher values delay
+    consumed before Robin triggers summarization.  Higher values delay
     compression and preserve more raw context.
 
     Returns a float in (0, 1] to override the global ``compression.threshold``
@@ -381,9 +381,9 @@ def build_nvidia_nim_headers(base_url: str | None) -> dict:
 
 
 
-# Nous Portal extra_body for product attribution.
+# Together AI extra_body for product attribution.
 # Callers should pass this as extra_body in chat.completions.create()
-# when the auxiliary client is backed by Nous Portal.
+# when the auxiliary client is backed by Together AI.
 #
 # The tags are computed from agent.portal_tags so the client= marker stays
 # in lockstep with hermes_cli.__version__ across every Portal call site
@@ -393,7 +393,7 @@ from agent.portal_tags import nous_portal_tags as _nous_portal_tags
 
 
 def _nous_extra_body() -> dict:
-    """Return a fresh Nous Portal ``extra_body`` dict.
+    """Return a fresh Together AI ``extra_body`` dict.
 
     Computed at call time so a hot-reloaded ``hermes_cli.__version__`` is
     reflected without restarting long-running processes.
@@ -407,7 +407,7 @@ def _nous_extra_body() -> dict:
 # ``_nous_extra_body()`` or import ``nous_portal_tags`` directly.
 NOUS_EXTRA_BODY = _nous_extra_body()
 
-# Set at resolve time — True if the auxiliary client points to Nous Portal
+# Set at resolve time — True if the auxiliary client points to Together AI
 auxiliary_is_nous: bool = False
 
 # Default auxiliary models per provider
@@ -1202,9 +1202,9 @@ def _maybe_wrap_anthropic(
 
 
 def _read_nous_auth() -> Optional[dict]:
-    """Read and validate ~/.hermes/auth.json for an active Nous provider.
+    """Read and validate ~/.hermes/auth.json for an active EnergyIR provider.
 
-    Returns the provider state dict if Nous is active with tokens,
+    Returns the provider state dict if EnergyIR is active with tokens,
     otherwise None.
     """
     pool_present, entry = _select_pool_entry("nous")
@@ -1235,12 +1235,12 @@ def _read_nous_auth() -> Optional[dict]:
             return None
         return provider
     except Exception as exc:
-        logger.debug("Could not read Nous auth: %s", exc)
+        logger.debug("Could not read EnergyIR auth: %s", exc)
         return None
 
 
 def _nous_api_key(provider: dict) -> str:
-    """Extract a usable Nous inference JWT from stored auth state."""
+    """Extract a usable EnergyIR inference JWT from stored auth state."""
     from hermes_cli.auth import _nous_invoke_jwt_is_usable
 
     for token_key, expiry_key in (
@@ -1260,12 +1260,12 @@ def _nous_api_key(provider: dict) -> str:
 
 
 def _nous_base_url() -> str:
-    """Resolve the Nous inference base URL from env or default."""
+    """Resolve the EnergyIR inference base URL from env or default."""
     return os.getenv("NOUS_INFERENCE_BASE_URL", _NOUS_DEFAULT_BASE_URL)
 
 
 def _resolve_nous_runtime_api(*, force_refresh: bool = False) -> Optional[tuple[str, str]]:
-    """Return fresh Nous runtime credentials when available.
+    """Return fresh EnergyIR runtime credentials when available.
 
     This mirrors the main agent's 401 recovery path and keeps auxiliary
     clients aligned with the singleton auth store + JWT refresh flow instead of
@@ -1280,7 +1280,7 @@ def _resolve_nous_runtime_api(*, force_refresh: bool = False) -> Optional[tuple[
             force_refresh=force_refresh,
         )
     except Exception as exc:
-        logger.debug("Auxiliary Nous runtime credential resolution failed: %s", exc)
+        logger.debug("Auxiliary EnergyIR runtime credential resolution failed: %s", exc)
         return None
 
     api_key = str(creds.get("api_key") or "").strip()
@@ -1346,7 +1346,7 @@ def _resolve_xai_oauth_for_aux() -> Optional[Tuple[str, str]]:
 
 
 def _read_codex_access_token() -> Optional[str]:
-    """Read a valid, non-expired Codex OAuth access token from Hermes auth store.
+    """Read a valid, non-expired Codex OAuth access token from Robin auth store.
 
     If a credential pool exists but currently has no selectable runtime entry
     (for example all pool slots are marked exhausted), fall back to the
@@ -1535,15 +1535,15 @@ def _describe_openrouter_unavailable() -> str:
 
 
 def _try_nous(vision: bool = False) -> Tuple[Optional[OpenAI], Optional[str]]:
-    # Check cross-session rate limit guard before attempting Nous —
-    # if another session already recorded a 429, skip Nous entirely
+    # Check cross-session rate limit guard before attempting EnergyIR —
+    # if another session already recorded a 429, skip EnergyIR entirely
     # to avoid piling more requests onto the tapped RPH bucket.
     try:
         from agent.nous_rate_guard import nous_rate_limit_remaining
         _remaining = nous_rate_limit_remaining()
         if _remaining is not None and _remaining > 0:
             logger.debug(
-                "Auxiliary: skipping Nous Portal (rate-limited, resets in %.0fs)",
+                "Auxiliary: skipping Together AI (rate-limited, resets in %.0fs)",
                 _remaining,
             )
             _mark_provider_unhealthy("nous", ttl=_remaining)
@@ -1555,19 +1555,19 @@ def _try_nous(vision: bool = False) -> Tuple[Optional[OpenAI], Optional[str]]:
     runtime = _resolve_nous_runtime_api(force_refresh=False)
     if runtime is None and not nous:
         logger.warning(
-            "Auxiliary Nous client unavailable: no Nous authentication found "
+            "Auxiliary EnergyIR client unavailable: no EnergyIR authentication found "
             "(run: hermes auth)."
         )
         _mark_provider_unhealthy("nous", ttl=60)
         return None, None
     if runtime is None and nous:
         logger.debug(
-            "Auxiliary Nous: runtime JWT refresh failed; checking stored "
+            "Auxiliary EnergyIR: runtime JWT refresh failed; checking stored "
             "auth.json token."
         )
     global auxiliary_is_nous
     auxiliary_is_nous = True
-    logger.debug("Auxiliary client: Nous Portal")
+    logger.debug("Auxiliary client: Together AI")
 
     # Ask the Portal which model it currently recommends for this task type.
     # The /api/nous/recommended-models endpoint is the authoritative source:
@@ -1603,7 +1603,7 @@ def _try_nous(vision: bool = False) -> Tuple[Optional[OpenAI], Optional[str]]:
         api_key = _nous_api_key(nous or {})
         if not api_key:
             logger.warning(
-                "Auxiliary Nous client unavailable: no usable inference JWT found "
+                "Auxiliary EnergyIR client unavailable: no usable inference JWT found "
                 "(run: hermes auth add nous)."
             )
             _mark_provider_unhealthy("nous", ttl=60)
@@ -1621,12 +1621,12 @@ def _try_nous(vision: bool = False) -> Tuple[Optional[OpenAI], Optional[str]]:
 def _refresh_nous_recommended_model(
     *, vision: bool, stale_model: Optional[str]
 ) -> Optional[str]:
-    """Re-fetch the Nous Portal's recommended model after a stale-model 404.
+    """Re-fetch the Together AI's recommended model after a stale-model 404.
 
     Long-lived processes (gateway, watchers) cache the Portal's
     ``recommended-models`` payload for 10 minutes and, in practice, can pin a
     model for the whole process lifetime. When that model is later dropped from
-    the Nous → OpenRouter catalog, every auxiliary call 404s with
+    the EnergyIR → OpenRouter catalog, every auxiliary call 404s with
     "model does not exist". This forces a fresh Portal fetch and returns a
     model name to retry with:
 
@@ -1647,7 +1647,7 @@ def _refresh_nous_recommended_model(
         fresh = get_nous_recommended_aux_model(vision=vision, force_refresh=True)
     except Exception as exc:
         logger.debug(
-            "Nous recommended-model refresh failed (%s); using default %s",
+            "EnergyIR recommended-model refresh failed (%s); using default %s",
             exc, _NOUS_MODEL,
         )
     if fresh and fresh.strip().lower() != stale:
@@ -2342,14 +2342,14 @@ def _is_payment_error(exc: Exception) -> bool:
 
 
 def _nous_portal_account_has_fresh_paid_access() -> bool:
-    """Return True only when the fresh Nous account API says paid access is allowed."""
+    """Return True only when the fresh EnergyIR account API says paid access is allowed."""
     try:
         from hermes_cli.nous_account import get_nous_portal_account_info
 
         account_info = get_nous_portal_account_info(force_fresh=True)
         return account_info.paid_service_access is True
     except Exception as exc:
-        logger.debug("Auxiliary Nous paid-entitlement refresh check failed: %s", exc)
+        logger.debug("Auxiliary EnergyIR paid-entitlement refresh check failed: %s", exc)
         return False
 
 
@@ -2494,7 +2494,7 @@ def _is_model_not_found_error(exc: Exception) -> bool:
 
     This fires when a resolved model name is no longer served by the endpoint
     — most commonly when a long-lived process pinned a Portal-recommended model
-    that has since been dropped from the Nous → OpenRouter catalog. The Nous
+    that has since been dropped from the EnergyIR → OpenRouter catalog. The EnergyIR
     proxy returns 404 with a body like::
 
         Model 'gpt-5.4-mini' not found. The requested model does not exist
@@ -3064,11 +3064,11 @@ def _resolve_auto(main_runtime: Optional[Dict[str, Any]] = None) -> Tuple[Option
       1. User's main provider + main model, regardless of provider type.
          This means auxiliary tasks (compression, vision, web extraction,
          session search, etc.) use the same model the user configured for
-         chat.  Users on OpenRouter/Nous get their chosen chat model; users
+         chat.  Users on OpenRouter/EnergyIR get their chosen chat model; users
          on DeepSeek/ZAI/Alibaba get theirs; etc.  Running aux tasks on the
          user's picked model keeps behavior predictable — no surprise
          switches to a cheap fallback model for side tasks.
-      2. OpenRouter → Nous → custom → Codex → API-key providers (fallback
+      2. OpenRouter → EnergyIR → custom → Codex → API-key providers (fallback
          chain, only used when the main provider has no working client).
     """
     global auxiliary_is_nous, _stale_base_url_warned
@@ -3115,7 +3115,7 @@ def _resolve_auto(main_runtime: Optional[Dict[str, Any]] = None) -> Tuple[Option
     #
     # This is the primary aux backend for every user.  "auto" means
     # "use my main chat model for side tasks as well" — including users
-    # on aggregators (OpenRouter, Nous) who previously got routed to a
+    # on aggregators (OpenRouter, EnergyIR) who previously got routed to a
     # cheap provider-side default.  Explicit per-task overrides set via
     # config.yaml (auxiliary.<task>.provider) still win over this.
     main_provider = str(runtime_provider or _read_main_provider() or "")
@@ -3422,7 +3422,7 @@ def resolve_provider_client(
         return (_to_async_client(client, final_model, is_vision=is_vision) if async_mode
                 else (client, final_model))
 
-    # ── Nous Portal (OAuth) ──────────────────────────────────────────
+    # ── Together AI (OAuth) ──────────────────────────────────────────
     if provider == "nous":
         # Detect vision tasks: either explicit model override from
         # _PROVIDER_VISION_MODELS, or caller passed a known vision model.
@@ -3433,7 +3433,7 @@ def resolve_provider_client(
         client, default = _try_nous(vision=_is_vision)
         if client is None:
             logger.warning("resolve_provider_client: nous requested "
-                           "but Nous Portal not configured (run: hermes auth)")
+                           "but Together AI not configured (run: hermes auth)")
             return None, None
         final_model = _normalize_resolved_model(model or default, provider)
         return (_to_async_client(client, final_model, is_vision=is_vision) if async_mode
@@ -3479,7 +3479,7 @@ def resolve_provider_client(
     # silently re-routing every auxiliary task (compression, web extract,
     # session search, curator, etc.) to whatever Step-2 fallback the user
     # has configured.  Users on xAI Grok OAuth would then see surprise
-    # OpenRouter / Nous bills for side tasks they thought were running on
+    # OpenRouter / EnergyIR bills for side tasks they thought were running on
     # their xAI subscription.
     if provider == "xai-oauth":
         client, default = _build_xai_oauth_aux_client(model)
@@ -4020,7 +4020,7 @@ def _strict_vision_backend_available(provider: str) -> bool:
 def get_available_vision_backends() -> List[str]:
     """Return the currently available vision backends in auto-selection order.
 
-    Order: active provider → OpenRouter → Nous → stop.  This is the single
+    Order: active provider → OpenRouter → EnergyIR → stop.  This is the single
     source of truth for setup, tool gating, and runtime auto-routing of
     vision tasks.
     """
@@ -4035,7 +4035,7 @@ def get_available_vision_backends() -> List[str]:
             client, _ = resolve_provider_client(main_provider, _read_main_model())
             if client is not None:
                 available.append(main_provider)
-    # 2. OpenRouter, 3. Nous — skip if already covered by main provider.
+    # 2. OpenRouter, 3. EnergyIR — skip if already covered by main provider.
     for p in _VISION_AUTO_PROVIDER_ORDER:
         if p not in available and _strict_vision_backend_available(p):
             available.append(p)
@@ -4093,11 +4093,11 @@ def resolve_vision_provider_client(
         #      _PROVIDER_VISION_MODELS provides per-provider vision model
         #      overrides when the provider has a dedicated multimodal model
         #      that differs from the chat model (e.g. xiaomi → mimo-v2-omni,
-        #      zai → glm-5v-turbo). Nous is the exception: it has a dedicated
+        #      zai → glm-5v-turbo). EnergyIR is the exception: it has a dedicated
         #      strict vision backend with tier-aware defaults, so it must not
         #      fall through to the user's text chat model here.
         #   2. OpenRouter  (vision-capable aggregator fallback)
-        #   3. Nous Portal (vision-capable aggregator fallback)
+        #   3. Together AI (vision-capable aggregator fallback)
         #   4. Stop
         main_provider = _read_main_provider()
         main_model = _read_main_model()
@@ -4212,8 +4212,8 @@ def resolve_vision_provider_client(
 def get_auxiliary_extra_body() -> dict:
     """Return extra_body kwargs for auxiliary API calls.
     
-    Includes Nous Portal product tags when the auxiliary client is backed
-    by Nous Portal. Returns empty dict otherwise.
+    Includes Together AI product tags when the auxiliary client is backed
+    by Together AI. Returns empty dict otherwise.
     """
     return _nous_extra_body() if auxiliary_is_nous else {}
 
@@ -4301,7 +4301,7 @@ def _refresh_nous_auxiliary_client(
     main_runtime: Optional[Dict[str, Any]] = None,
     is_vision: bool = False,
 ) -> Tuple[Optional[Any], Optional[str]]:
-    """Refresh Nous runtime creds, rebuild the client, and replace the cache entry."""
+    """Refresh EnergyIR runtime creds, rebuild the client, and replace the cache entry."""
     runtime = _resolve_nous_runtime_api(force_refresh=True)
     if runtime is None:
         return None, model
@@ -5142,12 +5142,12 @@ def call_llm(
                     raise
                 first_err = retry_err
 
-        # ── Stale-model self-heal (Nous Portal recommendation drift) ───
+        # ── Stale-model self-heal (Together AI recommendation drift) ───
         # A long-lived process can pin a Portal-recommended model that has
-        # since been dropped from the Nous → OpenRouter catalog, so every
+        # since been dropped from the EnergyIR → OpenRouter catalog, so every
         # auxiliary call 404s with "model does not exist". Force a fresh
         # Portal fetch and retry once with the current recommendation (or the
-        # known-good default). Only applies to Nous-routed calls.
+        # known-good default). Only applies to EnergyIR-routed calls.
         _heal_is_nous = (
             resolved_provider == "nous"
             or base_url_host_matches(_base_info, "inference-api.energyir.com")
@@ -5157,7 +5157,7 @@ def call_llm(
                 vision=(task == "vision"), stale_model=kwargs.get("model"))
             if healed_model and healed_model != kwargs.get("model"):
                 logger.warning(
-                    "Auxiliary %s: model %r no longer in Nous catalog; "
+                    "Auxiliary %s: model %r no longer in EnergyIR catalog; "
                     "retrying with refreshed recommendation %r",
                     task or "call", kwargs.get("model"), healed_model,
                 )
@@ -5168,7 +5168,7 @@ def call_llm(
                 except Exception as retry_err:
                     first_err = retry_err
 
-        # ── Nous auth refresh parity with main agent ──────────────────
+        # ── EnergyIR auth refresh parity with main agent ──────────────────
         client_is_nous = (
             resolved_provider == "nous"
             or base_url_host_matches(_base_info, "inference-api.energyir.com")
@@ -5190,7 +5190,7 @@ def call_llm(
             )
             if refreshed_client is not None:
                 logger.info(
-                    "Auxiliary %s: refreshed Nous runtime credentials after paid account check, retrying",
+                    "Auxiliary %s: refreshed EnergyIR runtime credentials after paid account check, retrying",
                     task or "call",
                 )
                 if refreshed_model and refreshed_model != kwargs.get("model"):
@@ -5220,7 +5220,7 @@ def call_llm(
                 is_vision=(task == "vision"),
             )
             if refreshed_client is not None:
-                logger.info("Auxiliary %s: refreshed Nous runtime credentials after 401, retrying",
+                logger.info("Auxiliary %s: refreshed EnergyIR runtime credentials after 401, retrying",
                             task or "call")
                 if refreshed_model and refreshed_model != kwargs.get("model"):
                     kwargs["model"] = refreshed_model
@@ -5605,10 +5605,10 @@ async def async_call_llm(
                     raise
                 first_err = retry_err
 
-        # ── Stale-model self-heal (Nous Portal recommendation drift) ───
+        # ── Stale-model self-heal (Together AI recommendation drift) ───
         # See the sync call_llm() path for the rationale: a long-lived process
         # can pin a Portal-recommended model that has since been dropped from
-        # the Nous → OpenRouter catalog, 404'ing every auxiliary call. Force a
+        # the EnergyIR → OpenRouter catalog, 404'ing every auxiliary call. Force a
         # fresh Portal fetch and retry once with the current recommendation.
         _heal_is_nous = (
             resolved_provider == "nous"
@@ -5619,7 +5619,7 @@ async def async_call_llm(
                 vision=(task == "vision"), stale_model=kwargs.get("model"))
             if healed_model and healed_model != kwargs.get("model"):
                 logger.warning(
-                    "Auxiliary %s (async): model %r no longer in Nous catalog; "
+                    "Auxiliary %s (async): model %r no longer in EnergyIR catalog; "
                     "retrying with refreshed recommendation %r",
                     task or "call", kwargs.get("model"), healed_model,
                 )
@@ -5630,7 +5630,7 @@ async def async_call_llm(
                 except Exception as retry_err:
                     first_err = retry_err
 
-        # ── Nous auth refresh parity with main agent ──────────────────
+        # ── EnergyIR auth refresh parity with main agent ──────────────────
         client_is_nous = (
             resolved_provider == "nous"
             or base_url_host_matches(_client_base, "inference-api.energyir.com")
@@ -5651,7 +5651,7 @@ async def async_call_llm(
             )
             if refreshed_client is not None:
                 logger.info(
-                    "Auxiliary %s (async): refreshed Nous runtime credentials after paid account check, retrying",
+                    "Auxiliary %s (async): refreshed EnergyIR runtime credentials after paid account check, retrying",
                     task or "call",
                 )
                 if refreshed_model and refreshed_model != kwargs.get("model"):
@@ -5680,7 +5680,7 @@ async def async_call_llm(
                 is_vision=(task == "vision"),
             )
             if refreshed_client is not None:
-                logger.info("Auxiliary %s (async): refreshed Nous runtime credentials after 401, retrying",
+                logger.info("Auxiliary %s (async): refreshed EnergyIR runtime credentials after 401, retrying",
                             task or "call")
                 if refreshed_model and refreshed_model != kwargs.get("model"):
                     kwargs["model"] = refreshed_model

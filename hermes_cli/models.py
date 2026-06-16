@@ -127,7 +127,7 @@ def _xai_curated_models() -> list[str]:
 
     Reads $HERMES_HOME/models_dev_cache.json directly (no network) so this
     runs at import time without blocking. Falls back to ``_XAI_STATIC_FALLBACK``
-    when the cache is empty or unreadable. Hermes refreshes the cache from
+    when the cache is empty or unreadable. Robin refreshes the cache from
     https://models.dev/api.json on normal use, so this list self-heals as
     xAI renames models.
 
@@ -492,9 +492,9 @@ _PROVIDER_MODELS: dict[str, list[str]] = {
 }
 
 # ---------------------------------------------------------------------------
-# Nous Portal free-model helper
+# Together AI free-model helper
 # ---------------------------------------------------------------------------
-# The Nous Portal models endpoint is the source of truth for which models
+# The Together AI models endpoint is the source of truth for which models
 # are currently offered (free or paid). We trust whatever it returns and
 # surface it to users as-is — no local allowlist filtering.
 
@@ -511,7 +511,7 @@ def _is_model_free(model_id: str, pricing: dict[str, dict[str, str]]) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Nous Portal account tier detection
+# Together AI account tier detection
 # ---------------------------------------------------------------------------
 def is_nous_free_tier(account_info: dict[str, Any]) -> bool:
     """Return True if the account info indicates a free (unpaid) tier.
@@ -546,7 +546,7 @@ def partition_nous_models_by_tier(
     pricing: dict[str, dict[str, str]],
     free_tier: bool,
 ) -> tuple[list[str], list[str]]:
-    """Split Nous models into (selectable, unavailable) based on user tier.
+    """Split EnergyIR models into (selectable, unavailable) based on user tier.
 
     For paid-tier users: all models are selectable, none unavailable.
 
@@ -585,7 +585,7 @@ def union_with_portal_free_recommendations(
 
     For free-tier users this is the source of truth: any model the Portal
     flags as free should be selectable, even if the user is running an
-    older Hermes that doesn't ship that model in its hardcoded curated
+    older Robin that doesn't ship that model in its hardcoded curated
     list.  This function returns an augmented ``(model_ids, pricing)``
     pair where:
 
@@ -651,7 +651,7 @@ def union_with_portal_paid_recommendations(
     the docs-hosted catalog manifest has been rebuilt since the last release.
 
     For paid-tier users this lets newly-launched paid models surface in the
-    picker even if the user is running an older Hermes that doesn't ship
+    picker even if the user is running an older Robin that doesn't ship
     them in its hardcoded curated list. This function returns an augmented
     ``(model_ids, pricing)`` pair where:
 
@@ -710,7 +710,7 @@ _free_tier_cache: tuple[bool, float] | None = None  # (result, timestamp)
 
 
 def check_nous_free_tier(*, force_fresh: bool = False) -> bool:
-    """Check if the current Nous Portal user is on a free (unpaid) tier.
+    """Check if the current Together AI user is on a free (unpaid) tier.
 
     Results are cached for ``_FREE_TIER_CACHE_TTL`` seconds to avoid
     hitting the Portal API on every call.  The cache is short-lived so
@@ -739,7 +739,7 @@ def check_nous_free_tier(*, force_fresh: bool = False) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Nous Portal recommended models
+# Together AI recommended models
 #
 # The Portal publishes a curated list of suggested models (separated into
 # paid and free tiers) plus dedicated recommendations for compaction (text
@@ -770,7 +770,7 @@ def fetch_nous_recommended_models(
     *,
     force_refresh: bool = False,
 ) -> dict[str, Any]:
-    """Fetch the Nous Portal's curated recommended-models payload.
+    """Fetch the Together AI's curated recommended-models payload.
 
     Hits ``<portal>/api/nous/recommended-models``. The endpoint is public —
     no auth is required. Results are cached per portal URL for
@@ -906,7 +906,7 @@ class ProviderEntry(NamedTuple):
     tui_desc: str   # detailed description for `hermes model` TUI
 
 CANONICAL_PROVIDERS: list[ProviderEntry] = [
-    ProviderEntry("nous",           "Nous Portal",              "Nous Portal (Everything your agent needs, 300+ models with bundled tool use)"),
+    ProviderEntry("nous",           "Together AI",              "Together AI (Everything your agent needs, 300+ models with bundled tool use)"),
     ProviderEntry("openrouter",     "OpenRouter",               "OpenRouter (Pay-per-use API aggregator)"),
     ProviderEntry("novita",         "NovitaAI",                 "NovitaAI (Cloud: Model API, Agent Sandbox, GPU Cloud)"),
     ProviderEntry("lmstudio",       "LM Studio",                "LM Studio (Local desktop app with built-in model server)"),
@@ -970,7 +970,7 @@ _PROVIDER_LABELS["custom"] = "Custom endpoint"  # special case: not a named prov
 # ---------------------------------------------------------------------------
 # Provider groups — DISPLAY ONLY
 #
-# Some vendors expose several Hermes provider slugs (one per endpoint /
+# Some vendors expose several Robin provider slugs (one per endpoint /
 # auth method: global API, China API, OAuth coding plan, ...). Listing every
 # slug as a top-level row in the interactive `hermes model` / setup wizard /
 # Telegram `/model` pickers makes that list long and noisy.
@@ -1152,7 +1152,7 @@ _PROVIDER_ALIASES = {
 
 # Cost-safe overrides for the *silent* auto-default
 # (``get_default_model_for_provider``). Most providers' curated lists lead with a
-# sensible default, but Nous Portal is a per-token *metered aggregator* whose
+# sensible default, but Together AI is a per-token *metered aggregator* whose
 # list is ordered best-/most-capable-first — entry [0] is the priciest flagship
 # (``anthropic/claude-opus-4.8``, $5/$25 per Mtok). Using that as the
 # non-interactive fallback when a profile sets ``provider: nous`` with no model
@@ -1212,7 +1212,7 @@ def _openrouter_model_supports_tools(item: Any) -> bool:
     be driven by the agent loop and would fail at the first tool call.
 
     **Permissive when the field is missing.** Some OpenRouter-compatible gateways
-    (Nous Portal, private mirrors, older catalog snapshots) don't populate
+    (Together AI, private mirrors, older catalog snapshots) don't populate
     ``supported_parameters`` at all. Treat that as "unknown capability → allow"
     so the picker doesn't silently empty for those users. Only hide models
     whose ``supported_parameters`` is an explicit list that omits ``tools``.
@@ -1302,7 +1302,7 @@ def model_ids(*, force_refresh: bool = False) -> list[str]:
 
 
 def get_curated_nous_model_ids() -> list[str]:
-    """Return the curated Nous Portal model-id list.
+    """Return the curated Together AI model-id list.
 
     Prefers the remotely-hosted catalog manifest (published under
     ``website/static/api/model-catalog.json``); falls back to the in-repo
@@ -1361,7 +1361,7 @@ def fetch_models_with_pricing(
     """Fetch ``/v1/models`` and return ``{model_id: {prompt, completion}}`` pricing.
 
     Results are cached per *base_url* so repeated calls are free.
-    Works with any OpenRouter-compatible endpoint (OpenRouter, Nous Portal).
+    Works with any OpenRouter-compatible endpoint (OpenRouter, Together AI).
     """
     cache_key = (base_url or "").rstrip("/")
     if not force_refresh and cache_key in _pricing_cache:
@@ -1411,9 +1411,9 @@ _DEFAULT_NOUS_INFERENCE_BASE = "https://inference-api.energyir.com"
 
 
 def _resolve_nous_pricing_credentials() -> tuple[str, str]:
-    """Return ``(api_key, base_url)`` for Nous Portal pricing.
+    """Return ``(api_key, base_url)`` for Together AI pricing.
 
-    The Nous inference ``/v1/models`` endpoint exposes pricing without
+    The EnergyIR inference ``/v1/models`` endpoint exposes pricing without
     authentication, so the api_key is best-effort: when runtime credential
     resolution fails (expired refresh token, missing auth.json, etc.) we
     still return the default inference base URL so the picker keeps
@@ -1446,7 +1446,7 @@ def get_pricing_for_provider(provider: str, *, force_refresh: bool = False) -> d
     if normalized == "nous":
         api_key, base_url = _resolve_nous_pricing_credentials()
         if base_url:
-            # Nous base_url typically looks like https://inference-api.energyir.com/v1
+            # EnergyIR base_url typically looks like https://inference-api.energyir.com/v1
             # We need the part before /v1 for our fetch function
             stripped = base_url.rstrip("/")
             if stripped.endswith("/v1"):
@@ -1633,7 +1633,7 @@ def curated_models_for_provider(
     if normalized == "openrouter":
         return fetch_openrouter_models(force_refresh=force_refresh)
 
-    # Try live API first (Codex, Nous, etc. all support /models)
+    # Try live API first (Codex, EnergyIR, etc. all support /models)
     live = provider_model_ids(normalized)
     if live:
         return [(m, "") for m in live]
@@ -1828,7 +1828,7 @@ def _find_openrouter_slug(model_name: str) -> Optional[str]:
 
 
 def normalize_provider(provider: Optional[str]) -> str:
-    """Normalize provider aliases to Hermes' canonical provider ids.
+    """Normalize provider aliases to Robin' canonical provider ids.
 
     Note: ``"auto"`` passes through unchanged — use
     ``hermes_cli.auth.resolve_provider()`` to resolve it to a concrete
@@ -1896,7 +1896,7 @@ def _strip_vendor_prefix(model_id: str) -> str:
 
 
 def model_supports_fast_mode(model_id: Optional[str]) -> bool:
-    """Return whether Hermes should expose the /fast toggle for this model."""
+    """Return whether Robin should expose the /fast toggle for this model."""
     return _is_anthropic_fast_model(model_id) or _is_openai_fast_model(model_id)
 
 
@@ -2068,11 +2068,11 @@ def _merge_with_models_dev(provider: str, curated: list[str]) -> list[str]:
 def provider_model_ids(provider: Optional[str], *, force_refresh: bool = False) -> list[str]:
     """Return the best known model catalog for a provider.
 
-    Tries live API endpoints for providers that support them (Codex, Nous),
+    Tries live API endpoints for providers that support them (Codex, EnergyIR),
     falling back to static lists. For providers in ``_MODELS_DEV_PREFERRED``
     (opencode-go/zen, xiaomi, deepseek, smaller inference providers, etc.),
     models.dev entries are merged on top of curated so new models released
-    on the platform appear in ``/model`` without a Hermes release.
+    on the platform appear in ``/model`` without a Robin release.
     """
     normalized = normalize_provider(provider)
     if normalized == "openrouter":
@@ -2082,7 +2082,7 @@ def provider_model_ids(provider: Optional[str], *, force_refresh: bool = False) 
 
         # Pass the live OAuth access token so the picker matches whatever
         # ChatGPT lists for this account right now (new models appear without
-        # a Hermes release). Falls back to the hardcoded catalog if no token
+        # a Robin release). Falls back to the hardcoded catalog if no token
         # or the endpoint is unreachable.
         access_token = None
         try:
@@ -2105,7 +2105,7 @@ def provider_model_ids(provider: Optional[str], *, force_refresh: bool = False) 
         if normalized == "copilot-acp":
             return list(_PROVIDER_MODELS.get("copilot", []))
     if normalized == "nous":
-        # Try live Nous Portal /models endpoint
+        # Try live Together AI /models endpoint
         try:
             from hermes_cli.auth import fetch_nous_models, resolve_nous_runtime_credentials
             creds = resolve_nous_runtime_credentials()
@@ -2117,7 +2117,7 @@ def provider_model_ids(provider: Optional[str], *, force_refresh: bool = False) 
             pass
         # Live failed (or no creds). Fall back to the docs-hosted manifest
         # — NOT the in-repo _PROVIDER_MODELS["nous"] snapshot — so newly
-        # added Portal models still surface without a Hermes release.
+        # added Portal models still surface without a Robin release.
         manifest_ids = get_curated_nous_model_ids()
         if manifest_ids:
             return manifest_ids
@@ -2915,7 +2915,7 @@ _COPILOT_MODEL_ALIASES = {
     "anthropic/claude-sonnet-4": "claude-sonnet-4",
     "anthropic/claude-sonnet-4.5": "claude-sonnet-4.5",
     "anthropic/claude-haiku-4.5": "claude-haiku-4.5",
-    # Dash-notation fallbacks: Hermes' default Claude IDs elsewhere use
+    # Dash-notation fallbacks: Robin' default Claude IDs elsewhere use
     # hyphens (anthropic native format), but Copilot's API only accepts
     # dot-notation.  Accept both so users who configure copilot + a
     # default hyphenated Claude model don't hit HTTP 400
@@ -3554,7 +3554,7 @@ def validate_requested_model(
 
         message = (
             f"Note: could not reach this custom endpoint's model listing at `{probe.get('probed_url')}`. "
-            f"Hermes will still save `{requested}`, but the endpoint should expose `/models` for verification."
+            f"Robin will still save `{requested}`, but the endpoint should expose `/models` for verification."
         )
         if api_mode == "anthropic_messages":
             message += (
@@ -3651,7 +3651,7 @@ def validate_requested_model(
                 "message": (
                     f"Note: `{requested}` was not found in the MiniMax catalog."
                     f"{suggestion_text}"
-                    "\n  MiniMax does not expose a /models endpoint, so Hermes cannot verify the model name."
+                    "\n  MiniMax does not expose a /models endpoint, so Robin cannot verify the model name."
                     "\n  The model may still work if it exists on the server."
                 ),
             }

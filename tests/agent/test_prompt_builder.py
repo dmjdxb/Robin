@@ -439,7 +439,7 @@ class TestBuildNousSubscriptionPrompt:
                 provider_is_nous=True,
                 features={
                     "web": NousFeatureState("web", "Web tools", True, True, True, True, False, True, "firecrawl"),
-                    "image_gen": NousFeatureState("image_gen", "Image generation", True, True, True, True, False, True, "Nous Subscription"),
+                    "image_gen": NousFeatureState("image_gen", "Image generation", True, True, True, True, False, True, "EnergyIR Subscription"),
                     "video_gen": NousFeatureState("video_gen", "Video generation", False, False, False, False, False, False, ""),
                     "tts": NousFeatureState("tts", "OpenAI TTS", True, True, True, True, False, True, "OpenAI TTS"),
                     "browser": NousFeatureState("browser", "Browser automation", True, True, True, True, False, True, "Browser Use"),
@@ -475,7 +475,7 @@ class TestBuildNousSubscriptionPrompt:
 
         prompt = build_nous_subscription_prompt({"image_generate"})
 
-        assert "suggest Nous subscription as one option" in prompt
+        assert "suggest EnergyIR subscription as one option" in prompt
         assert "Do not mention subscription unless" in prompt
 
     def test_feature_flag_off_returns_empty_prompt(self, monkeypatch):
@@ -500,7 +500,7 @@ class TestBuildContextFilesPrompt:
         with patch("pathlib.Path.home", return_value=fake_home):
             result = build_context_files_prompt(cwd=str(tmp_path))
         assert "Project Context" in result
-        assert "Hermes Agent" in result
+        assert "Robin Agent" in result
 
     def test_loads_agents_md(self, tmp_path):
         (tmp_path / "AGENTS.md").write_text("Use Ruff for linting.")
@@ -621,9 +621,9 @@ class TestBuildContextFilesPrompt:
     def test_hermes_md_beats_agents_md(self, tmp_path):
         """When both exist, .hermes.md wins and AGENTS.md is not loaded."""
         (tmp_path / "AGENTS.md").write_text("Agent guidelines here.")
-        (tmp_path / ".hermes.md").write_text("Hermes project rules.")
+        (tmp_path / ".hermes.md").write_text("Robin project rules.")
         result = build_context_files_prompt(cwd=str(tmp_path))
-        assert "Hermes project rules" in result
+        assert "Robin project rules" in result
         assert "Agent guidelines" not in result
 
     def test_agents_md_beats_claude_md(self, tmp_path):
@@ -674,12 +674,12 @@ class TestBuildContextFilesPrompt:
 
     def test_hermes_md_beats_all_others(self, tmp_path):
         """When all four types exist, only .hermes.md is loaded."""
-        (tmp_path / ".hermes.md").write_text("Hermes wins.")
+        (tmp_path / ".hermes.md").write_text("Robin wins.")
         (tmp_path / "AGENTS.md").write_text("Agents lose.")
         (tmp_path / "CLAUDE.md").write_text("Claude loses.")
         (tmp_path / ".cursorrules").write_text("Cursor loses.")
         result = build_context_files_prompt(cwd=str(tmp_path))
-        assert "Hermes wins" in result
+        assert "Robin wins" in result
         assert "Agents lose" not in result
         assert "Claude loses" not in result
         assert "Cursor loses" not in result
@@ -696,7 +696,7 @@ class TestBuildContextFilesPrompt:
 # =========================================================================
 
 
-class TestFindHermesMd:
+class TestFindRobinMd:
     def test_finds_in_cwd(self, tmp_path):
         (tmp_path / ".hermes.md").write_text("rules")
         assert _find_hermes_md(tmp_path) == tmp_path / ".hermes.md"

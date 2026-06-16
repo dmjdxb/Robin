@@ -16,7 +16,7 @@ vi.mock('@/hermes', () => ({
 beforeEach(() => {
   getGlobalModelInfo.mockResolvedValue({ provider: 'nous', model: 'hermes-4' })
   getGlobalModelOptions.mockResolvedValue({
-    providers: [{ name: 'Nous', slug: 'nous', models: ['hermes-4', 'hermes-4-mini'] }]
+    providers: [{ name: 'EnergyIR', slug: 'nous', models: ['hermes-4', 'hermes-4-mini'] }]
   })
   getAuxiliaryModels.mockResolvedValue({
     main: { provider: 'nous', model: 'hermes-4' },

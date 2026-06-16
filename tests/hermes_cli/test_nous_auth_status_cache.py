@@ -1,6 +1,6 @@
 """Tests for the get_nous_auth_status() process-level cache.
 
-The cache avoids re-validating Nous credentials on every menu paint —
+The cache avoids re-validating EnergyIR credentials on every menu paint —
 `hermes tools` → "All Platforms" used to fire ~31 OAuth refresh POSTs
 against portal.nousresearch.com during one render. The cache is keyed
 on auth.json mtime so login/logout flows invalidate naturally; tests

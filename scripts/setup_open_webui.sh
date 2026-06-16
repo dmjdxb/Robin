@@ -15,7 +15,7 @@ set -euo pipefail
 # Optional environment overrides:
 #   OPEN_WEBUI_PORT=8080
 #   OPEN_WEBUI_HOST=127.0.0.1
-#   OPEN_WEBUI_NAME='Johnny Hermes'
+#   OPEN_WEBUI_NAME='Johnny Robin'
 #   OPEN_WEBUI_ENABLE_SIGNUP=true
 #   OPEN_WEBUI_ENABLE_SERVICE=auto   # auto|true|false
 #   OPEN_WEBUI_VENV=~/.local/open-webui-venv
@@ -299,7 +299,7 @@ main() {
     api_key="$(generate_secret)"
   fi
 
-  log 'Ensuring Hermes API server is configured...'
+  log 'Ensuring Robin API server is configured...'
   upsert_env API_SERVER_ENABLED true "$HERMES_ENV_FILE"
   upsert_env API_SERVER_HOST "$HERMES_API_HOST" "$HERMES_ENV_FILE"
   upsert_env API_SERVER_PORT "$HERMES_API_PORT" "$HERMES_ENV_FILE"
@@ -307,11 +307,11 @@ main() {
   upsert_env API_SERVER_KEY "$api_key" "$HERMES_ENV_FILE"
   ensure_env_permissions
 
-  log 'Restarting Hermes gateway so API server settings take effect...'
+  log 'Restarting Robin gateway so API server settings take effect...'
   hermes gateway restart >/dev/null 2>&1 || true
   sleep 4
   if ! curl -fsS "http://${HERMES_API_CONNECT_HOST}:${HERMES_API_PORT}/health" >/dev/null; then
-    log 'Hermes API server did not answer on the first check. Trying to start gateway in the background...'
+    log 'Robin API server did not answer on the first check. Trying to start gateway in the background...'
     nohup hermes gateway run >/dev/null 2>&1 &
     sleep 6
   fi
@@ -342,7 +342,7 @@ main() {
   esac
 
   log "Done. Open WebUI should be available at: http://${OPEN_WEBUI_HOST}:${OPEN_WEBUI_PORT}"
-  log "Hermes API endpoint: ${HERMES_API_BASE_URL}"
+  log "Robin API endpoint: ${HERMES_API_BASE_URL}"
   log 'Important: Open WebUI persists connection settings after first launch. If you later save a wrong API key in the Admin UI, update/delete that connection there or reset its database.'
 }
 

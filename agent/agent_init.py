@@ -1155,7 +1155,7 @@ def init_agent(
     # same tools via ctx.register_tool(), which lands in agent.tools
     # through _ra().get_tool_definitions()).  Duplicate function names cause
     # 400 errors on providers that enforce unique names (e.g. Xiaomi
-    # MiMo via Nous Portal).
+    # MiMo via Together AI).
     #
     # Respect the platform's enabled_toolsets configuration (#5544):
     #   enabled_toolsets is None        → no filter, inject (backward compat)

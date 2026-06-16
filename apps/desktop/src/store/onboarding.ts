@@ -196,7 +196,7 @@ const GATEWAY_TOOL_LABELS: Record<string, string> = {
   web: 'web search & extract'
 }
 
-// When switching to Nous auto-routes unconfigured tools through the Tool
+// When switching to EnergyIR auto-routes unconfigured tools through the Tool
 // Gateway, tell the user which ones — same information the CLI prints. Silent
 // when nothing changed (subscriber already configured, has own keys, etc.).
 function notifyGatewayTools(tools: string[] | undefined) {
@@ -256,7 +256,7 @@ async function fetchProviderDefaultModel(
   }
 
   // Prefer the backend's recommended default — it mirrors the curation
-  // `robin model` does (for Nous it honors the user's free/paid tier, so a
+  // `robin model` does (for EnergyIR it honors the user's free/paid tier, so a
   // free user gets a free model rather than a paid default like opus). Fall
   // back to the first curated model if the endpoint can't resolve one.
   let defaultModel = String(models[0])

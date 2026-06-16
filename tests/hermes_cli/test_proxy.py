@@ -44,7 +44,7 @@ def test_get_adapter_returns_xai_instance():
 
 def test_get_adapter_case_insensitive():
     assert isinstance(get_adapter("NOUS"), NousPortalAdapter)
-    assert isinstance(get_adapter("  Nous  "), NousPortalAdapter)
+    assert isinstance(get_adapter("  EnergyIR  "), NousPortalAdapter)
     assert isinstance(get_adapter("XAI"), XAIGrokAdapter)
 
 
@@ -71,7 +71,7 @@ def _write_auth_store(hermes_home: Path, nous_state: Dict[str, Any]) -> Path:
 def test_nous_adapter_metadata():
     adapter = NousPortalAdapter()
     assert adapter.name == "nous"
-    assert adapter.display_name == "Nous Portal"
+    assert adapter.display_name == "Together AI"
     assert "/chat/completions" in adapter.allowed_paths
     assert "/embeddings" in adapter.allowed_paths
     assert "/completions" in adapter.allowed_paths
@@ -692,7 +692,7 @@ def test_server_forwards_chat_completions():
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     f"{proxy_base}/v1/chat/completions",
-                    json={"model": "Hermes-4-70B",
+                    json={"model": "Robin-4-70B",
                           "messages": [{"role": "user", "content": "hi"}]},
                     headers={"Authorization": "Bearer client-dummy-key"},
                 ) as resp:
@@ -703,7 +703,7 @@ def test_server_forwards_chat_completions():
             assert len(captured["requests"]) == 1
             req = captured["requests"][0]
             assert req["auth"] == "Bearer real-portal-key"
-            assert "Hermes-4-70B" in req["body"]
+            assert "Robin-4-70B" in req["body"]
         finally:
             await proxy_runner.cleanup()
             await upstream_runner.cleanup()
@@ -728,7 +728,7 @@ def test_server_retries_once_with_adapter_retry_credential_on_401():
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     f"{proxy_base}/v1/chat/completions",
-                    json={"model": "Hermes-4-70B"},
+                    json={"model": "Robin-4-70B"},
                 ) as resp:
                     assert resp.status == 200
                     data = await resp.json()
@@ -859,7 +859,7 @@ def test_cmd_proxy_status_runs(capsys, tmp_path, monkeypatch):
     assert rc == 0
     out = capsys.readouterr().out
     assert "nous" in out
-    assert "Nous Portal" in out
+    assert "Together AI" in out
     assert "not logged in" in out
 
 
@@ -871,7 +871,7 @@ def test_cmd_proxy_providers_runs(capsys):
     assert rc == 0
     out = capsys.readouterr().out
     assert "nous" in out
-    assert "Nous Portal" in out
+    assert "Together AI" in out
 
 
 def test_cmd_proxy_start_refuses_unknown_provider(capsys):

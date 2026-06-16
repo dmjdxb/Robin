@@ -1,7 +1,7 @@
 """
 Multi-provider authentication system for Robin.
 
-Supports OAuth device code flows (Nous Portal, future: OpenAI Codex) and
+Supports OAuth device code flows (Together AI, future: OpenAI Codex) and
 traditional API key providers (OpenRouter, custom endpoints). Auth state
 is persisted in ~/.hermes/auth.json with cross-process file locking.
 
@@ -12,7 +12,7 @@ Architecture:
 - resolve_*_runtime_credentials() handles token refresh and runtime keys
 - logout_command() is the CLI entry point for clearing auth
 
-Nous authentication paths:
+EnergyIR authentication paths:
 - Invoke JWT (preferred): use a scoped access_token directly for inference.
 """
 
@@ -66,7 +66,7 @@ except Exception:
 AUTH_STORE_VERSION = 1
 AUTH_LOCK_TIMEOUT_SECONDS = 15.0
 
-# Nous Portal defaults
+# Together AI defaults
 DEFAULT_NOUS_PORTAL_URL = "https://portal.energyir.com"
 DEFAULT_NOUS_INFERENCE_URL = "https://inference-api.energyir.com/v1"
 DEFAULT_NOUS_CLIENT_ID = "hermes-cli"
@@ -167,7 +167,7 @@ class ProviderConfig:
 PROVIDER_REGISTRY: Dict[str, ProviderConfig] = {
     "nous": ProviderConfig(
         id="nous",
-        name="Nous Portal",
+        name="Together AI",
         auth_type="oauth_device_code",
         portal_base_url=DEFAULT_NOUS_PORTAL_URL,
         inference_base_url=DEFAULT_NOUS_INFERENCE_URL,
@@ -814,13 +814,13 @@ def _format_nous_entitlement_auth_error(error: AuthError) -> str:
         account_info = get_nous_portal_account_info(force_fresh=True)
         message = format_nous_portal_entitlement_message(
             account_info,
-            capability="Nous model access",
+            capability="EnergyIR model access",
         )
         if message:
             return message
     except Exception:
         pass
-    return f"{error} Check credits or billing in Nous Portal, then retry."
+    return f"{error} Check credits or billing in Together AI, then retry."
 
 
 def _token_fingerprint(token: Any) -> Optional[str]:
@@ -960,7 +960,7 @@ def _file_lock(
     Reentrant per-thread via ``holder.depth``. Falls back to a depth-only
     guard when neither ``fcntl`` nor ``msvcrt`` is available (rare).
     Callers supply their own ``threading.local`` so independent locks
-    (e.g. profile auth.json vs shared Nous store) don't share reentrancy
+    (e.g. profile auth.json vs shared EnergyIR store) don't share reentrancy
     state — that would let one lock's reentrant acquisition silently skip
     the other's kernel-level flock.
     """
@@ -1026,7 +1026,7 @@ def _auth_store_lock(timeout_seconds: float = AUTH_LOCK_TIMEOUT_SECONDS):
 
     Lock ordering invariant: when this lock is held together with
     ``_nous_shared_store_lock``, acquire ``_auth_store_lock`` FIRST
-    (outer) and the shared Nous lock SECOND (inner). All runtime
+    (outer) and the shared EnergyIR lock SECOND (inner). All runtime
     refresh paths follow this order; violating it risks deadlock
     against a concurrent import on the shared store.
     """
@@ -1316,7 +1316,7 @@ def get_provider_auth_state(provider_id: str) -> Optional[Dict[str, Any]]:
     ``read_credential_pool``'s per-provider shadowing semantics so that
     ``_seed_from_singletons`` can reseed a profile's credential pool from
     global-scope provider state (e.g. a globally-authenticated Anthropic
-    OAuth or Nous device-code session). See issue #18594 follow-up.
+    OAuth or EnergyIR device-code session). See issue #18594 follow-up.
     """
     auth_store = _load_auth_store()
     return _load_provider_state(auth_store, provider_id)
@@ -1366,7 +1366,7 @@ def is_provider_explicitly_configured(provider_id: str) -> bool:
 
     # 3. Check provider-specific env vars
     # Exclude CLAUDE_CODE_OAUTH_TOKEN — it's set by Claude Code itself,
-    # not by the user explicitly configuring anthropic in Hermes.
+    # not by the user explicitly configuring anthropic in Robin.
     _IMPLICIT_ENV_VARS = {"CLAUDE_CODE_OAUTH_TOKEN"}
     pconfig = PROVIDER_REGISTRY.get(normalized)
     if pconfig and pconfig.auth_type == "api_key":
@@ -1637,7 +1637,7 @@ def _optional_base_url(value: Any) -> Optional[str]:
     return cleaned if cleaned else None
 
 
-# Allowlist of hosts the Nous Portal proxy is willing to forward inference
+# Allowlist of hosts the Together AI proxy is willing to forward inference
 # JWTs to. Sending a bearer anywhere else would leak it.
 #
 # This is consulted only for URLs coming from the NETWORK side (Portal
@@ -1787,7 +1787,7 @@ def _assert_nous_inference_jwt_usable(
     if reason is None:
         return
     raise AuthError(
-        "Nous Portal access token is not a usable inference JWT "
+        "Together AI access token is not a usable inference JWT "
         f"({reason}). Re-authenticate with: hermes auth add nous",
         provider="nous",
         code=reason,
@@ -1800,7 +1800,7 @@ def _log_nous_invoke_jwt_selected(
     access_token: Any,
     sequence_id: Optional[str] = None,
 ) -> None:
-    logger.info("Nous inference auth: using NAS invoke JWT")
+    logger.info("EnergyIR inference auth: using NAS invoke JWT")
     _oauth_trace(
         "nous_invoke_jwt_selected",
         sequence_id=sequence_id,
@@ -2514,7 +2514,7 @@ def _make_xai_callback_handler(expected_path: str) -> tuple[type[BaseHTTPRequest
             }
 
             # Diagnostic logging — emits at INFO so reporters of loopback bugs
-            # (#27385 — "callback received but Hermes times out") can produce
+            # (#27385 — "callback received but Robin times out") can produce
             # actionable evidence without a code change.  Logged values are
             # fingerprints / booleans only; no actual code/state strings leak
             # into the log file.  Run with ``HERMES_LOG_LEVEL=INFO`` (or check
@@ -2975,7 +2975,7 @@ def login_spotify_command(args) -> None:
     print(f"Redirect URI: {redirect_uri}")
     print("Make sure this redirect URI is allow-listed in your Spotify app settings.")
     print()
-    print("Open this URL to authorize Hermes:")
+    print("Open this URL to authorize Robin:")
     print(authorize_url)
     print()
     print(f"Full setup guide: {SPOTIFY_DOCS_URL}")
@@ -3261,7 +3261,7 @@ def _print_loopback_ssh_hint(redirect_uri: str, *, docs_url: str | None = None) 
     print(divider)
     print("Remote session detected — SSH tunnel required")
     print(divider)
-    print(f"Hermes is waiting for the OAuth callback on {redirect_uri}")
+    print(f"Robin is waiting for the OAuth callback on {redirect_uri}")
     print("but your browser is on a different machine. Run this command")
     print("in a NEW terminal on your local machine BEFORE opening the URL:")
     print()
@@ -3282,13 +3282,13 @@ def _print_loopback_ssh_hint(redirect_uri: str, *, docs_url: str | None = None) 
 # =============================================================================
 # OpenAI Codex auth — tokens stored in ~/.hermes/auth.json (not ~/.codex/)
 #
-# Hermes maintains its own Codex OAuth session separate from the Codex CLI
+# Robin maintains its own Codex OAuth session separate from the Codex CLI
 # and VS Code extension. This prevents refresh token rotation conflicts
 # where one app's refresh invalidates the other's session.
 # =============================================================================
 
 def _read_codex_tokens(*, _lock: bool = True) -> Dict[str, Any]:
-    """Read Codex OAuth tokens from Hermes auth store (~/.hermes/auth.json).
+    """Read Codex OAuth tokens from Robin auth store (~/.hermes/auth.json).
     
     Returns dict with 'tokens' (access_token, refresh_token) and 'last_refresh'.
     Raises AuthError if no Codex tokens are stored.
@@ -3408,7 +3408,7 @@ def _sync_codex_pool_entries(
 
 
 def _save_codex_tokens(tokens: Dict[str, str], last_refresh: str = None, label: str = None) -> None:
-    """Save Codex OAuth tokens to Hermes auth store (~/.hermes/auth.json)."""
+    """Save Codex OAuth tokens to Robin auth store (~/.hermes/auth.json)."""
     if last_refresh is None:
         last_refresh = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     with _auth_store_lock():
@@ -3430,7 +3430,7 @@ def refresh_codex_oauth_pure(
     *,
     timeout_seconds: float = 20.0,
 ) -> Dict[str, Any]:
-    """Refresh Codex OAuth tokens without mutating Hermes auth state."""
+    """Refresh Codex OAuth tokens without mutating Robin auth state."""
     del access_token  # Access token is only used by callers to decide whether to refresh.
     if not isinstance(refresh_token, str) or not refresh_token.strip():
         raise AuthError(
@@ -3558,7 +3558,7 @@ def _refresh_codex_auth_tokens(
 ) -> Dict[str, str]:
     """Refresh Codex access token using the refresh token.
     
-    Saves the new tokens to Hermes auth store automatically.
+    Saves the new tokens to Robin auth store automatically.
     """
     refreshed = refresh_codex_oauth_pure(
         str(tokens.get("access_token", "") or ""),
@@ -3613,7 +3613,7 @@ def resolve_codex_runtime_credentials(
     refresh_if_expiring: bool = True,
     refresh_skew_seconds: int = CODEX_ACCESS_TOKEN_REFRESH_SKEW_SECONDS,
 ) -> Dict[str, Any]:
-    """Resolve runtime credentials from Hermes's own Codex token store.
+    """Resolve runtime credentials from Robin's own Codex token store.
 
     Falls back to the credential pool when the singleton (``providers.openai-codex.tokens``)
     has no usable access_token but the pool (``credential_pool.openai-codex``) does. This
@@ -3651,7 +3651,7 @@ def resolve_codex_runtime_credentials(
     if (not should_refresh) and refresh_if_expiring:
         should_refresh = _codex_access_token_is_expiring(access_token, refresh_skew_seconds)
     if should_refresh:
-        # Re-read under lock to avoid racing with other Hermes processes
+        # Re-read under lock to avoid racing with other Robin processes
         with _auth_store_lock(timeout_seconds=max(float(AUTH_LOCK_TIMEOUT_SECONDS), refresh_timeout_seconds + 5.0)):
             data = _read_codex_tokens(_lock=False)
             tokens = dict(data["tokens"])
@@ -3974,7 +3974,7 @@ def refresh_xai_oauth_pure(
         )
     endpoint = token_endpoint.strip() or _xai_oauth_discovery(timeout_seconds)["token_endpoint"]
     # Re-validate cached endpoints on the refresh hot path: an auth.json
-    # written by an older Hermes (or hand-edited) may carry a non-xAI
+    # written by an older Robin (or hand-edited) may carry a non-xAI
     # token_endpoint that would receive every future refresh_token in
     # plaintext if we trusted it blindly. Cheap suffix check; fast-fail
     # with a clear error so the user can re-run `hermes model` to refetch.
@@ -4306,11 +4306,11 @@ def _poll_for_token(
 
 
 # =============================================================================
-# Nous Portal — token refresh and model discovery
+# Together AI — token refresh and model discovery
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# Shared Nous token store — lets OAuth credentials persist across profiles
+# Shared EnergyIR token store — lets OAuth credentials persist across profiles
 # so a new `hermes --profile <name> auth add nous --type oauth` can one-tap
 # import instead of running the full device-code flow every time.
 #
@@ -4333,7 +4333,7 @@ _nous_shared_lock_holder = threading.local()
 
 
 def _nous_shared_auth_dir() -> Path:
-    """Resolve the directory that holds the shared Nous token store.
+    """Resolve the directory that holds the shared EnergyIR token store.
 
     Honors ``HERMES_SHARED_AUTH_DIR`` so tests can redirect it to a tmp
     path without touching the real user's home. Defaults to
@@ -4355,7 +4355,7 @@ def _nous_shared_auth_dir() -> Path:
 def _nous_shared_store_path() -> Path:
     path = _nous_shared_auth_dir() / NOUS_SHARED_STORE_FILENAME
     # Seat belt: if pytest is running and this resolves to a path under the
-    # real user's Hermes root, refuse rather than silently corrupt cross-profile
+    # real user's Robin root, refuse rather than silently corrupt cross-profile
     # state. Tests must set HERMES_SHARED_AUTH_DIR to a tmp_path (conftest
     # does not do this automatically — mirror the _auth_file_path() guard
     # so forgetting to set it fails loudly instead of writing to the real
@@ -4371,7 +4371,7 @@ def _nous_shared_store_path() -> Path:
             resolved = path
         if resolved == real_home_shared:
             raise RuntimeError(
-                f"Refusing to touch real user shared Nous auth store during test run: "
+                f"Refusing to touch real user shared EnergyIR auth store during test run: "
                 f"{path}. Set HERMES_SHARED_AUTH_DIR to a tmp_path in your test fixture."
             )
     return path
@@ -4379,7 +4379,7 @@ def _nous_shared_store_path() -> Path:
 
 @contextmanager
 def _nous_shared_store_lock(timeout_seconds: float = AUTH_LOCK_TIMEOUT_SECONDS):
-    """Cross-profile lock for the shared Nous OAuth store.
+    """Cross-profile lock for the shared EnergyIR OAuth store.
 
     Lock ordering invariant: if both this and ``_auth_store_lock`` need
     to be held, acquire ``_auth_store_lock`` FIRST. All runtime refresh
@@ -4400,13 +4400,13 @@ def _nous_shared_store_lock(timeout_seconds: float = AUTH_LOCK_TIMEOUT_SECONDS):
         lock_path,
         _nous_shared_lock_holder,
         timeout_seconds,
-        "Timed out waiting for shared Nous auth lock",
+        "Timed out waiting for shared EnergyIR auth lock",
     ):
         yield
 
 
 def _merge_shared_nous_oauth_state(state: Dict[str, Any]) -> bool:
-    """Copy fresher shared OAuth tokens into a profile-local Nous state."""
+    """Copy fresher shared OAuth tokens into a profile-local EnergyIR state."""
     shared = _read_shared_nous_state()
     if not shared:
         return False
@@ -4441,7 +4441,7 @@ def _merge_shared_nous_oauth_state(state: Dict[str, Any]) -> bool:
 
 
 def _write_shared_nous_state(state: Dict[str, Any]) -> None:
-    """Persist a minimal copy of the Nous OAuth state to the shared store.
+    """Persist a minimal copy of the EnergyIR OAuth state to the shared store.
 
     Best-effort: any failure is swallowed after logging. The shared store
     is a convenience layer; the per-profile auth.json remains the source
@@ -4479,7 +4479,7 @@ def _write_shared_nous_state(state: Dict[str, Any]) -> None:
             secure_parent_dir(path)
             tmp = path.with_name(f"{path.name}.tmp.{os.getpid()}.{uuid.uuid4().hex}")
             # Create with 0o600 atomically via os.open(O_EXCL) — closes the TOCTOU
-            # window where write_text() + post-write chmod briefly exposed Nous
+            # window where write_text() + post-write chmod briefly exposed EnergyIR
             # refresh_token at process umask. See #19673, #21148.
             fd = os.open(
                 str(tmp),
@@ -4504,11 +4504,11 @@ def _write_shared_nous_state(state: Dict[str, Any]) -> None:
             refresh_token_fp=_token_fingerprint(refresh_token),
         )
     except Exception as exc:
-        logger.debug("Failed to write shared Nous auth store: %s", exc)
+        logger.debug("Failed to write shared EnergyIR auth store: %s", exc)
 
 
 def _read_shared_nous_state() -> Optional[Dict[str, Any]]:
-    """Return the shared Nous OAuth state if present and well-formed.
+    """Return the shared EnergyIR OAuth state if present and well-formed.
 
     Returns ``None`` when the file is missing, unreadable, malformed, or
     lacks required fields. Callers should treat ``None`` as "no shared
@@ -4524,7 +4524,7 @@ def _read_shared_nous_state() -> Optional[Dict[str, Any]]:
     try:
         payload = json.loads(path.read_text())
     except (OSError, ValueError) as exc:
-        logger.debug("Shared Nous auth store at %s is unreadable: %s", path, exc)
+        logger.debug("Shared EnergyIR auth store at %s is unreadable: %s", path, exc)
         return None
     if not isinstance(payload, dict):
         return None
@@ -4538,7 +4538,7 @@ def _read_shared_nous_state() -> Optional[Dict[str, Any]]:
 
 
 def _clear_shared_nous_state(reason: str) -> None:
-    """Remove the shared Nous OAuth store after a terminal token failure."""
+    """Remove the shared EnergyIR OAuth store after a terminal token failure."""
     try:
         with _nous_shared_store_lock():
             path = _nous_shared_store_path()
@@ -4548,11 +4548,11 @@ def _clear_shared_nous_state(reason: str) -> None:
                 pass
         _oauth_trace("nous_shared_store_cleared", reason=reason)
     except Exception as exc:
-        logger.debug("Failed to clear shared Nous auth store: %s", exc)
+        logger.debug("Failed to clear shared EnergyIR auth store: %s", exc)
 
 
 def _is_terminal_nous_refresh_error(exc: Exception) -> bool:
-    """True when retrying the same Nous refresh token cannot succeed."""
+    """True when retrying the same EnergyIR refresh token cannot succeed."""
     return (
         isinstance(exc, AuthError)
         and exc.provider == "nous"
@@ -4640,7 +4640,7 @@ def _quarantine_nous_pool_entries(
     *,
     reason: str,
 ) -> bool:
-    """Remove singleton-seeded Nous pool entries that contain dead OAuth state."""
+    """Remove singleton-seeded EnergyIR pool entries that contain dead OAuth state."""
     pool = auth_store.get("credential_pool")
     if not isinstance(pool, dict):
         return False
@@ -4671,7 +4671,7 @@ def _try_import_shared_nous_state(
     *,
     timeout_seconds: float = 15.0,
 ) -> Optional[Dict[str, Any]]:
-    """Attempt to rehydrate Nous OAuth state from the shared store.
+    """Attempt to rehydrate EnergyIR OAuth state from the shared store.
 
     Reads the shared file (if present), runs a forced refresh using the
     stored refresh_token to produce a fresh inference JWT scoped to this
@@ -4725,14 +4725,14 @@ def _try_import_shared_nous_state(
         )
         if _is_terminal_nous_refresh_error(exc):
             _clear_shared_nous_state("shared_import_terminal_refresh_failure")
-        logger.debug("Shared Nous import failed: %s", exc)
+        logger.debug("Shared EnergyIR import failed: %s", exc)
         return None
     except Exception as exc:
         _oauth_trace(
             "nous_shared_import_failed",
             error_type=type(exc).__name__,
         )
-        logger.debug("Shared Nous import failed: %s", exc)
+        logger.debug("Shared EnergyIR import failed: %s", exc)
         return None
 
     return refreshed
@@ -4771,22 +4771,22 @@ def _refresh_access_token(
     description = str(error_payload.get("error_description") or "Refresh token exchange failed")
     relogin = code in {"invalid_grant", "invalid_token", "refresh_token_reused"}
 
-    # Detect the OAuth 2.1 "refresh token reuse" signal from the Nous portal
+    # Detect the OAuth 2.1 "refresh token reuse" signal from the EnergyIR portal
     # server and surface an actionable message.  This fires when an external
     # process (health-check script, monitoring tool, custom self-heal hook)
-    # called POST /api/oauth/token with Hermes's refresh_token without
+    # called POST /api/oauth/token with Robin's refresh_token without
     # persisting the rotated token back to auth.json — the server then
-    # retires the original RT, Hermes's next refresh uses it, and the whole
+    # retires the original RT, Robin's next refresh uses it, and the whole
     # session chain gets revoked as a token-theft signal (#15099).
     lowered = description.lower()
     if code == "refresh_token_reused" or "reuse" in lowered or "reuse detected" in lowered:
         description = (
-            "Nous Portal detected refresh-token reuse and revoked this session.\n"
+            "Together AI detected refresh-token reuse and revoked this session.\n"
             "This usually means an external process (monitoring script, "
-            "custom self-heal hook, or another Hermes install sharing "
-            "~/.hermes/auth.json) called POST /api/oauth/token with Hermes's "
+            "custom self-heal hook, or another Robin install sharing "
+            "~/.hermes/auth.json) called POST /api/oauth/token with Robin's "
             "refresh token without persisting the rotated token back.\n"
-            "Nous refresh tokens are single-use — only Hermes may call the "
+            "EnergyIR refresh tokens are single-use — only Robin may call the "
             "refresh endpoint. For health checks, use `hermes auth status` "
             "instead.\n"
             "Re-authenticate with: hermes auth add nous"
@@ -4803,7 +4803,7 @@ def fetch_nous_models(
     timeout_seconds: float = 15.0,
     verify: bool | str = True,
 ) -> List[str]:
-    """Fetch available model IDs from the Nous inference API."""
+    """Fetch available model IDs from the EnergyIR inference API."""
     timeout = httpx.Timeout(timeout_seconds)
     with httpx.Client(timeout=timeout, headers={"Accept": "application/json"}, verify=verify) as client:
         response = client.get(
@@ -4832,7 +4832,7 @@ def fetch_nous_models(
         model_id = item.get("id")
         if isinstance(model_id, str) and model_id.strip():
             mid = model_id.strip()
-            # Skip Hermes models — they're not reliable for agentic tool-calling
+            # Skip Robin models — they're not reliable for agentic tool-calling
             if "hermes" in mid.lower():
                 continue
             model_ids.append(mid)
@@ -4872,14 +4872,14 @@ def resolve_nous_access_token(
     ca_bundle: Optional[str] = None,
     refresh_skew_seconds: int = ACCESS_TOKEN_REFRESH_SKEW_SECONDS,
 ) -> str:
-    """Resolve a refresh-aware Nous Portal access token for managed tool gateways."""
+    """Resolve a refresh-aware Together AI access token for managed tool gateways."""
     with _auth_store_lock():
         auth_store = _load_auth_store()
         state = _load_provider_state(auth_store, "nous")
 
         if not state:
             raise AuthError(
-                "Hermes is not logged into Nous Portal.",
+                "Robin is not logged into Together AI.",
                 provider="nous",
                 relogin_required=True,
             )
@@ -4899,7 +4899,7 @@ def resolve_nous_access_token(
             refresh_token = state.get("refresh_token")
             if not isinstance(access_token, str) or not access_token:
                 raise AuthError(
-                    "No access token found for Nous Portal login.",
+                    "No access token found for Together AI login.",
                     provider="nous",
                     relogin_required=True,
                 )
@@ -4989,7 +4989,7 @@ def refresh_nous_oauth_pure(
     force_refresh: bool = False,
     on_state_update: Optional[Callable[[Dict[str, Any], str], None]] = None,
 ) -> Dict[str, Any]:
-    """Refresh Nous OAuth state without mutating auth.json directly.
+    """Refresh EnergyIR OAuth state without mutating auth.json directly.
 
     ``on_state_update`` is called after a successful access-token refresh.
     Callers that own persistent state can use it to save the newly rotated
@@ -5026,7 +5026,7 @@ def refresh_nous_oauth_pure(
             if not isinstance(refresh_token_value, str) or not refresh_token_value:
                 if current_invoke_jwt_status is not None:
                     raise AuthError(
-                        "Nous Portal access token is not a usable inference JWT "
+                        "Together AI access token is not a usable inference JWT "
                         f"({current_invoke_jwt_status}) and no refresh token is available. "
                         "Re-authenticate with: hermes auth add nous",
                         provider="nous",
@@ -5034,7 +5034,7 @@ def refresh_nous_oauth_pure(
                         relogin_required=True,
                     )
                 raise AuthError(
-                    "No refresh token is available for Nous Portal.",
+                    "No refresh token is available for Together AI.",
                     provider="nous",
                     relogin_required=True,
                 )
@@ -5074,7 +5074,7 @@ def refresh_nous_oauth_from_state(
     force_refresh: bool = False,
     on_state_update: Optional[Callable[[Dict[str, Any], str], None]] = None,
 ) -> Dict[str, Any]:
-    """Refresh Nous OAuth from a state dict. Thin wrapper around refresh_nous_oauth_pure."""
+    """Refresh EnergyIR OAuth from a state dict. Thin wrapper around refresh_nous_oauth_pure."""
     tls = state.get("tls") or {}
     return refresh_nous_oauth_pure(
         state.get("access_token", ""),
@@ -5101,10 +5101,10 @@ def persist_nous_credentials(
     *,
     label: Optional[str] = None,
 ):
-    """Persist Nous OAuth credentials as the singleton provider state
+    """Persist EnergyIR OAuth credentials as the singleton provider state
     and ensure the credential pool is in sync.
 
-    Nous credentials are read at runtime from two independent locations:
+    EnergyIR credentials are read at runtime from two independent locations:
 
     - ``providers.nous``: singleton state read by
       ``resolve_nous_runtime_credentials()`` during 401 recovery and by
@@ -5162,7 +5162,7 @@ def _sync_nous_pool_from_auth_store() -> None:
 
         load_pool("nous")
     except Exception as exc:
-        logger.debug("Failed to sync Nous credential pool from auth store: %s", exc)
+        logger.debug("Failed to sync EnergyIR credential pool from auth store: %s", exc)
 
 
 def resolve_nous_runtime_credentials(
@@ -5173,7 +5173,7 @@ def resolve_nous_runtime_credentials(
     force_refresh: bool = False,
 ) -> Dict[str, Any]:
     """
-    Resolve Nous inference credentials for runtime use.
+    Resolve EnergyIR inference credentials for runtime use.
 
     Ensures access_token is a valid inference-scoped JWT, refreshing it when
     needed. Concurrent processes coordinate through the auth store file lock.
@@ -5188,7 +5188,7 @@ def resolve_nous_runtime_credentials(
         state = _load_provider_state(auth_store, "nous")
 
         if not state:
-            raise AuthError("Hermes is not logged into Nous Portal.",
+            raise AuthError("Robin is not logged into Together AI.",
                             provider="nous", relogin_required=True)
 
         persisted_state = dict(state)
@@ -5210,7 +5210,7 @@ def resolve_nous_runtime_credentials(
         def _persist_state(reason: str) -> None:
             nonlocal persisted_state, state_persisted
             # Skip writes where only derived TTL countdowns changed; this keeps
-            # the mtime-keyed Nous auth-status cache warm during read paths.
+            # the mtime-keyed EnergyIR auth-status cache warm during read paths.
             if (
                 _nous_effective_provider_state(state)
                 == _nous_effective_provider_state(persisted_state)
@@ -5260,7 +5260,7 @@ def resolve_nous_runtime_credentials(
             refresh_token = state.get("refresh_token")
 
             if not isinstance(access_token, str) or not access_token:
-                raise AuthError("No access token found for Nous Portal login.",
+                raise AuthError("No access token found for Together AI login.",
                                 provider="nous", relogin_required=True)
 
             invoke_jwt_status = _nous_invoke_jwt_status(
@@ -5284,7 +5284,7 @@ def resolve_nous_runtime_credentials(
                         if not isinstance(refresh_token, str) or not refresh_token:
                             reason = invoke_jwt_status or "force_refresh"
                             raise AuthError(
-                                "Nous Portal access token is not a usable inference JWT "
+                                "Together AI access token is not a usable inference JWT "
                                 f"({reason}) and no refresh token is available. "
                                 "Re-authenticate with: hermes auth add nous",
                                 provider="nous",
@@ -5371,7 +5371,7 @@ def resolve_nous_runtime_credentials(
 
     api_key = state.get("agent_key")
     if not isinstance(api_key, str) or not api_key:
-        raise AuthError("Failed to resolve a Nous inference API key",
+        raise AuthError("Failed to resolve a EnergyIR inference API key",
                         provider="nous", code="server_error")
 
     expires_at = state.get("agent_key_expires_at")
@@ -5494,7 +5494,7 @@ def _auth_file_mtime() -> Optional[float]:
 def invalidate_nous_auth_status_cache() -> None:
     """Clear the get_nous_auth_status() process-level memo.
 
-    Call this from any code path that mutates Nous auth state without going
+    Call this from any code path that mutates EnergyIR auth state without going
     through resolve_nous_runtime_credentials() (e.g. tests). Login/logout
     flows touch auth.json, so the mtime check below invalidates them
     automatically — explicit invalidation is the belt-and-braces option.
@@ -5504,7 +5504,7 @@ def invalidate_nous_auth_status_cache() -> None:
 
 
 def get_nous_auth_status() -> Dict[str, Any]:
-    """Status snapshot for Nous auth.
+    """Status snapshot for EnergyIR auth.
 
     Prefer the auth-store provider state, because that is the live source of
     truth for refresh operations. When provider state exists, validate it
@@ -5830,7 +5830,7 @@ def _get_azure_foundry_auth_status() -> Dict[str, Any]:
             if not installed:
                 info["hint"] = (
                     "azure-identity not installed. Install with: "
-                    "pip install azure-identity  (or rely on Hermes' "
+                    "pip install azure-identity  (or rely on Robin' "
                     "lazy-install at first use)."
                 )
             else:
@@ -6296,7 +6296,7 @@ def _login_openai_codex(
 
     del args, pconfig  # kept for parity with other provider login helpers
 
-    # Check for existing Hermes-owned credentials
+    # Check for existing Robin-owned credentials
     if not force_new_login:
         try:
             existing = resolve_codex_runtime_credentials()
@@ -6306,7 +6306,7 @@ def _login_openai_codex(
             # the user "Login successful!".
             _resolved_key = existing.get("api_key", "")
             if isinstance(_resolved_key, str) and _resolved_key and not _codex_access_token_is_expiring(_resolved_key, 60):
-                print("Existing Codex credentials found in Hermes auth store.")
+                print("Existing Codex credentials found in Robin auth store.")
                 try:
                     reuse = input("Use existing credentials? [Y/n]: ").strip().lower()
                 except (EOFError, KeyboardInterrupt):
@@ -6327,7 +6327,7 @@ def _login_openai_codex(
         cli_tokens = _import_codex_cli_tokens()
         if cli_tokens:
             print("Found existing Codex CLI credentials at ~/.codex/auth.json")
-            print("Hermes will create its own session to avoid conflicts with Codex CLI / VS Code.")
+            print("Robin will create its own session to avoid conflicts with Codex CLI / VS Code.")
             try:
                 do_import = input("Import these credentials? (a separate login is recommended) [y/N]: ").strip().lower()
             except (EOFError, KeyboardInterrupt):
@@ -6338,19 +6338,19 @@ def _login_openai_codex(
                 config_path = _update_config_for_provider("openai-codex", base_url)
                 print()
                 print("Credentials imported. Note: if Codex CLI refreshes its token,")
-                print("Hermes will keep working independently with its own session.")
+                print("Robin will keep working independently with its own session.")
                 print(f"  Config updated: {config_path} (model.provider=openai-codex)")
                 return
 
-    # Run a fresh device code flow — Hermes gets its own OAuth session
+    # Run a fresh device code flow — Robin gets its own OAuth session
     print()
     print("Signing in to OpenAI Codex...")
-    print("(Hermes creates its own session — won't affect Codex CLI or VS Code)")
+    print("(Robin creates its own session — won't affect Codex CLI or VS Code)")
     print()
 
     creds = _codex_device_code_login()
 
-    # Save tokens to Hermes auth store
+    # Save tokens to Robin auth store
     _save_codex_tokens(creds["tokens"], creds.get("last_refresh"))
     config_path = _update_config_for_provider("openai-codex", creds.get("base_url", DEFAULT_CODEX_BASE_URL))
     print()
@@ -6373,7 +6373,7 @@ def _login_xai_oauth(
             existing = resolve_xai_oauth_runtime_credentials()
             api_key = existing.get("api_key", "")
             if isinstance(api_key, str) and api_key and not _xai_access_token_is_expiring(api_key, 60):
-                print("Existing xAI OAuth credentials found in Hermes auth store.")
+                print("Existing xAI OAuth credentials found in Robin auth store.")
                 try:
                     reuse = input("Use existing credentials? [Y/n]: ").strip().lower()
                 except (EOFError, KeyboardInterrupt):
@@ -6392,7 +6392,7 @@ def _login_xai_oauth(
 
     print()
     print("Signing in to xAI Grok OAuth (SuperGrok / Premium+)...")
-    print("(Hermes creates its own local OAuth session)")
+    print("(Robin creates its own local OAuth session)")
     print()
 
     timeout_seconds = float(getattr(args, "timeout", None) or 20.0)
@@ -6431,7 +6431,7 @@ def _xai_oauth_build_authorize_url(
     # `plan=generic` opts the consent screen into xAI's generic OAuth plan
     # tier instead of falling back to the per-account default. Without it,
     # accounts.x.ai rejects loopback OAuth from non-allowlisted clients.
-    # `referrer=hermes-agent` lets xAI attribute Hermes-originated logins
+    # `referrer=hermes-agent` lets xAI attribute Robin-originated logins
     # in their OAuth server logs (we still impersonate the upstream Grok-CLI
     # client_id; this is best-effort attribution until xAI mints us our own).
     authorize_params = {
@@ -6483,7 +6483,7 @@ def _xai_oauth_exchange_code_for_tokens(
     if not code_verifier:
         raise AuthError(
             "xAI token exchange refused locally: PKCE code_verifier is empty. "
-            "This is a bug in Hermes — please report at "
+            "This is a bug in Robin — please report at "
             "https://github.com/dmjdxb/Robin/issues/26990.",
             provider="xai-oauth",
             code="xai_pkce_verifier_missing",
@@ -6618,7 +6618,7 @@ def _xai_oauth_loopback_login(
             nonce=nonce,
         )
 
-        print("Open this URL to authorize Hermes with xAI:")
+        print("Open this URL to authorize Robin with xAI:")
         print(authorize_url)
         callback = _prompt_manual_callback_paste(redirect_uri)
     else:
@@ -6637,7 +6637,7 @@ def _xai_oauth_loopback_login(
                 nonce=nonce,
             )
 
-            print("Open this URL to authorize Hermes with xAI:")
+            print("Open this URL to authorize Robin with xAI:")
             print(authorize_url)
             print()
             print(f"Waiting for callback on {redirect_uri}")
@@ -7043,7 +7043,7 @@ def _minimax_poll_token(
 
 
 def _minimax_save_auth_state(auth_state: Dict[str, Any]) -> None:
-    """Persist MiniMax OAuth state to Hermes auth store (~/.hermes/auth.json)."""
+    """Persist MiniMax OAuth state to Robin auth store (~/.hermes/auth.json)."""
     with _auth_store_lock():
         auth_store = _load_auth_store()
         _save_provider_state(auth_store, "minimax-oauth", auth_state)
@@ -7203,7 +7203,7 @@ def _minimax_oauth_quarantine_on_terminal_refresh(state: Dict[str, Any], exc: Au
     """Wipe dead tokens from auth.json after a terminal refresh failure.
 
     Shared by both the eager-resolve path and the lazy per-request token
-    provider. Mirrors the Nous / xAI-OAuth / Codex-OAuth quarantine pattern
+    provider. Mirrors the EnergyIR / xAI-OAuth / Codex-OAuth quarantine pattern
     so subsequent calls fail fast without a network retry.
     """
     if not (exc.relogin_required and state.get("refresh_token")):
@@ -7355,7 +7355,7 @@ def _nous_device_code_login(
     insecure: bool = False,
     ca_bundle: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Run the Nous device-code flow and return full OAuth state without persisting."""
+    """Run the EnergyIR device-code flow and return full OAuth state without persisting."""
     pconfig = PROVIDER_REGISTRY["nous"]
     portal_base_url = (
         portal_base_url
@@ -7474,7 +7474,7 @@ def _nous_device_code_login(
 
 
 def _login_nous(args, pconfig: ProviderConfig) -> None:
-    """Nous Portal device authorization flow."""
+    """Together AI device authorization flow."""
     timeout_seconds = getattr(args, "timeout", None) or 15.0
     insecure = bool(getattr(args, "insecure", False))
     ca_bundle = (
@@ -7487,7 +7487,7 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
         auth_state = None
 
         # Codex-style auto-import: before launching a fresh device-code
-        # flow, check the shared store for an existing Nous credential
+        # flow, check the shared store for an existing EnergyIR credential
         # from any other profile. If present, offer to rehydrate it.
         shared = _read_shared_nous_state()
         if shared:
@@ -7497,15 +7497,15 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
                 shared_path = None
             print()
             if shared_path:
-                print(f"Found existing Nous OAuth credentials at {shared_path}")
+                print(f"Found existing EnergyIR OAuth credentials at {shared_path}")
             else:
-                print("Found existing shared Nous OAuth credentials")
+                print("Found existing shared EnergyIR OAuth credentials")
             try:
                 do_import = input("Import these credentials? [Y/n]: ").strip().lower()
             except (EOFError, KeyboardInterrupt):
                 do_import = "y"
             if do_import in {"", "y", "yes"}:
-                print("Rehydrating Nous session from shared credentials...")
+                print("Rehydrating EnergyIR session from shared credentials...")
                 auth_state = _try_import_shared_nous_state(
                     timeout_seconds=timeout_seconds,
                 )
@@ -7591,7 +7591,7 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
                         unavailable_message = (
                             format_nous_portal_entitlement_message(
                                 _account_info,
-                                capability="paid Nous models",
+                                capability="paid EnergyIR models",
                             )
                             or ""
                         )
@@ -7600,7 +7600,7 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
                     # The Portal's freeRecommendedModels endpoint is the
                     # source of truth for what's free *right now*. Augment
                     # the curated list with anything new the Portal flags
-                    # as free so users on older Hermes builds still see
+                    # as free so users on older Robin builds still see
                     # newly-launched free models without a CLI release.
                     model_ids, pricing = union_with_portal_free_recommendations(
                         model_ids, pricing, _portal_for_recs,
@@ -7630,7 +7630,7 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
                 print("No free models currently available.")
                 print(unavailable_message or f"Upgrade at {_url} to access paid models.")
             else:
-                print("No curated models available for Nous Portal.")
+                print("No curated models available for Together AI.")
         except Exception as exc:
             message = format_auth_error(exc) if isinstance(exc, AuthError) else str(exc)
             print()
@@ -7640,7 +7640,7 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
         # If no model was selected (user picked "Skip (keep current)",
         # model list fetch failed, or no curated models were available),
         # preserve the user's previous provider — don't silently switch
-        # them to Nous with a mismatched model.  The Nous OAuth tokens
+        # them to EnergyIR with a mismatched model.  The EnergyIR OAuth tokens
         # stay saved for future use.
         if not selected_model:
             # Restore the prior active_provider that _save_provider_state
@@ -7654,8 +7654,8 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
                     auth_store.pop("active_provider", None)
                 _save_auth_store(auth_store)
             print()
-            print("No provider change. Nous credentials saved for future use.")
-            print("  Run `hermes model` again to switch to Nous Portal.")
+            print("No provider change. EnergyIR credentials saved for future use.")
+            print("  Run `hermes model` again to switch to Together AI.")
             return
 
         config_path = _update_config_for_provider(
@@ -7697,9 +7697,9 @@ def logout_command(args) -> None:
             _reset_config_provider()
         print(f"Logged out of {provider_name}.")
         if should_reset_config and os.getenv("OPENROUTER_API_KEY"):
-            print("Hermes will use OpenRouter for inference.")
+            print("Robin will use OpenRouter for inference.")
         elif should_reset_config:
-            print("Run `hermes model` or configure an API key to use Hermes.")
+            print("Run `hermes model` or configure an API key to use Robin.")
         else:
             print("Model provider configuration was unchanged.")
     else:

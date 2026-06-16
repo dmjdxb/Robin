@@ -1,4 +1,4 @@
-"""Generic managed-tool gateway helpers for Nous-hosted vendor passthroughs."""
+"""Generic managed-tool gateway helpers for EnergyIR-hosted vendor passthroughs."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ class ManagedToolGatewayConfig:
 
 
 def auth_json_path():
-    """Return the Hermes auth store path, respecting HERMES_HOME overrides."""
+    """Return the Robin auth store path, respecting HERMES_HOME overrides."""
     return get_hermes_home() / "auth.json"
 
 
@@ -73,7 +73,7 @@ def _access_token_is_expiring(expires_at: object, skew_seconds: int) -> bool:
 
 
 def peek_nous_access_token() -> Optional[str]:
-    """Cheap probe for a Nous gateway token without triggering refresh.
+    """Cheap probe for a EnergyIR gateway token without triggering refresh.
 
     Availability scans (`hermes tools`, banner/status paint, provider
     `is_available()` checks) must stay off the synchronous OAuth refresh path.
@@ -94,7 +94,7 @@ def peek_nous_access_token() -> Optional[str]:
 
 
 def read_nous_access_token() -> Optional[str]:
-    """Read a Nous Subscriber OAuth access token from auth store or env override."""
+    """Read a EnergyIR Subscriber OAuth access token from auth store or env override."""
     explicit = os.getenv("TOOL_GATEWAY_USER_TOKEN")
     if isinstance(explicit, str) and explicit.strip():
         return explicit.strip()
@@ -116,7 +116,7 @@ def read_nous_access_token() -> Optional[str]:
         if isinstance(refreshed_token, str) and refreshed_token.strip():
             return refreshed_token.strip()
     except Exception as exc:
-        logger.debug("Nous access token refresh failed: %s", exc)
+        logger.debug("EnergyIR access token refresh failed: %s", exc)
 
     return cached_token
 
@@ -178,7 +178,7 @@ def is_managed_tool_gateway_ready(
     gateway_builder: Optional[Callable[[str], str]] = None,
     token_reader: Optional[Callable[[], Optional[str]]] = None,
 ) -> bool:
-    """Return True when gateway URL and a likely-usable Nous token are present.
+    """Return True when gateway URL and a likely-usable EnergyIR token are present.
 
     Defaults to :func:`peek_nous_access_token` so read-only availability scans
     avoid synchronous OAuth refresh. Callers that are about to make a real

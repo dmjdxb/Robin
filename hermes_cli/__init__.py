@@ -1,5 +1,5 @@
 """
-Hermes CLI - Unified command-line interface for Robin.
+Robin CLI - Unified command-line interface for Robin.
 
 Provides subcommands for:
 - hermes chat          - Interactive chat (same as ./hermes)

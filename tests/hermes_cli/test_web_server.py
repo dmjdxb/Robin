@@ -139,7 +139,7 @@ class TestReloadEnv:
         os.environ.pop("TEST_RELOAD_VAR", None)
 
     def test_removes_deleted_known_vars(self, tmp_path):
-        """reload_env() removes known Hermes vars not present in .env."""
+        """reload_env() removes known Robin vars not present in .env."""
         env_file = tmp_path / ".env"
         env_file.write_text("")  # empty .env
         # Pick a known key from OPTIONAL_ENV_VARS
@@ -151,7 +151,7 @@ class TestReloadEnv:
             assert count >= 1
 
     def test_does_not_remove_unknown_vars(self, tmp_path):
-        """reload_env() preserves non-Hermes env vars even when absent from .env."""
+        """reload_env() preserves non-Robin env vars even when absent from .env."""
         env_file = tmp_path / ".env"
         env_file.write_text("")
         with patch.dict(reload_env.__globals__, {"get_env_path": lambda: env_file}):
@@ -1006,8 +1006,8 @@ class TestWebServerEndpoints:
                 "pairing_id": "pair123",
                 "poll_token": "poll-secret",
                 "suggested_username": "hermes_pair123_bot",
-                "deep_link": "https://t.me/newbot/HermesSetupBot/hermes_pair123_bot",
-                "qr_payload": "https://t.me/newbot/HermesSetupBot/hermes_pair123_bot",
+                "deep_link": "https://t.me/newbot/RobinSetupBot/hermes_pair123_bot",
+                "qr_payload": "https://t.me/newbot/RobinSetupBot/hermes_pair123_bot",
                 "expires_at": "2027-05-18T00:00:00.000Z",
             }
 
@@ -1015,7 +1015,7 @@ class TestWebServerEndpoints:
 
         resp = self.client.post(
             "/api/messaging/telegram/onboarding/start",
-            json={"bot_name": "Hosted Hermes"},
+            json={"bot_name": "Hosted Robin"},
         )
 
         assert resp.status_code == 200
@@ -1026,7 +1026,7 @@ class TestWebServerEndpoints:
             (
                 "POST",
                 "/v1/telegram/pairings",
-                {"bot_name": "Hosted Hermes"},
+                {"bot_name": "Hosted Robin"},
                 None,
             )
         ]
@@ -1044,8 +1044,8 @@ class TestWebServerEndpoints:
                     "pairing_id": "pair-ready",
                     "poll_token": "poll-secret",
                     "suggested_username": "hermes_pair_ready_bot",
-                    "deep_link": "https://t.me/newbot/HermesSetupBot/hermes_pair_ready_bot",
-                    "qr_payload": "https://t.me/newbot/HermesSetupBot/hermes_pair_ready_bot",
+                    "deep_link": "https://t.me/newbot/RobinSetupBot/hermes_pair_ready_bot",
+                    "qr_payload": "https://t.me/newbot/RobinSetupBot/hermes_pair_ready_bot",
                     "expires_at": "2027-05-18T00:00:00.000Z",
                 }
             assert method == "GET"
@@ -1098,8 +1098,8 @@ class TestWebServerEndpoints:
                 "pairing_id": "pair-waiting",
                 "poll_token": "poll-secret",
                 "suggested_username": "hermes_pair_waiting_bot",
-                "deep_link": "https://t.me/newbot/HermesSetupBot/hermes_pair_waiting_bot",
-                "qr_payload": "https://t.me/newbot/HermesSetupBot/hermes_pair_waiting_bot",
+                "deep_link": "https://t.me/newbot/RobinSetupBot/hermes_pair_waiting_bot",
+                "qr_payload": "https://t.me/newbot/RobinSetupBot/hermes_pair_waiting_bot",
                 "expires_at": "2027-05-18T00:00:00.000Z",
             }
 
@@ -1127,8 +1127,8 @@ class TestWebServerEndpoints:
                 "pairing_id": "pair-cancel",
                 "poll_token": "poll-secret",
                 "suggested_username": "hermes_pair_cancel_bot",
-                "deep_link": "https://t.me/newbot/HermesSetupBot/hermes_pair_cancel_bot",
-                "qr_payload": "https://t.me/newbot/HermesSetupBot/hermes_pair_cancel_bot",
+                "deep_link": "https://t.me/newbot/RobinSetupBot/hermes_pair_cancel_bot",
+                "qr_payload": "https://t.me/newbot/RobinSetupBot/hermes_pair_cancel_bot",
                 "expires_at": "2027-05-18T00:00:00.000Z",
             }
 
@@ -1194,7 +1194,7 @@ class TestWebServerEndpoints:
             assert "FastAPI" not in resp.text  # Should not serve the actual source
 
     def test_set_model_main_nous_applies_gateway_defaults(self, monkeypatch):
-        """Switching the main provider to Nous calls apply_nous_managed_defaults
+        """Switching the main provider to EnergyIR calls apply_nous_managed_defaults
         (mirroring the CLI's post-model-selection Tool Gateway routing) and
         surfaces the routed tools in the response."""
         import hermes_cli.nous_subscription as ns
@@ -1223,7 +1223,7 @@ class TestWebServerEndpoints:
         assert called["force_fresh"] is True
 
     def test_set_model_main_non_nous_skips_gateway_defaults(self, monkeypatch):
-        """Non-Nous providers must NOT trigger Tool Gateway auto-routing."""
+        """Non-EnergyIR providers must NOT trigger Tool Gateway auto-routing."""
         import hermes_cli.nous_subscription as ns
 
         def boom(*args, **kwargs):  # pragma: no cover - must not be called
@@ -1372,7 +1372,7 @@ class TestWebServerEndpoints:
         assert data.get("gateway_tools", []) == []
 
     def test_recommended_default_nous_honors_free_tier(self, monkeypatch):
-        """For a free-tier Nous user, the recommended default must be a free
+        """For a free-tier EnergyIR user, the recommended default must be a free
         model (mirroring `hermes model`), not the first curated paid entry."""
         import hermes_cli.models as models_mod
 
@@ -1400,7 +1400,7 @@ class TestWebServerEndpoints:
         assert data["free_tier"] is True
 
     def test_recommended_default_nous_paid_uses_curated_default(self, monkeypatch):
-        """A paid Nous user gets the first curated/paid-augmented model."""
+        """A paid EnergyIR user gets the first curated/paid-augmented model."""
         import hermes_cli.models as models_mod
 
         monkeypatch.setattr(models_mod, "get_curated_nous_model_ids", lambda: ["top/model", "other/model"])

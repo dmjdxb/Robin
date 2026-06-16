@@ -8,7 +8,7 @@ Covers the CLI half of self-hosted dashboard registration:
   - portal-URL write logic (only when non-default and not already set)
   - portal HTTP error mapping (401/403)
 
-The portal HTTP call and the Nous token resolution are both mocked — this
+The portal HTTP call and the EnergyIR token resolution are both mocked — this
 file proves the CLI wiring + env-write behaviour. The live end-to-end token
 round-trip against the Vercel preview build is a separate manual step.
 """
@@ -55,7 +55,7 @@ class TestFastFails:
                     dr.cmd_dashboard_register(_ns())
         assert exc.value.code == 1
         out = capsys.readouterr().out
-        assert "not logged into Nous Portal" in out
+        assert "not logged into Together AI" in out
         assert "hermes setup" in out
 
     def test_managed_install_refuses(self, capsys):

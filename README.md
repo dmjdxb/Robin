@@ -76,22 +76,10 @@ npx electron-builder --mac  # or --win / --linux
 
 Push a tag (`v1.0.0`) to build, sign, and publish all platforms to Releases.
 
-## How Robin relates to Hermes Agent
-
-Robin is an independent product of **EnergyIR**, built on
-[Hermes Agent](https://github.com/NousResearch/hermes-agent) by Nous Research,
-used under the MIT License. The desktop shell, agent core, tools, and memory are
-Hermes's; Robin adds the EnergyIR brand identity, the Together AI / DeepSeek V4
-Pro default, the relocated `~/.robin` home, hardening defaults, the light/dark
-EnergyIR theme, and its own signed installers and update feed.
-
-Robin and EnergyIR are **not affiliated with, endorsed, or sponsored by Nous
-Research.** The MIT copyright and permission notice for Hermes Agent is retained
-in [`LICENSE`](LICENSE), as the licence requires. "Hermes" and "Nous Research"
-remain marks of Nous Research.
-
 ## Licence
 
-MIT — see [`LICENSE`](LICENSE). Robin's modifications and branding are
-© 2026 EnergyIR; the retained upstream Hermes Agent notice is © Nous Research.
-Third-party dependency notices: [docs/THIRD_PARTY_NOTICES.md](docs/THIRD_PARTY_NOTICES.md).
+Robin is a product of **EnergyIR**, released under the MIT License — see
+[`LICENSE`](LICENSE). Robin's modifications and branding are © 2026 EnergyIR.
+Robin is built on open-source software; the required upstream copyright and
+permission notices are retained in [`LICENSE`](LICENSE) and
+[docs/THIRD_PARTY_NOTICES.md](docs/THIRD_PARTY_NOTICES.md).

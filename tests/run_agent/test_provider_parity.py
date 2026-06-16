@@ -930,7 +930,7 @@ class TestChatMessagesToResponsesInputMessageItems:
         assert items == [{"role": "assistant", "content": "fallback text"}]
 
 
-# ── Chat completions response handling (OpenRouter/Nous) ─────────────────────
+# ── Chat completions response handling (OpenRouter/EnergyIR) ─────────────────────
 
 class TestBuildAssistantMessage:
     """Verify _build_assistant_message works for all provider response formats."""
@@ -1033,7 +1033,7 @@ class TestAuxiliaryClientProviderPriority:
         assert model == "google/gemini-3-flash-preview"
 
     def test_custom_endpoint_when_no_nous(self, monkeypatch):
-        """Custom endpoint is used when no OpenRouter/Nous keys are available.
+        """Custom endpoint is used when no OpenRouter/EnergyIR keys are available.
 
         Since the March 2026 config refactor, OPENAI_BASE_URL env var is no
         longer consulted — base_url comes from config.yaml via

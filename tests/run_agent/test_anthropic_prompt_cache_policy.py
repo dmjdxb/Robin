@@ -258,7 +258,7 @@ class TestQwenAlibabaFamily:
         assert agent._anthropic_prompt_cache_policy() == (False, False)
 
     def test_qwen_on_nous_portal_caches_with_envelope_layout(self):
-        # Nous Portal Qwen takes the same envelope-layout cache_control
+        # Together AI Qwen takes the same envelope-layout cache_control
         # path as Portal Claude. Without this, Portal-routed qwen3.6-plus
         # falls through to the alibaba-family check (which only matches
         # provider=opencode/alibaba) and serves 0% cache hits.

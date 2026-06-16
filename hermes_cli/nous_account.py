@@ -1,4 +1,4 @@
-"""Normalized Nous Portal account entitlement helpers."""
+"""Normalized Together AI account entitlement helpers."""
 
 from __future__ import annotations
 
@@ -125,7 +125,7 @@ class NousPortalAccountInfo:
 
 
 def nous_portal_billing_url(account_info: Optional[NousPortalAccountInfo] = None) -> str:
-    """Return the billing URL for a normalized Nous account snapshot."""
+    """Return the billing URL for a normalized EnergyIR account snapshot."""
     try:
         from hermes_cli.auth import DEFAULT_NOUS_PORTAL_URL
     except Exception:
@@ -146,7 +146,7 @@ def format_nous_portal_entitlement_message(
     include_refresh_hint: bool = True,
     coverage_category: Optional[str] = None,
 ) -> Optional[str]:
-    """Return user-facing guidance for a missing Nous tool-gateway entitlement.
+    """Return user-facing guidance for a missing EnergyIR tool-gateway entitlement.
 
     ``None`` means the account is entitled to use the capability — via paid
     service access OR a live free tool pool that covers it. The message works
@@ -171,7 +171,7 @@ def format_nous_portal_entitlement_message(
                 # specific capability isn't covered. Surface a neutral billing
                 # nudge without exposing pool-vs-paid internals to the user.
                 return (
-                    f"{capability} isn't included with your current Nous Portal "
+                    f"{capability} isn't included with your current Together AI "
                     f"access. Add credits or a subscription to enable it at {billing_url}."
                 )
         elif account_info.tool_gateway_entitled:
@@ -179,7 +179,7 @@ def format_nous_portal_entitlement_message(
 
     if account_info is None:
         return (
-            f"Hermes could not verify your Nous Portal entitlement, so {capability} "
+            f"Robin could not verify your Together AI entitlement, so {capability} "
             f"is unavailable. Run `hermes model` to refresh your login, or check "
             f"billing at {billing_url}."
         )
@@ -187,19 +187,19 @@ def format_nous_portal_entitlement_message(
     if not account_info.logged_in:
         if account_info.inference_credential_present:
             return (
-                f"Nous inference credentials are configured, but Hermes cannot verify "
-                f"your Nous Portal paid access for {capability}. Log in with "
+                f"EnergyIR inference credentials are configured, but Robin cannot verify "
+                f"your Together AI paid access for {capability}. Log in with "
                 f"`hermes model` to enable Portal-managed features. Billing and "
                 f"credits are managed at {billing_url}."
             )
         return (
-            f"Log in to Nous Portal to use {capability}: run `hermes model`. "
+            f"Log in to Together AI to use {capability}: run `hermes model`. "
             f"Billing and credits are managed at {billing_url}."
         )
 
     if account_info.paid_service_access is None:
         detail = (
-            f"Hermes could not verify your Nous Portal paid access, so {capability} "
+            f"Robin could not verify your Together AI paid access, so {capability} "
             f"is unavailable."
         )
         if account_info.error:
@@ -213,19 +213,19 @@ def format_nous_portal_entitlement_message(
     reason = access.reason if access else None
     if reason == "account_missing":
         return (
-            f"Hermes could not find a Nous Portal account or organisation for this "
+            f"Robin could not find a Together AI account or organisation for this "
             f"login, so {capability} is unavailable. Run `hermes model` to "
-            f"authenticate again; if the problem persists, contact Nous support."
+            f"authenticate again; if the problem persists, contact EnergyIR support."
         )
 
     if reason == "no_usable_credits" or account_info.paid_service_access is False:
         message = _no_paid_access_message(account_info, capability, billing_url)
         if include_refresh_hint and not account_info.fresh:
-            message += " If you recently bought credits, run `hermes model` to refresh Hermes."
+            message += " If you recently bought credits, run `hermes model` to refresh Robin."
         return message
 
     return (
-        f"Your Nous Portal account does not currently have paid service access, "
+        f"Your Together AI account does not currently have paid service access, "
         f"so {capability} is unavailable. Add credits or update billing at {billing_url}."
     )
 
@@ -245,27 +245,27 @@ def _no_paid_access_message(
     if has_active_subscription and active_subscription_is_paid:
         credit_detail = _credit_detail(total_usable, subscription_credits, purchased_credits)
         return (
-            f"Your Nous Portal credits are exhausted{credit_detail}, so {capability} "
+            f"Your Together AI credits are exhausted{credit_detail}, so {capability} "
             f"is unavailable. Top up or renew credits at {billing_url}."
         )
 
     if has_active_subscription and active_subscription_is_paid is False:
         return (
-            f"Your current Nous Portal plan does not include paid service access, "
+            f"Your current Together AI plan does not include paid service access, "
             f"so {capability} is unavailable. Upgrade or add credits at {billing_url}."
         )
 
     if has_active_subscription is False:
         credit_detail = _credit_detail(total_usable, subscription_credits, purchased_credits)
         return (
-            f"Your Nous Portal account has no active subscription or usable credits"
+            f"Your Together AI account has no active subscription or usable credits"
             f"{credit_detail}, so {capability} is unavailable. Subscribe or add credits "
             f"at {billing_url}."
         )
 
     credit_detail = _credit_detail(total_usable, subscription_credits, purchased_credits)
     return (
-        f"Your Nous Portal account has no usable paid credits{credit_detail}, so "
+        f"Your Together AI account has no usable paid credits{credit_detail}, so "
         f"{capability} is unavailable. Add credits or update billing at {billing_url}."
     )
 
@@ -298,7 +298,7 @@ def get_nous_portal_account_info(
     force_fresh: bool = False,
     min_jwt_ttl_seconds: int = 60,
 ) -> NousPortalAccountInfo:
-    """Return normalized Nous Portal account entitlement information.
+    """Return normalized Together AI account entitlement information.
 
     By default, a valid unexpired OAuth access JWT is used as a low-latency
     local account snapshot. ``force_fresh=True`` always calls
@@ -405,7 +405,7 @@ def _fresh_account_info(
 def _info_from_inference_key_pool(
     portal_base_url: Optional[str],
 ) -> Optional[NousPortalAccountInfo]:
-    """Return an explicit unknown-entitlement snapshot for opaque Nous keys."""
+    """Return an explicit unknown-entitlement snapshot for opaque EnergyIR keys."""
     try:
         entry = _select_nous_pool_entry()
         if entry is None:

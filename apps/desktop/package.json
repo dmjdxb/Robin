@@ -134,7 +134,7 @@
     "productName": "Robin",
     "executableName": "Robin",
     "artifactName": "Robin-${version}-${os}-${arch}.${ext}",
-    "copyright": "Copyright © 2026 EnergyIR. Built on Hermes (MIT) — see LICENSE.",
+    "copyright": "Copyright © 2026 EnergyIR. See LICENSE for full notices.",
     "icon": "assets/icon",
     "directories": {
       "output": "release"

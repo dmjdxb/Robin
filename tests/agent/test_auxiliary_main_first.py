@@ -1,6 +1,6 @@
 """Regression tests for the ``auto`` → main-model-first policy.
 
-Prior to this change, aggregator users (OpenRouter / Nous Portal) had aux
+Prior to this change, aggregator users (OpenRouter / Together AI) had aux
 tasks routed through a cheap provider-side default (Gemini Flash) while
 non-aggregator users got their main model.  This made behavior inconsistent
 and surprising — users picked Claude but got Gemini Flash summaries.
@@ -52,7 +52,7 @@ class TestResolveAutoMainFirst:
         assert mock_resolve.call_args.args[1] == "anthropic/claude-sonnet-4.6"
 
     def test_nous_main_uses_main_model_for_aux(self, monkeypatch):
-        """Nous Portal main user → aux uses their picked Nous model, not free-tier MiMo."""
+        """Together AI main user → aux uses their picked EnergyIR model, not free-tier MiMo."""
         # No OPENROUTER_API_KEY → ensures if main failed we'd fall to chain
         with patch(
             "agent.auxiliary_client._read_main_provider", return_value="nous",
@@ -201,7 +201,7 @@ class TestResolveVisionMainFirst:
         assert mock_resolve.call_args.kwargs.get("is_vision") is True
 
     def test_nous_main_vision_uses_paid_nous_vision_backend(self):
-        """Paid Nous main → aux vision uses the dedicated Nous vision backend."""
+        """Paid EnergyIR main → aux vision uses the dedicated EnergyIR vision backend."""
         with patch(
             "agent.auxiliary_client._read_main_provider", return_value="nous",
         ), patch(
@@ -223,7 +223,7 @@ class TestResolveVisionMainFirst:
         assert model == "google/gemini-3-flash-preview"
 
     def test_nous_main_vision_uses_free_tier_nous_vision_backend(self):
-        """Free-tier Nous main → aux vision uses MiMo omni, not the text main model."""
+        """Free-tier EnergyIR main → aux vision uses MiMo omni, not the text main model."""
         with patch(
             "agent.auxiliary_client._read_main_provider", return_value="nous",
         ), patch(
@@ -349,7 +349,7 @@ class TestResolveVisionMainFirst:
         assert "default_headers" not in mock_openai.call_args.kwargs
 
     def test_main_unavailable_vision_falls_through_to_aggregators(self):
-        """Main provider fails → fall back to OpenRouter/Nous strict backends."""
+        """Main provider fails → fall back to OpenRouter/EnergyIR strict backends."""
         fallback_client = MagicMock()
         with patch(
             "agent.auxiliary_client._read_main_provider", return_value="deepseek",

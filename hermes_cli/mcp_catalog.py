@@ -1,4 +1,4 @@
-"""MCP catalog — curated, Nous-approved MCP servers shipped with the repo.
+"""MCP catalog — curated, EnergyIR-approved MCP servers shipped with the repo.
 
 Mirrors the optional-skills/ pattern: each catalog entry lives under
 ``optional-mcps/<name>/manifest.yaml`` and ships disabled. Users discover
@@ -8,7 +8,7 @@ picker, which flows them through any required env/OAuth setup).
 
 Catalog policy:
 - Entries are added only by merging a PR into hermes-agent. Presence in the
-  ``optional-mcps/`` directory = Nous approval. No community tier, no trust
+  ``optional-mcps/`` directory = EnergyIR approval. No community tier, no trust
   signals beyond "it's in the catalog".
 - Manifests pin transport details (commands, args, refs). MCPs are never
   auto-updated; users explicitly re-run ``hermes mcp install <name>`` to
@@ -126,7 +126,7 @@ class CatalogError(Exception):
 
 
 def _catalog_root() -> Path:
-    """Return the optional-mcps/ directory shipped with this Hermes install."""
+    """Return the optional-mcps/ directory shipped with this Robin install."""
     # Prefer the env-var override / packaged location; fall back to the repo's
     # optional-mcps/ next to the package (source checkout).
     return get_optional_mcps_dir(Path(__file__).parent.parent / "optional-mcps")
@@ -162,7 +162,7 @@ def _parse_manifest(path: Path) -> CatalogEntry:
     if mv != _MANIFEST_VERSION:
         raise CatalogError(
             f"{path}: manifest_version {mv!r} unsupported "
-            f"(this Hermes understands version {_MANIFEST_VERSION})"
+            f"(this Robin understands version {_MANIFEST_VERSION})"
         )
 
     name = data.get("name") or ""
@@ -268,7 +268,7 @@ def list_catalog() -> List[CatalogEntry]:
     Invalid manifests are skipped silently (CI tests catch them at PR time).
     Manifests with a future ``manifest_version`` are also skipped, but the
     skip is surfaced via :func:`catalog_diagnostics` so the picker / catalog
-    UIs can tell the user their Hermes is out of date.
+    UIs can tell the user their Robin is out of date.
     """
     root = _catalog_root()
     if not root.exists():
@@ -303,8 +303,8 @@ def catalog_diagnostics() -> List[tuple]:
 
     Returns a list of ``(entry_name, kind, message)`` tuples where ``kind``
     is one of:
-      - ``future_manifest`` — manifest_version is newer than this Hermes
-        understands. Update Hermes to install this entry.
+      - ``future_manifest`` — manifest_version is newer than this Robin
+        understands. Update Robin to install this entry.
       - ``invalid`` — manifest is malformed in some other way (caught by
         CI for shipped manifests; user-modified manifests can hit this).
     """

@@ -1033,7 +1033,7 @@ class TestDoctorXaiOAuthStatus:
     """The ◆ Auth Providers section must show xAI OAuth login state.
 
     xAI OAuth is checked in a *separate* try/except block so that an import
-    failure (or runtime exception) cannot silence the Nous / Codex / Gemini /
+    failure (or runtime exception) cannot silence the EnergyIR / Codex / Gemini /
     MiniMax rows that were already printed above it.
     """
 
@@ -1145,7 +1145,7 @@ class TestDoctorXaiOAuthStatus:
         assert "Auth Providers" in out
 
     def test_import_failure_does_not_affect_other_providers(self, monkeypatch, tmp_path):
-        """Nous / Codex / Gemini / MiniMax rows must survive an xAI import failure."""
+        """EnergyIR / Codex / Gemini / MiniMax rows must survive an xAI import failure."""
         home = tmp_path / ".hermes"
         home.mkdir(parents=True, exist_ok=True)
         (home / "config.yaml").write_text("memory: {}\n", encoding="utf-8")
@@ -1173,7 +1173,7 @@ class TestDoctorXaiOAuthStatus:
         with contextlib.redirect_stdout(buf):
             doctor_mod.run_doctor(Namespace(fix=False))
         out = buf.getvalue()
-        assert "Nous Portal auth" in out
+        assert "Together AI auth" in out
         assert "logged in" in out
 
     def test_function_raises_does_not_crash_doctor(self, monkeypatch, tmp_path):

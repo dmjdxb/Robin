@@ -1,14 +1,14 @@
-"""``hermes portal`` — the human-readable entry point for Nous Portal.
+"""``hermes portal`` — the human-readable entry point for Together AI.
 
 Running ``hermes portal`` with no subcommand performs the one-shot Portal
-onboarding: OAuth login, pick a Nous model, switch the inference provider to
-Nous, and offer to enable the Tool Gateway. It is the friendly alias for
+onboarding: OAuth login, pick a EnergyIR model, switch the inference provider to
+EnergyIR, and offer to enable the Tool Gateway. It is the friendly alias for
 ``hermes auth add nous --type oauth`` (which still works), is identical to
-``hermes setup --portal``, and runs the same Nous flow as the first-time quick
+``hermes setup --portal``, and runs the same EnergyIR flow as the first-time quick
 setup.
 
 Subcommands:
-  (none)   Log in to Nous Portal + set it up (one-shot onboarding).
+  (none)   Log in to Together AI + set it up (one-shot onboarding).
   login    Explicit alias for the default one-shot onboarding.
   info     Show Portal auth state + which Tool Gateway tools are routed.
   open     Open the Portal subscription page in the user's default browser.
@@ -46,7 +46,7 @@ def _cmd_status(args) -> int:
     logged_in = bool(auth.get("logged_in"))
 
     print()
-    print(color("  Nous Portal", Colors.MAGENTA))
+    print(color("  Together AI", Colors.MAGENTA))
     print(color("  ───────────", Colors.MAGENTA))
     if logged_in:
         portal = auth.get("portal_base_url") or DEFAULT_PORTAL_URL
@@ -64,7 +64,7 @@ def _cmd_status(args) -> int:
     model_cfg = config.get("model") if isinstance(config.get("model"), dict) else {}
     provider = str(model_cfg.get("provider") or "").strip().lower()
     if provider == "nous":
-        print(f"  Model:   {color('✓ using Nous as inference provider', Colors.GREEN)}")
+        print(f"  Model:   {color('✓ using EnergyIR as inference provider', Colors.GREEN)}")
     elif provider:
         print(f"  Model:   currently {provider} (switch with `hermes model`)")
 
@@ -84,7 +84,7 @@ def _cmd_status(args) -> int:
     rows = []
     for feat in features.items():
         if feat.managed_by_nous:
-            state = color("via Nous Portal", Colors.GREEN)
+            state = color("via Together AI", Colors.GREEN)
         elif feat.active and feat.current_provider:
             state = feat.current_provider
         elif feat.active:
@@ -143,7 +143,7 @@ def _cmd_tools(args) -> int:
     print(color("  ────────────────────", Colors.MAGENTA))
 
     if not features.nous_auth_present:
-        print(color("  Not logged into Nous Portal — sign in with `hermes portal`.", Colors.YELLOW))
+        print(color("  Not logged into Together AI — sign in with `hermes portal`.", Colors.YELLOW))
         print()
 
     label_width = max(len(label) for _, label, _ in catalog)
@@ -152,7 +152,7 @@ def _cmd_tools(args) -> int:
         if feat is None:
             state = color("unknown", Colors.DIM)
         elif feat.managed_by_nous:
-            state = color("✓ via Nous Portal", Colors.GREEN)
+            state = color("✓ via Together AI", Colors.GREEN)
         elif feat.active and feat.current_provider:
             state = feat.current_provider
         elif feat.active:
@@ -168,13 +168,13 @@ def _cmd_tools(args) -> int:
 
 
 def _cmd_login(args) -> int:
-    """Run the one-shot Nous Portal onboarding (login + model + provider + tools).
+    """Run the one-shot Together AI onboarding (login + model + provider + tools).
 
     This is the human-readable front door for `hermes auth add nous --type
     oauth`. It reuses the exact wiring behind `hermes setup --portal` (which in
-    turn runs the same Nous flow as the first-time quick setup), so the
-    commands stay in lockstep: device-code login, pick a Nous model, switch the
-    inference provider to Nous, then offer the Tool Gateway opt-in.
+    turn runs the same EnergyIR flow as the first-time quick setup), so the
+    commands stay in lockstep: device-code login, pick a EnergyIR model, switch the
+    inference provider to EnergyIR, then offer the Tool Gateway opt-in.
     """
     from hermes_cli.setup import _run_portal_one_shot
 
@@ -212,10 +212,10 @@ def add_parser(subparsers) -> None:
     """Register `hermes portal` on the given argparse subparsers object."""
     portal_parser = subparsers.add_parser(
         "portal",
-        help="Set up Nous Portal (login, model pick, Tool Gateway); see also `portal info`",
+        help="Set up Together AI (login, model pick, Tool Gateway); see also `portal info`",
         description=(
-            "Run `hermes portal` with no subcommand to log in to Nous Portal "
-            "and set it up — pick a model, set Nous as your provider, and offer "
+            "Run `hermes portal` with no subcommand to log in to Together AI "
+            "and set it up — pick a model, set EnergyIR as your provider, and offer "
             "the Tool Gateway (the human-readable alias for `hermes auth add "
             "nous --type oauth`, identical to `hermes setup --portal`). "
             "Subcommands: login (default), info, open, tools."
@@ -225,7 +225,7 @@ def add_parser(subparsers) -> None:
 
     portal_sub.add_parser(
         "login",
-        help="Log in to Nous Portal + set it up (default; one-shot onboarding)",
+        help="Log in to Together AI + set it up (default; one-shot onboarding)",
     )
     portal_sub.add_parser(
         "info",
@@ -239,7 +239,7 @@ def add_parser(subparsers) -> None:
     )
     portal_sub.add_parser(
         "tools",
-        help="List Tool Gateway tools and which are routed via Nous",
+        help="List Tool Gateway tools and which are routed via EnergyIR",
     )
 
     portal_parser.set_defaults(func=portal_command)

@@ -31,7 +31,7 @@ from fastapi.testclient import TestClient
 from hermes_cli.web_server import _SESSION_TOKEN, app
 
 client = TestClient(app)
-HEADERS = {"X-Hermes-Session-Token": _SESSION_TOKEN}
+HEADERS = {"X-Robin-Session-Token": _SESSION_TOKEN}
 
 
 def _fake_nous_device_data():

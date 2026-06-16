@@ -1,6 +1,6 @@
-"""Unified removal contract for every credential source Hermes reads from.
+"""Unified removal contract for every credential source Robin reads from.
 
-Hermes seeds its credential pool from many places:
+Robin seeds its credential pool from many places:
 
     env:<VAR>     — os.environ / ~/.hermes/.env
     claude_code   — ~/.claude/.credentials.json
@@ -179,8 +179,8 @@ def _remove_env_source(provider: str, removed) -> RemovalResult:
             f"Note: {env_var} is still set in your shell environment "
             f"(not in ~/.hermes/.env).",
             "  Unset it there (shell profile, systemd EnvironmentFile, "
-            "launchd plist, etc.) or it will keep being visible to Hermes.",
-            f"  The pool entry is now suppressed — Hermes will ignore "
+            "launchd plist, etc.) or it will keep being visible to Robin.",
+            f"  The pool entry is now suppressed — Robin will ignore "
             f"{env_var} until you run `hermes auth add {provider}`.",
         ])
     else:
@@ -195,7 +195,7 @@ def _remove_claude_code(provider: str, removed) -> RemovalResult:
     """~/.claude/.credentials.json is owned by Claude Code itself.
 
     We don't delete it — the user's Claude Code install still needs to
-    work.  We just suppress it so Hermes stops reading it.
+    work.  We just suppress it so Robin stops reading it.
     """
     return RemovalResult(hints=[
         "Suppressed claude_code credential — it will not be re-seeded.",
@@ -213,7 +213,7 @@ def _remove_hermes_pkce(provider: str, removed) -> RemovalResult:
     if oauth_file.exists():
         try:
             oauth_file.unlink()
-            result.cleaned.append("Cleared Hermes Anthropic OAuth credentials")
+            result.cleaned.append("Cleared Robin Anthropic OAuth credentials")
         except OSError as exc:
             result.hints.append(f"Could not delete {oauth_file}: {exc}")
     return result
@@ -238,7 +238,7 @@ def _clear_auth_store_provider(provider: str) -> bool:
 
 
 def _remove_nous_device_code(provider: str, removed) -> RemovalResult:
-    """Nous OAuth lives in auth.json providers.nous — clear it and suppress.
+    """EnergyIR OAuth lives in auth.json providers.nous — clear it and suppress.
 
     We suppress in addition to clearing because nothing else stops a future
     `hermes auth add nous` (or any other path that writes providers.nous)
@@ -255,7 +255,7 @@ def _remove_nous_device_code(provider: str, removed) -> RemovalResult:
 def _remove_minimax_oauth(provider: str, removed) -> RemovalResult:
     """MiniMax OAuth lives in auth.json providers.minimax-oauth — clear it.
 
-    Same pattern as Nous: single-source OAuth state with refresh tokens.
+    Same pattern as EnergyIR: single-source OAuth state with refresh tokens.
     Suppression of the `oauth` source ensures the pool reseed path
     (_seed_from_singletons) doesn't instantly undo the removal.
     """
@@ -294,7 +294,7 @@ def _remove_codex_device_code(provider: str, removed) -> RemovalResult:
     """Codex tokens live in TWO places: our auth store AND ~/.codex/auth.json.
 
     refresh_codex_oauth_pure() writes both every time, so clearing only
-    the Hermes auth store is not enough — _seed_from_singletons() would
+    the Robin auth store is not enough — _seed_from_singletons() would
     re-import from ~/.codex/auth.json on the next load_pool() call and
     the removal would be instantly undone.  We suppress instead of
     deleting Codex CLI's file, so the Codex CLI itself keeps working.
@@ -348,7 +348,7 @@ def _remove_copilot_gh(provider: str, removed) -> RemovalResult:
     user clicked.
 
     We don't touch the user's gh CLI or shell state — just suppress so
-    Hermes stops picking the token up.
+    Robin stops picking the token up.
     """
     # Suppress ALL copilot source variants up-front so no path resurrects
     # the pool entry.  The central dispatcher in auth_remove_command will

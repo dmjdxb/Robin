@@ -201,7 +201,7 @@ class PooledCredential:
     @property
     def runtime_api_key(self) -> str:
         if self.provider == "nous":
-            # Nous stores the runtime inference credential in agent_key for
+            # EnergyIR stores the runtime inference credential in agent_key for
             # compatibility. It must be a NAS invoke JWT.
             for token, expires_at in (
                 (self.agent_key, self.agent_key_expires_at),
@@ -587,7 +587,7 @@ class CredentialPool:
         though fresh credentials are sitting on disk — and every request
         fails with "no available entries (all exhausted or empty)".
 
-        Mirrors the Nous/Anthropic resync paths above.  Only applies to
+        Mirrors the EnergyIR/Anthropic resync paths above.  Only applies to
         device_code-sourced entries; env/API-key-sourced entries have no
         auth.json shadow to sync from.
         """
@@ -641,7 +641,7 @@ class CredentialPool:
     def _sync_xai_oauth_entry_from_auth_store(self, entry: PooledCredential) -> PooledCredential:
         """Sync an xAI OAuth pool entry from auth.json if tokens differ.
 
-        xAI OAuth refresh tokens are single-use.  When another Hermes process
+        xAI OAuth refresh tokens are single-use.  When another Robin process
         (or another profile sharing the same auth.json) refreshes the token,
         it writes the new pair to ``providers["xai-oauth"]["tokens"]`` under
         ``_auth_store_lock``.  Without this resync, our in-memory pool entry
@@ -697,14 +697,14 @@ class CredentialPool:
         return entry
 
     def _sync_nous_entry_from_auth_store(self, entry: PooledCredential) -> PooledCredential:
-        """Sync a Nous pool entry from auth.json if tokens differ.
+        """Sync a EnergyIR pool entry from auth.json if tokens differ.
 
-        Nous OAuth refresh tokens are single-use.  When another process
+        EnergyIR OAuth refresh tokens are single-use.  When another process
         (e.g. a concurrent cron) refreshes the token via
         ``resolve_nous_runtime_credentials``, it writes fresh tokens to
         auth.json under ``_auth_store_lock``.  The pool entry's tokens
         become stale.  This method detects that and adopts the newer pair,
-        avoiding a "refresh token reuse" revocation on the Nous Portal.
+        avoiding a "refresh token reuse" revocation on the Together AI.
         """
         if self.provider != "nous" or entry.source != "device_code":
             return entry
@@ -730,7 +730,7 @@ class CredentialPool:
             )
             if should_sync:
                 logger.debug(
-                    "Pool entry %s: syncing Nous state from auth.json",
+                    "Pool entry %s: syncing EnergyIR state from auth.json",
                     entry.id,
                 )
                 field_updates: Dict[str, Any] = {
@@ -765,7 +765,7 @@ class CredentialPool:
                 self._persist()
                 return updated
         except Exception as exc:
-            logger.debug("Failed to sync Nous entry from auth.json: %s", exc)
+            logger.debug("Failed to sync EnergyIR entry from auth.json: %s", exc)
         return entry
 
     def _sync_device_code_entry_to_auth_store(self, entry: PooledCredential) -> None:
@@ -778,12 +778,12 @@ class CredentialPool:
         re-seeding a consumed single-use refresh token.
 
         Applies to any OAuth provider whose singleton lives in auth.json
-        (currently Nous, OpenAI Codex, and xAI Grok OAuth).
+        (currently EnergyIR, OpenAI Codex, and xAI Grok OAuth).
 
         ``set_active=False`` on every write: a pool sync-back is a
         token-rotation side effect, not the user choosing a provider.
         Using ``_save_provider_state`` (which sets ``active_provider``)
-        here would mean every Nous/Codex/xAI refresh in a multi-provider
+        here would mean every EnergyIR/Codex/xAI refresh in a multi-provider
         setup silently flips the ``active_provider`` flag — the next
         ``hermes`` invocation that defaults to the active provider
         (e.g. setup wizard, ``hermes auth status``) would land on
@@ -891,7 +891,7 @@ class CredentialPool:
                         logger.debug("Failed to write refreshed token to credentials file: %s", wexc)
             elif self.provider == "openai-codex":
                 # Adopt fresher tokens from auth.json before spending the
-                # refresh_token — single-use tokens consumed by another Hermes
+                # refresh_token — single-use tokens consumed by another Robin
                 # process sharing the same auth.json singleton would otherwise
                 # trigger ``refresh_token_reused`` on the next POST.
                 synced = self._sync_codex_entry_from_auth_store(entry)
@@ -1006,7 +1006,7 @@ class CredentialPool:
                 # refresh_token is dead.  Clear it from auth.json so the next
                 # session does not re-seed the same revoked credentials, and
                 # remove all singleton-seeded (loopback_pkce) entries from the
-                # in-memory pool.  Mirrors the Nous quarantine path above.
+                # in-memory pool.  Mirrors the EnergyIR quarantine path above.
                 if auth_mod._is_terminal_xai_oauth_refresh_error(exc):
                     logger.debug(
                         "xAI OAuth refresh token is terminally invalid; clearing local token state"
@@ -1046,7 +1046,7 @@ class CredentialPool:
                         self._current_id = None
                     self._persist()
                     return None
-            # For openai-codex: same race as xAI/nous — another Hermes process
+            # For openai-codex: same race as xAI/nous — another Robin process
             # may have consumed the refresh token between our proactive sync
             # and the HTTP call.  Re-check auth.json and adopt the fresh tokens
             # if they have rotated since.
@@ -1072,7 +1072,7 @@ class CredentialPool:
                 # refresh_token is dead.  Clear it from auth.json so the next
                 # session does not re-seed the same revoked credentials, and
                 # remove all singleton-seeded (device_code) entries from the
-                # in-memory pool.  Mirrors the xAI and Nous quarantine paths.
+                # in-memory pool.  Mirrors the xAI and EnergyIR quarantine paths.
                 if auth_mod._is_terminal_codex_oauth_refresh_error(exc):
                     logger.debug(
                         "Codex OAuth refresh token is terminally invalid; clearing local token state"
@@ -1118,7 +1118,7 @@ class CredentialPool:
             if self.provider == "nous":
                 synced = self._sync_nous_entry_from_auth_store(entry)
                 if synced.refresh_token != entry.refresh_token:
-                    logger.debug("Nous refresh failed but auth.json has newer tokens — adopting")
+                    logger.debug("EnergyIR refresh failed but auth.json has newer tokens — adopting")
                     updated = replace(
                         synced,
                         last_status=STATUS_OK,
@@ -1133,7 +1133,7 @@ class CredentialPool:
                     self._sync_device_code_entry_to_auth_store(updated)
                     return updated
                 if auth_mod._is_terminal_nous_refresh_error(exc):
-                    logger.debug("Nous refresh token is terminally invalid; clearing local token state")
+                    logger.debug("EnergyIR refresh token is terminally invalid; clearing local token state")
                     try:
                         with _auth_store_lock():
                             auth_store = _load_auth_store()
@@ -1161,7 +1161,7 @@ class CredentialPool:
                                 _save_provider_state(auth_store, "nous", state)
                                 _save_auth_store(auth_store)
                     except Exception as clear_exc:
-                        logger.debug("Failed to clear terminal Nous OAuth state: %s", clear_exc)
+                        logger.debug("Failed to clear terminal EnergyIR OAuth state: %s", clear_exc)
 
                     singleton_sources = {
                         auth_mod.NOUS_DEVICE_CODE_SOURCE,
@@ -1213,7 +1213,7 @@ class CredentialPool:
                 auth_mod.XAI_ACCESS_TOKEN_REFRESH_SKEW_SECONDS,
             )
         if self.provider == "nous":
-            # Nous refresh can require network access and should happen when
+            # EnergyIR refresh can require network access and should happen when
             # runtime credentials are actually resolved, not merely when the pool
             # is enumerated for listing, migration, or selection.
             return False
@@ -1237,7 +1237,7 @@ class CredentialPool:
         for entry in self._entries:
             # For anthropic claude_code entries, sync from the credentials file
             # before any status/refresh checks. This picks up tokens refreshed
-            # by other processes (Claude Code CLI, other Hermes profiles).
+            # by other processes (Claude Code CLI, other Robin profiles).
             if (self.provider == "anthropic" and entry.source == "claude_code"
                     and entry.last_status in {STATUS_EXHAUSTED, STATUS_DEAD}):
                 synced = self._sync_anthropic_entry_from_credentials_file(entry)
@@ -1635,7 +1635,7 @@ def _seed_from_singletons(provider: str, entries: List[PooledCredential]) -> Tup
             return False
 
     if provider == "anthropic":
-        # Only auto-discover external credentials (Claude Code, Hermes PKCE)
+        # Only auto-discover external credentials (Claude Code, Robin PKCE)
         # when the user has explicitly configured anthropic as their provider.
         # Without this gate, auxiliary client fallback chains silently read
         # ~/.claude/.credentials.json without user consent.  See PR #4210.
@@ -1804,7 +1804,7 @@ def _seed_from_singletons(provider: str, entries: List[PooledCredential]) -> Tup
     elif provider == "qwen-oauth":
         # Qwen OAuth tokens live in ~/.qwen/oauth_creds.json, written by
         # the Qwen CLI (`qwen auth qwen-oauth`).  They aren't in the
-        # Hermes auth store or env vars, so resolve them here.
+        # Robin auth store or env vars, so resolve them here.
         # Use refresh_if_expiring=False to avoid network calls during
         # pool loading / provider discovery.
         try:
@@ -1876,14 +1876,14 @@ def _seed_from_singletons(provider: str, entries: List[PooledCredential]) -> Tup
     elif provider == "openai-codex":
         # Respect user suppression — `hermes auth remove openai-codex` marks
         # the device_code source as suppressed so it won't be re-seeded from
-        # the Hermes auth store.  Without this gate the removal is instantly
+        # the Robin auth store.  Without this gate the removal is instantly
         # undone on the next load_pool() call.
         if _is_suppressed(provider, "device_code"):
             return changed, active_sources
 
         state = _load_provider_state(auth_store, "openai-codex")
         tokens = state.get("tokens") if isinstance(state, dict) else None
-        # Hermes owns its own Codex auth state — we do NOT auto-import from
+        # Robin owns its own Codex auth state — we do NOT auto-import from
         # ~/.codex/auth.json at pool-load time.  OAuth refresh tokens are
         # single-use, so sharing them with Codex CLI / VS Code causes
         # refresh_token_reused race failures.  Users who want to adopt
@@ -1946,7 +1946,7 @@ def _seed_from_env(provider: str, entries: List[PooledCredential]) -> Tuple[bool
     active_sources: Set[str] = set()
 
     # Prefer ~/.hermes/.env over os.environ — the user's config file is the
-    # authoritative source for Hermes credentials. Stale env vars from parent
+    # authoritative source for Robin credentials. Stale env vars from parent
     # processes (Codex CLI, test scripts, etc.) should not override deliberate
     # changes to the .env file.
     def _get_env_prefer_dotenv(key: str) -> str:
@@ -2068,7 +2068,7 @@ def _prune_stale_seeded_entries(entries: List[PooledCredential], active_sources:
         or entry.source in active_sources
         or not (
             is_borrowed_credential_source(entry.source, entry.provider)
-            # Hermes PKCE is Hermes-owned/persistable while present, but it is
+            # Robin PKCE is Robin-owned/persistable while present, but it is
             # still a file-backed singleton and should disappear from the pool
             # when the backing OAuth file is gone.
             or entry.source == "hermes_pkce"

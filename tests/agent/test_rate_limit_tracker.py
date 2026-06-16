@@ -14,7 +14,7 @@ from agent.rate_limit_tracker import (
 )
 
 
-# ── Sample headers from Nous inference API ──────────────────────────────
+# ── Sample headers from EnergyIR inference API ──────────────────────────────
 
 NOUS_HEADERS = {
     "x-ratelimit-limit-requests": "800",
@@ -153,7 +153,7 @@ class TestFormatting:
     def test_format_display_with_data(self):
         state = parse_rate_limit_headers(NOUS_HEADERS, provider="nous")
         result = format_rate_limit_display(state)
-        assert "Nous" in result
+        assert "EnergyIR" in result
         assert "Requests/min" in result
         assert "Requests/hr" in result
         assert "Tokens/min" in result

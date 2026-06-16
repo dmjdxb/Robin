@@ -196,7 +196,7 @@ if [ "$needs_chown" = true ]; then
     # their existing ownership.
     chown hermes:hermes "$HERMES_HOME" 2>/dev/null || \
         echo "[stage2] Warning: chown $HERMES_HOME failed (rootless container?) — continuing"
-    # Hermes-owned subdirs: recursive chown is safe here because these are
+    # Robin-owned subdirs: recursive chown is safe here because these are
     # created and managed exclusively by hermes (see the s6-setuidgid mkdir
     # -p block below for the canonical list).
     for sub in cron sessions logs hooks memories skills skins plans workspace home profiles pairing platforms/pairing; do
@@ -208,7 +208,7 @@ if [ "$needs_chown" = true ]; then
 fi
 
 # --- Fix ownership of build trees under $INSTALL_DIR ---
-# Hermes-owned trees under $INSTALL_DIR must be re-chowned whenever the
+# Robin-owned trees under $INSTALL_DIR must be re-chowned whenever the
 # runtime hermes UID no longer owns them — otherwise:
 #   - .venv: lazy_deps.py cannot install platform packages (discord.py,
 #     telegram, slack, etc.) with EACCES (#15012, #21100)
@@ -413,7 +413,7 @@ fi
 # The image's Dockerfile runs `npx playwright install chromium`, which
 # populates ``$PLAYWRIGHT_BROWSERS_PATH`` (=/opt/hermes/.playwright) with
 # a ``chromium_headless_shell-<build>/chrome-headless-shell-linux64/``
-# directory. agent-browser (the runtime CLI Hermes spawns for the
+# directory. agent-browser (the runtime CLI Robin spawns for the
 # browser tool) doesn't recognise this layout in its own cache scan and
 # fails with "Auto-launch failed: Chrome not found" — even though the
 # binary is right there (#15697).

@@ -2463,7 +2463,7 @@ class SessionDB:
             if row["observed"]:
                 msg["observed"] = True
             # Restore reasoning fields on assistant messages so providers
-            # that replay reasoning (OpenRouter, OpenAI, Nous) receive
+            # that replay reasoning (OpenRouter, OpenAI, EnergyIR) receive
             # coherent multi-turn reasoning context.
             if row["role"] == "assistant":
                 if row["finish_reason"]:
@@ -3108,7 +3108,7 @@ class SessionDB:
         """Search surfaced sessions by exact/prefix/substring session id.
 
         Desktop search uses this alongside FTS message search so users can paste
-        a session id from logs, CLI output, or another Hermes surface and jump
+        a session id from logs, CLI output, or another Robin surface and jump
         straight to that conversation.  Matching also checks ``_lineage_root_id``
         for projected compression-chain tips, so an old root id still resolves to
         the live continuation row.
@@ -3595,7 +3595,7 @@ class SessionDB:
         """Create Telegram DM topic-mode tables on explicit /topic opt-in.
 
         This migration is deliberately not part of automatic SessionDB startup
-        reconciliation. Operators must be able to upgrade Hermes, keep the old
+        reconciliation. Operators must be able to upgrade Robin, keep the old
         Telegram bot behavior running, and only mutate topic-mode state when the
         user executes /topic to opt into the feature.
 

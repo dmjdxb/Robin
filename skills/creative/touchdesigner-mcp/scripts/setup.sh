@@ -43,14 +43,14 @@ else
     fi
 fi
 
-# ── 3. Ensure Hermes config has twozero_td MCP entry ──
+# ── 3. Ensure Robin config has twozero_td MCP entry ──
 if [[ ! -f "$HERMES_CFG" ]]; then
-    echo -e " ${FAIL} Hermes config not found at ${HERMES_CFG}"
+    echo -e " ${FAIL} Robin config not found at ${HERMES_CFG}"
     manual_steps+=("Create ${HERMES_CFG} with twozero_td MCP server entry")
 elif grep -q 'twozero_td' "$HERMES_CFG" 2>/dev/null; then
-    echo -e " ${OK} twozero_td MCP entry exists in Hermes config"
+    echo -e " ${OK} twozero_td MCP entry exists in Robin config"
 else
-    echo -e " ${WARN} Adding twozero_td MCP entry to Hermes config..."
+    echo -e " ${WARN} Adding twozero_td MCP entry to Robin config..."
     python3 -c "
 import yaml, sys, copy
 

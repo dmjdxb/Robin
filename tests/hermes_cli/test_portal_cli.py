@@ -1,6 +1,6 @@
 """Tests for `hermes portal` dispatch.
 
-`hermes portal` (no subcommand) is the human-readable alias for the Nous Portal
+`hermes portal` (no subcommand) is the human-readable alias for the Together AI
 one-shot onboarding (`hermes auth add nous --type oauth` / `hermes setup
 --portal`). The prior status default moved to `hermes portal info`, with
 `status` retained as a back-compat alias.
@@ -112,7 +112,7 @@ def test_parser_registers_subcommands():
 
 
 def test_one_shot_delegates_to_model_flow_nous(monkeypatch):
-    """`hermes portal` must run the quick-setup Nous flow (login + MODEL PICK +
+    """`hermes portal` must run the quick-setup EnergyIR flow (login + MODEL PICK +
     provider + Tool Gateway), i.e. delegate to `_model_flow_nous` — not the
     lighter auth-only path that skipped model selection.
     """
@@ -139,7 +139,7 @@ def test_one_shot_delegates_to_model_flow_nous(monkeypatch):
 
 @pytest.mark.parametrize("exc", [KeyboardInterrupt, EOFError, SystemExit])
 def test_one_shot_swallows_cancel_and_systemexit(monkeypatch, exc):
-    """A cancel/abort from the delegated Nous flow must NOT escape and kill the
+    """A cancel/abort from the delegated EnergyIR flow must NOT escape and kill the
     CLI. `_login_nous` raises SystemExit(130)/(1) on cancel/failure, and the
     expired-session re-login path inside `_model_flow_nous` only catches
     Exception — so SystemExit could otherwise propagate out. The portal handler

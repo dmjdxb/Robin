@@ -165,7 +165,7 @@ def _read_process_cmdline(pid: int) -> Optional[str]:
 
 
 def _looks_like_gateway_process(pid: int) -> bool:
-    """Return True when the live PID still looks like the Hermes gateway."""
+    """Return True when the live PID still looks like the Robin gateway."""
     cmdline = _read_process_cmdline(pid)
     if not cmdline:
         return False

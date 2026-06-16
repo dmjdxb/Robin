@@ -105,7 +105,7 @@ class TestChatCompletionsBasic:
         assert msgs[2]["tool_name"] == "execute_code"
 
     def test_convert_messages_strips_internal_scaffolding_markers(self, transport):
-        """Hermes-internal ``_``-prefixed markers must never reach the wire.
+        """Robin-internal ``_``-prefixed markers must never reach the wire.
 
         The empty-response recovery path appends synthetic messages tagged
         with ``_empty_recovery_synthetic``; permissive providers ignore the
@@ -262,7 +262,7 @@ class TestChatCompletionsBuildKwargs:
             supports_reasoning=True,
             reasoning_config={"enabled": False},
         )
-        # Nous rejects enabled=false; reasoning omitted entirely
+        # EnergyIR rejects enabled=false; reasoning omitted entirely
         assert "reasoning" not in kw.get("extra_body", {})
 
     def test_ollama_num_ctx(self, transport):
@@ -412,7 +412,7 @@ class TestChatCompletionsBuildKwargs:
     def test_gemma_does_not_receive_thinking_config(self, transport):
         # The `gemini` provider also serves Gemma (e.g. `gemma-4-31b-it`),
         # but Gemma rejects `thinking_config` with HTTP 400 (#17426). Even
-        # when Hermes has reasoning enabled, the field must be omitted for
+        # when Robin has reasoning enabled, the field must be omitted for
         # non-Gemini models on this provider.
         msgs = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
@@ -592,7 +592,7 @@ class TestChatCompletionsKimi:
         assert kw["extra_body"]["thinking"] == {"type": "disabled"}
 
     def test_moonshot_tool_schemas_are_sanitized_by_model_name(self, transport):
-        """Aggregator routes (Nous, OpenRouter) hit Moonshot by model name, not base URL."""
+        """Aggregator routes (EnergyIR, OpenRouter) hit Moonshot by model name, not base URL."""
         tools = [
             {
                 "type": "function",
@@ -862,7 +862,7 @@ class TestChatCompletionsCacheStats:
 
 
 class TestChatCompletionsGeminiNativeExtraBodyStrip:
-    """Profile extra_body (e.g. Nous portal tags) must not reach a native
+    """Profile extra_body (e.g. EnergyIR portal tags) must not reach a native
     Gemini endpoint — Google's REST API rejects unknown fields with HTTP 400.
     """
 

@@ -8,13 +8,13 @@ These guard the contract:
     picker path (``provider_model_ids``) and the gateway ``/model`` picker
     path (``list_authenticated_providers``) merge fresh models.dev entries
     on top of the curated static list.
-  * OpenRouter and Nous Portal are NEVER merged — they keep their curated
-    (OpenRouter) or live-Portal (Nous) semantics.
+  * OpenRouter and Together AI are NEVER merged — they keep their curated
+    (OpenRouter) or live-Portal (EnergyIR) semantics.
   * If models.dev is unreachable (offline / CI), the curated list is the
     fallback — no crash, no empty list.
 
 Merging is what lets new models (e.g. ``mimo-v2.5-pro`` on opencode-go)
-appear in ``/model`` without a Hermes release.
+appear in ``/model`` without a Robin release.
 """
 
 from unittest.mock import patch

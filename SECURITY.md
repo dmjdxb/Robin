@@ -281,7 +281,7 @@ private-disclosure channel and don't receive advisories.
   plugins are in the operator's review surface, not Robin's
   trust surface (§2.4, §2.5). A skill or plugin doing something
   malicious is the expected failure mode of one that wasn't
-  reviewed, not a vulnerability in Robin. Bugs in Hermes
+  reviewed, not a vulnerability in Robin. Bugs in Robin
   Agent's skill-install or plugin-install path that prevent the
   operator from seeing what they're installing are in scope under
   §3.1.

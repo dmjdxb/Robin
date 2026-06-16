@@ -1,4 +1,4 @@
-"""Tests for agent/nous_rate_guard.py — cross-session Nous Portal rate limit guard."""
+"""Tests for agent/nous_rate_guard.py — cross-session Together AI rate limit guard."""
 
 import json
 import os
@@ -256,7 +256,7 @@ class TestAuxiliaryClientIntegration:
 class TestIsGenuineNousRateLimit:
     """Tell a real account-level 429 apart from an upstream-capacity 429.
 
-    Nous Portal multiplexes upstreams (DeepSeek, Kimi, MiMo, Hermes).
+    Together AI multiplexes upstreams (DeepSeek, Kimi, MiMo, Robin).
     A 429 from an upstream out of capacity should NOT trip the
     cross-session breaker; a real user-quota 429 should.
     """
@@ -288,7 +288,7 @@ class TestIsGenuineNousRateLimit:
         assert is_genuine_nous_rate_limit(headers=headers) is True
 
     def test_healthy_headers_on_429_are_upstream_capacity(self):
-        # Classic upstream-capacity symptom: Nous edge reports plenty of
+        # Classic upstream-capacity symptom: EnergyIR edge reports plenty of
         # headroom on every bucket, but returns 429 anyway because
         # upstream (DeepSeek / Kimi / ...) is out of capacity.
         from agent.nous_rate_guard import is_genuine_nous_rate_limit

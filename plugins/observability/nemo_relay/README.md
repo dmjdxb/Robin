@@ -1,17 +1,17 @@
 # NeMo Relay Observability
 
-Optional Hermes observability plugin that maps Hermes observer hooks to
+Optional Robin observability plugin that maps Robin observer hooks to
 NeMo Relay scopes, LLM spans, tool spans, marks, ATOF, and ATIF.
 
 NeMo Relay is NVIDIA's runtime layer for agent execution boundaries. It does
 not replace Robin's planner, tools, memory, model provider routing, or
-CLI UX. Instead, this plugin lets Hermes emit NeMo Relay lifecycle events for
-the work Hermes already owns: sessions, turns, provider/API calls, tool calls,
+CLI UX. Instead, this plugin lets Robin emit NeMo Relay lifecycle events for
+the work Robin already owns: sessions, turns, provider/API calls, tool calls,
 approval prompts, and delegated subagents.
 
 With this plugin enabled, Robin can:
 
-- Preserve Hermes execution as NeMo Relay scopes, LLM spans, tool spans, and
+- Preserve Robin execution as NeMo Relay scopes, LLM spans, tool spans, and
   mark events.
 - Export raw lifecycle events as Agent Trajectory Observability Format (ATOF)
   JSONL for debugging and offline inspection.
@@ -56,9 +56,9 @@ Runs started with `--ignore_user_config` skip the enabled-plugin state from
 `HERMES_HOME`, so local E2E tests should omit that flag unless the test harness
 loads `observability/nemo_relay` explicitly another way.
 
-`HERMES_HOME` is the Hermes profile/config home used by both
+`HERMES_HOME` is the Robin profile/config home used by both
 `hermes plugins enable ...` and the later `hermes chat ...` run. If unset,
-Hermes uses the user's default home, usually `~/.hermes`. For isolated smoke
+Robin uses the user's default home, usually `~/.hermes`. For isolated smoke
 tests, choose any writable temporary directory and use the same value for every
 command in that test:
 
@@ -129,7 +129,7 @@ Optional overrides:
 ### NeMo Relay Component Config
 
 To initialize NeMo Relay from a component config, create a `plugins.toml` file
-and point Hermes at it:
+and point Robin at it:
 
 ```bash
 export HERMES_NEMO_RELAY_PLUGINS_TOML=.nemo-relay/plugins.toml
@@ -279,7 +279,7 @@ Sanitized ATIF excerpt:
 ### Parallel Tool Calls
 
 This run asks the model to emit two `read_file` tool calls in the same assistant
-message. Hermes dispatches the read-only tools as one batch, and NeMo Relay
+message. Robin dispatches the read-only tools as one batch, and NeMo Relay
 records both tool invocations.
 
 ```bash
@@ -356,8 +356,8 @@ Sanitized ATIF excerpt:
 The plugin keeps NeMo Relay's native event model:
 
 - Robin sessions map to `agent` scopes.
-- Hermes API request hooks map to `llm` scope start/end events.
-- Hermes tool hooks map to `tool` scope start/end events.
+- Robin API request hooks map to `llm` scope start/end events.
+- Robin tool hooks map to `tool` scope start/end events.
 - Turn, approval, subagent, and diagnostic fallback events map to `mark`
   events.
 

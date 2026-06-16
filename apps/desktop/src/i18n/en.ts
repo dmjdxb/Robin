@@ -24,7 +24,7 @@ export const en: Translations = {
       loadingSettings: 'Loading Robin settings',
       loadingSessions: 'Loading recent sessions',
       startingDesktopConnection: 'Starting desktop connection',
-      startingHermesDesktop: 'Starting Robin…'
+      startingRobinDesktop: 'Starting Robin…'
     },
     errors: {
       backgroundExited: 'Robin background process exited.',
@@ -73,7 +73,7 @@ export const en: Translations = {
     backendOutOfDateTitle: 'Backend out of date',
     backendOutOfDateMessage:
       'Your Robin backend is older than this desktop build and may not work correctly. Update to align them.',
-    updateHermes: 'Update Robin',
+    updateRobin: 'Update Robin',
     updateReadyTitle: 'Update ready',
     updateReadyMessage: count => `${count} new change${count === 1 ? '' : 's'} available.`,
     seeWhatsNew: "See what's new",
@@ -289,7 +289,7 @@ export const en: Translations = {
     gatewayStopped: 'Messaging gateway stopped',
     hermesActiveSessions: (version, count) => `Robin ${version} · Active sessions ${count}`,
     restartMessaging: 'Restart messaging',
-    updateHermes: 'Update Robin',
+    updateRobin: 'Update Robin',
     actionRunning: 'running',
     actionDone: 'done',
     actionFailed: 'failed',

@@ -129,7 +129,7 @@ export interface ThemeComponentStyles {
  *  Inverted-lens themes (e.g. Ocean) must pre-invert these hex
  *  values so they read as their intended visual color after the FG
  *  difference layer flips them (`out = 255 − channel`). E.g. to make
- *  output paint as Nous-blue `#0053FD` on screen, set
+ *  output paint as EnergyIR-blue `#0053FD` on screen, set
  *  `outputTokenAccent: "#FFAC02"` — the difference math reverses it. */
 export interface ThemeSeriesColors {
   /** Input-tokens series accent (Analytics chart bars + table values). */

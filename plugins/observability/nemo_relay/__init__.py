@@ -1,4 +1,4 @@
-"""nemo_relay — optional Hermes plugin for NeMo Relay observability."""
+"""nemo_relay — optional Robin plugin for NeMo Relay observability."""
 
 from __future__ import annotations
 

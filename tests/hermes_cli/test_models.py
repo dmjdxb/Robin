@@ -138,7 +138,7 @@ class TestFetchOpenRouterModels:
     def test_permissive_when_supported_parameters_missing(self, monkeypatch):
         """Models missing the supported_parameters field keep appearing in the picker.
 
-        Some OpenRouter-compatible gateways (Nous Portal, private mirrors, older
+        Some OpenRouter-compatible gateways (Together AI, private mirrors, older
         catalog snapshots) don't populate supported_parameters. Treating missing
         as 'unknown → allow' prevents the picker from silently emptying on
         those gateways.

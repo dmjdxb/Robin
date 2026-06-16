@@ -1180,7 +1180,7 @@ class TestDetectVenvDir:
         assert result is None
 
 
-class TestSystemUnitHermesHome:
+class TestSystemUnitRobinHome:
     """HERMES_HOME in system units must reference the target user, not root."""
 
     def test_system_unit_uses_target_user_home_not_calling_user(self, monkeypatch):
@@ -1244,7 +1244,7 @@ class TestSystemUnitHermesHome:
         assert f'HERMES_HOME={hermes_home}' in unit
 
 
-class TestHermesHomeForTargetUser:
+class TestRobinHomeForTargetUser:
     """Unit tests for _hermes_home_for_target_user()."""
 
     def test_remaps_default_home(self, monkeypatch):
@@ -1800,7 +1800,7 @@ class TestDockerAwareGateway:
         assert "hermes gateway run" in out
 
 
-class TestLegacyHermesUnitDetection:
+class TestLegacyRobinUnitDetection:
     """Tests for _find_legacy_hermes_units / has_legacy_hermes_units.
 
     These guard against the scenario that tripped Luis in April 2026: an
@@ -1816,7 +1816,7 @@ class TestLegacyHermesUnitDetection:
 
     # Minimal ExecStart that looks like our gateway
     _OUR_UNIT_TEXT = (
-        "[Unit]\nDescription=Hermes Gateway\n[Service]\n"
+        "[Unit]\nDescription=Robin Gateway\n[Service]\n"
         "ExecStart=/usr/bin/python -m hermes_cli.main gateway run --replace\n"
     )
 
@@ -1894,7 +1894,7 @@ class TestLegacyHermesUnitDetection:
         """
         user_dir, _ = self._setup_search_paths(tmp_path, monkeypatch)
         (user_dir / "hermes.service").write_text(
-            "[Unit]\nDescription=Some Other Hermes\n[Service]\n"
+            "[Unit]\nDescription=Some Other Robin\n[Service]\n"
             "ExecStart=/opt/other-hermes/bin/daemon --foreground\n",
             encoding="utf-8",
         )
@@ -1942,7 +1942,7 @@ class TestLegacyHermesUnitDetection:
             name = f"hermes.service" if i == 0 else f"hermes.service"  # same name
             # Test each variant fresh
             (user_dir / "hermes.service").write_text(
-                f"[Unit]\nDescription=Old Hermes\n[Service]\n{execstart}\n",
+                f"[Unit]\nDescription=Old Robin\n[Service]\n{execstart}\n",
                 encoding="utf-8",
             )
             results = gateway_cli._find_legacy_hermes_units()
@@ -1987,11 +1987,11 @@ class TestLegacyHermesUnitDetection:
         assert results == []
 
 
-class TestRemoveLegacyHermesUnits:
+class TestRemoveLegacyRobinUnits:
     """Tests for remove_legacy_hermes_units (the migration action)."""
 
     _OUR_UNIT_TEXT = (
-        "[Unit]\nDescription=Hermes Gateway\n[Service]\n"
+        "[Unit]\nDescription=Robin Gateway\n[Service]\n"
         "ExecStart=/usr/bin/python -m hermes_cli.main gateway run --replace\n"
     )
 

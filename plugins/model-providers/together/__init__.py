@@ -4,7 +4,7 @@ Together AI is an OpenAI-compatible cloud inference API (base URL
 ``https://api.together.xyz/v1``, namespaced model IDs such as
 ``deepseek-ai/DeepSeek-V4-Pro``). It implements chat completions with function
 calling and structured output, but NOT the OpenAI Responses/Assistants APIs —
-so the agent loop is driven by Hermes's own function-calling harness, which is
+so the agent loop is driven by Robin's own function-calling harness, which is
 exactly the supported pattern.
 
 This is the configured default provider for Robin (by EnergyIR): the model is

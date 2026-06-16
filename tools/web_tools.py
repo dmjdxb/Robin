@@ -4,8 +4,8 @@ Standalone Web Tools Module
 
 This module provides generic web tools that work with multiple backend providers.
 Backend is selected during ``hermes tools`` setup (web.backend in config.yaml).
-When available, Hermes can route Firecrawl calls through a Nous-hosted tool-gateway
-for Nous Subscribers only.
+When available, Robin can route Firecrawl calls through a EnergyIR-hosted tool-gateway
+for EnergyIR Subscribers only.
 
 Available tools:
 - web_search_tool: Search the web for information
@@ -13,7 +13,7 @@ Available tools:
 
 Backend compatibility:
 - Exa: https://exa.ai (search, extract)
-- Firecrawl: https://docs.firecrawl.dev/introduction (search, extract; direct or derived firecrawl-gateway.<domain> for Nous Subscribers)
+- Firecrawl: https://docs.firecrawl.dev/introduction (search, extract; direct or derived firecrawl-gateway.<domain> for EnergyIR Subscribers)
 - Parallel: https://docs.parallel.ai (search, extract)
 - Tavily: https://tavily.com (search, extract)
 
@@ -135,7 +135,7 @@ def _get_backend() -> str:
 
     # Fallback for manual / legacy config — pick the highest-priority
     # available backend. Firecrawl also counts as available when the managed
-    # tool gateway is configured for Nous subscribers.
+    # tool gateway is configured for EnergyIR subscribers.
     # Free-tier backends (searxng / brave-free / ddgs) trail the paid ones so
     # existing paid setups are unaffected.
     backend_candidates = (
@@ -252,7 +252,7 @@ def _web_requires_env() -> list[str]:
     used by the tool registry to light up the tool when the variable is
     set.  Gating them on ``managed_nous_tools_enabled()`` only saved
     string noise in the metadata list, but cost a synchronous HTTP
-    refresh against the Nous portal on every CLI startup (invoked at
+    refresh against the EnergyIR portal on every CLI startup (invoked at
     tool-registration time).  The behavioral contract is: if the env var
     is set, the tool sees it; if not, it doesn't.  Not-logged-in users
     simply don't have the vars set, so the extra entries are harmless.
@@ -286,7 +286,7 @@ def _web_requires_env() -> list[str]:
 DEFAULT_MIN_LENGTH_FOR_SUMMARIZATION = 5000
 
 def _is_nous_auxiliary_client(client: Any) -> bool:
-    """Return True when the resolved auxiliary backend is Nous Portal."""
+    """Return True when the resolved auxiliary backend is Together AI."""
     from urllib.parse import urlparse
 
     base_url = str(getattr(client, "base_url", "") or "")
@@ -1218,7 +1218,7 @@ if __name__ == "__main__":
 
     if not nous_available:
         print("❌ No auxiliary model available for LLM content processing")
-        print("Set OPENROUTER_API_KEY, configure Nous Portal, or set OPENAI_BASE_URL + OPENAI_API_KEY")
+        print("Set OPENROUTER_API_KEY, configure Together AI, or set OPENAI_BASE_URL + OPENAI_API_KEY")
         print("⚠️  Without an auxiliary model, LLM content processing will be disabled")
     else:
         print(f"✅ Auxiliary model available: {default_summarizer_model}")

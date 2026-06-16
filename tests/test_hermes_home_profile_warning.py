@@ -29,7 +29,7 @@ def fresh_constants(monkeypatch, tmp_path):
     return hermes_constants
 
 
-class TestGetHermesHomeProfileWarning:
+class TestGetRobinHomeProfileWarning:
     def test_classic_mode_no_active_profile_no_warning(
         self, fresh_constants, tmp_path, capsys
     ):

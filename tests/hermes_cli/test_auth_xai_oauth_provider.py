@@ -1,4 +1,4 @@
-"""Tests for xAI Grok OAuth — tokens stored in Hermes auth store (~/.hermes/auth.json)."""
+"""Tests for xAI Grok OAuth — tokens stored in Robin auth store (~/.hermes/auth.json)."""
 
 import base64
 import json
@@ -45,7 +45,7 @@ def _setup_hermes_auth(
     refresh_token: str = "refresh",
     discovery: dict | None = None,
 ):
-    """Write xAI OAuth tokens into the Hermes auth store at the given root."""
+    """Write xAI OAuth tokens into the Robin auth store at the given root."""
     hermes_home.mkdir(parents=True, exist_ok=True)
     state = {
         "tokens": {
@@ -235,7 +235,7 @@ def test_xai_oauth_authorize_url_includes_plan_generic():
 
 
 def test_xai_oauth_authorize_url_includes_referrer_hermes_agent():
-    """Attribution: xAI's OAuth server can identify Hermes-originated logins
+    """Attribution: xAI's OAuth server can identify Robin-originated logins
     via the referrer query param. Must always be present on the authorize URL."""
     url = _xai_oauth_build_authorize_url(
         authorization_endpoint="https://auth.x.ai/oauth2/authorize",
@@ -1040,7 +1040,7 @@ def test_xai_oauth_discovery_raises_typed_error_on_non_object_payload(monkeypatc
 
 def test_refresh_xai_oauth_pure_rejects_non_https_token_endpoint(monkeypatch):
     """A poisoned auth.json (from MITM during initial discovery, or an older
-    Hermes that didn't validate) must not be silently honored on the refresh
+    Robin that didn't validate) must not be silently honored on the refresh
     hot path. A non-HTTPS ``token_endpoint`` would leak the refresh_token in
     cleartext on every refresh; refuse before the POST."""
     # No HTTP stub installed — refresh must fail at validation, not at POST.
@@ -1273,7 +1273,7 @@ def test_auth_remove_xai_oauth_clears_singleton_and_sticks(tmp_path, monkeypatch
     assert not pool_after.has_credentials(), (
         "Removal must stick across load_pool() calls — without the "
         "loopback_pkce RemovalStep, the seed function reads the singleton "
-        "and rebuilds the entry on every Hermes invocation."
+        "and rebuilds the entry on every Robin invocation."
     )
 
 
@@ -1636,7 +1636,7 @@ def test_pool_seeded_entry_sync_back_after_refresh(tmp_path, monkeypatch):
 
 
 def test_pool_refresh_adopts_singleton_tokens_when_consumed_elsewhere(tmp_path, monkeypatch):
-    """Multi-process race: another Hermes process refreshed the singleton
+    """Multi-process race: another Robin process refreshed the singleton
     (rotating the refresh_token) while this process held a stale in-memory
     pool entry.  ``_refresh_entry`` must adopt the fresher singleton tokens
     BEFORE spending its own (now-consumed) refresh_token, otherwise the
@@ -1645,7 +1645,7 @@ def test_pool_refresh_adopts_singleton_tokens_when_consumed_elsewhere(tmp_path, 
 
     Mirrors the proactive sync codex/nous already perform for the same
     reason, and is what makes the pool actually safe to share across
-    profiles + Hermes processes."""
+    profiles + Robin processes."""
     from agent.credential_pool import load_pool
 
     hermes_home = tmp_path / "hermes"
@@ -1899,7 +1899,7 @@ def test_auxiliary_client_routes_xai_oauth_through_responses_api(tmp_path, monke
     arm and returns ``(None, None)`` — silently re-routing every auxiliary
     task (compression, curator, web extract, session search, ...) to
     whatever Step-2 fallback chain the user has configured (OpenRouter,
-    Nous, etc.).  Users on xAI Grok OAuth would then see surprise charges
+    EnergyIR, etc.).  Users on xAI Grok OAuth would then see surprise charges
     on those side providers for side tasks they thought were running on
     their xAI subscription.
 
@@ -1972,7 +1972,7 @@ def test_auxiliary_client_xai_oauth_requires_explicit_model(tmp_path, monkeypatc
 def test_pool_sync_back_preserves_active_provider(tmp_path, monkeypatch):
     """A token-rotation sync-back is a side effect of refresh, not the user
     picking a provider.  ``_save_provider_state`` flips ``active_provider``;
-    using it on the sync-back path means every xAI/Codex/Nous refresh in a
+    using it on the sync-back path means every xAI/Codex/EnergyIR refresh in a
     multi-provider setup silently overrides the user's chosen active
     provider (visible to ``hermes auth status``, ``hermes setup``, and the
     ``hermes`` no-arg dispatcher).  Pin the ``set_active=False`` contract so
@@ -2015,7 +2015,7 @@ def test_pool_sync_back_preserves_active_provider(tmp_path, monkeypatch):
     raw_after = json.loads((hermes_home / "auth.json").read_text())
     assert raw_after["active_provider"] == "openrouter", (
         "pool sync-back must not flip active_provider; otherwise xAI/Codex/"
-        "Nous token rotations silently take over multi-provider users' "
+        "EnergyIR token rotations silently take over multi-provider users' "
         "auth.json `active_provider` flag."
     )
     # Tokens were actually written so the next process won't replay the

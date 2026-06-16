@@ -389,7 +389,7 @@ class TestTeePattern:
         assert key is None
 
 
-class TestHermesConfigWriteProtection:
+class TestRobinConfigWriteProtection:
     """Terminal-side pairing for the file_tools write_file/patch deny on
     ~/.hermes/config.yaml (#14639). config.yaml IS the security policy
     (approvals.mode/yolo live there, mtime-keyed cache reloads mid-session),
@@ -479,7 +479,7 @@ class TestHermesConfigWriteProtection:
         assert dangerous is False
 
     def test_normal_yaml_write_safe(self):
-        # A non-Hermes config.yaml in a project dir is handled by the project
+        # A non-Robin config.yaml in a project dir is handled by the project
         # patterns, but a plain temp write must not false-positive.
         dangerous, key, desc = detect_dangerous_command("echo data > /tmp/scratch.txt")
         assert dangerous is False

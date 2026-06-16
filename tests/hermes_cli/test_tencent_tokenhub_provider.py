@@ -186,12 +186,12 @@ class TestTencentTokenhubCanonicalProvider:
 
 
 # =============================================================================
-# OpenRouter / Nous Portal curated lists
+# OpenRouter / Together AI curated lists
 # =============================================================================
 
 
 class TestTencentInOpenRouterAndNous:
-    """tencent/hy3-preview:free and tencent/hy3-preview should appear in OpenRouter and Nous curated lists."""
+    """tencent/hy3-preview:free and tencent/hy3-preview should appear in OpenRouter and EnergyIR curated lists."""
 
     def test_in_openrouter_fallback(self):
         from hermes_cli.models import OPENROUTER_MODELS

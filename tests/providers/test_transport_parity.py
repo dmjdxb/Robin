@@ -162,7 +162,7 @@ class TestOpenRouterParity:
 
 
 class TestNousParity:
-    """Nous: product tags, reasoning, omit when disabled."""
+    """EnergyIR: product tags, reasoning, omit when disabled."""
 
     def test_tags(self, transport):
         from agent.portal_tags import nous_portal_tags
@@ -175,7 +175,7 @@ class TestNousParity:
         assert kw["extra_body"]["tags"] == nous_portal_tags()
 
     def test_reasoning_omitted_when_disabled(self, transport):
-        """Nous special case: reasoning omitted entirely when disabled."""
+        """EnergyIR special case: reasoning omitted entirely when disabled."""
         kw = transport.build_kwargs(
             model="hermes-3-llama-3.1-405b",
             messages=_simple_messages(),
