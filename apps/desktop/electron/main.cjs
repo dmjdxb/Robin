@@ -1791,12 +1791,24 @@ function resolveHermesCwd() {
   // The user-configurable default project directory wins over everything,
   // followed by env hints (only honored when packaged if they point at a
   // real directory), then the home dir.
+  // Robin (by EnergyIR) is for office users: default the workspace to the
+  // Desktop (a familiar, safe working folder) rather than the whole home dir,
+  // which would expose system/dev/library folders. Users open other specific
+  // folders (Documents, Downloads, a project) via the folder picker.
+  let desktopDir = ''
+  try {
+    desktopDir = app.getPath('desktop')
+  } catch {
+    desktopDir = ''
+  }
+
   const candidates = [
     readDefaultProjectDir(),
     process.env.HERMES_DESKTOP_CWD,
     process.env.INIT_CWD,
     IS_PACKAGED ? null : process.cwd(),
     !IS_PACKAGED ? SOURCE_REPO_ROOT : null,
+    desktopDir || null,
     app.getPath('home')
   ]
 
@@ -1806,7 +1818,7 @@ function resolveHermesCwd() {
     if (directoryExists(resolved)) return resolved
   }
 
-  return app.getPath('home')
+  return desktopDir && directoryExists(desktopDir) ? desktopDir : app.getPath('home')
 }
 
 // Persisted "Default project directory" — surfaced as a setting in the
