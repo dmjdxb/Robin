@@ -8,7 +8,8 @@
 model:
   # Default model to use (can be overridden with --model flag)
   # Both "default" and "model" work as the key name here.
-  default: "anthropic/claude-opus-4.6"
+  # Robin (by EnergyIR) is locked to DeepSeek V4 Pro on the EnergyIR endpoint.
+  default: "deepseek-ai/DeepSeek-V4-Pro"
   
   # Inference provider selection:
   #   "auto"         - Auto-detect from credentials (default)
@@ -38,12 +39,12 @@ model:
   #   LM Studio is first-class and uses provider: "lmstudio".
   #   It works with both no-auth and auth-enabled server modes.
   #
-  # Can also be overridden for a single invocation with the --provider flag.
-  provider: "auto"
-  
-  # API configuration (falls back to OPENROUTER_API_KEY env var)
-  # api_key: "your-key-here"  # Uncomment to set here instead of .env
-  base_url: "https://openrouter.ai/api/v1"
+  # Robin uses the EnergyIR (together) provider exclusively.
+  provider: "together"
+
+  # API configuration. The user's EnergyIR API key is read from TOGETHER_API_KEY
+  # (set at onboarding); the endpoint is the EnergyIR inference endpoint.
+  base_url: "https://api.together.xyz/v1"
 
   # Azure Foundry keyless auth example:
   # provider: "azure-foundry"

@@ -9,6 +9,16 @@ import { asText, includesQuery, redactedValue, withoutKey } from './helpers'
 import { Pill } from './primitives'
 import type { EnvRowProps } from './types'
 
+// Friendly, user-facing name for a credential in toasts. Robin never surfaces
+// the raw env-var name (e.g. TOGETHER_API_KEY) — the EnergyIR key is the only
+// provider credential and it is always shown as "EnergyIR API key".
+export function credentialToastLabel(key: string): string {
+  if (key === 'TOGETHER_API_KEY') {
+    return 'EnergyIR API key'
+  }
+  return key
+}
+
 // Shared filter used by every credential surface (Providers + Keys pages):
 // category gate first, then a free-text match across key name + description.
 export function filterEnv(info: EnvVarInfo, key: string, q: string, cat: string, extra?: string): boolean {
@@ -96,7 +106,7 @@ export function useEnvCredentials(): UseEnvCredentials {
       await setEnvVar(key, value)
       patchVar(key, { is_set: true, redacted_value: redactedValue(value) })
       clearLocalState(key)
-      notify({ kind: 'success', title: 'Credential saved', message: `${key} updated.` })
+      notify({ kind: 'success', title: 'Saved', message: `${credentialToastLabel(key)} saved.` })
     } catch (err) {
       notifyError(err, `Failed to save ${key}`)
     } finally {
@@ -120,7 +130,7 @@ export function useEnvCredentials(): UseEnvCredentials {
       await setEnvVar(key, trimmed)
       patchVar(key, { is_set: true, redacted_value: redactedValue(trimmed) })
       clearLocalState(key)
-      notify({ kind: 'success', message: `${key} updated.`, title: 'Credential saved' })
+      notify({ kind: 'success', message: `${credentialToastLabel(key)} saved.`, title: 'Saved' })
 
       return { ok: true }
     } catch (err) {

@@ -800,14 +800,12 @@ def _ensure_hermes_home_managed(home: Path):
 # =============================================================================
 
 DEFAULT_CONFIG = {
-    # Robin (by EnergyIR) ships a single, fixed model by design: DeepSeek V4 Pro
-    # served via Together AI (OpenAI-compatible cloud, US host). The model is not
-    # user-selectable in the UI. The Together provider profile
-    # (plugins/model-providers/together/) supplies base_url + the
-    # TOGETHER_API_KEY env var; the user's key is collected at onboarding and
-    # stored in the OS keychain / HERMES_HOME/.env — never alongside this config.
-    "model": "deepseek-ai/DeepSeek-V4-Pro",
-    "provider": "together",
+    # Leave the model UNSET on a fresh install so the desktop reports
+    # "unconfigured" and shows the EnergyIR setup screen. The model is locked to
+    # DeepSeek V4 Pro at onboarding: pasting the EnergyIR API key resolves the
+    # EnergyIR (together) provider, whose default model is DeepSeek V4 Pro. The
+    # UI never exposes a model picker, so it stays fixed thereafter.
+    "model": "",
     "providers": {},
     "fallback_providers": [],
     "credential_pool_strategies": {},
