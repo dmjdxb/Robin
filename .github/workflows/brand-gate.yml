@@ -1,0 +1,27 @@
+name: Brand gate
+
+# Falsification instrument for the Robin acceptance gate (PRD §18.7):
+# zero user-visible "Hermes"/"Nous" strings in the shipped UI, and the
+# deterministic rebrand is fully applied.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  brand-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Rebrand is fully applied (idempotent re-run is a no-op)
+        run: python scripts/robin_rebrand.py --check
+      - name: No user-visible Hermes/Nous strings in shipped UI
+        run: python scripts/check_brand.py
+      - name: Retained MIT attribution is present
+        run: |
+          grep -q "Nous Research" LICENSE && echo "✅ upstream MIT notice retained" || (echo "❌ upstream MIT notice missing from LICENSE" && exit 1)

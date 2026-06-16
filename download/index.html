@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Download Robin — by EnergyIR</title>
+  <meta name="description" content="Robin — your everyday sidekick. A desktop AI assistant by EnergyIR." />
+  <style>
+    :root {
+      --bg: #0f1115; --fg: #f4f2eb; --primary: #3aa676; --primary-text: #09160f;
+      --secondary: #1d1f26; --accent: #102d22; --accent-text: #55c392;
+      --muted: #24272d; --muted-text: #b9b6ac;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--fg);
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      display: flex; flex-direction: column; align-items: center;
+      min-height: 100vh; padding: 48px 20px;
+    }
+    .logo { width: 96px; height: 96px; }
+    h1 { font-size: 2.6rem; margin: 18px 0 4px; }
+    .tagline { color: var(--accent-text); font-size: 1.15rem; margin: 0 0 6px; }
+    .sub { color: var(--muted-text); max-width: 560px; text-align: center; line-height: 1.55; }
+    .primary-btn {
+      margin-top: 28px; background: var(--primary); color: var(--primary-text);
+      border: none; border-radius: 12px; padding: 16px 30px; font-size: 1.1rem;
+      font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block;
+    }
+    .primary-btn:hover { filter: brightness(1.08); }
+    .others { margin-top: 26px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .others a {
+      color: var(--fg); background: var(--secondary); border: 1px solid var(--muted);
+      border-radius: 10px; padding: 11px 18px; text-decoration: none; font-size: 0.95rem;
+    }
+    .others a:hover { border-color: var(--primary); }
+    .note { margin-top: 32px; color: var(--muted-text); font-size: 0.85rem; max-width: 560px; text-align: center; line-height: 1.6; }
+    code { background: var(--muted); padding: 2px 6px; border-radius: 5px; color: var(--accent-text); }
+    a.inline { color: var(--accent-text); }
+    .wordmark { margin-top: 56px; opacity: 0.7; font-family: Georgia, serif; font-size: 1.1rem; }
+    .wordmark b { color: var(--primary); }
+  </style>
+</head>
+<body>
+  <img class="logo" src="../resources/robin-icon.svg" alt="Robin" />
+  <h1>Robin</h1>
+  <p class="tagline">Your sidekick.</p>
+  <p class="sub">Because every superhero needs a sidekick. Install Robin to your desktop and start — drafting, rewriting, parsing documents, and brainstorming, powered by DeepSeek&nbsp;V4&nbsp;Pro.</p>
+
+  <a class="primary-btn" id="primary" href="https://github.com/dmjdxb/Robin/releases/latest">Download for your platform</a>
+
+  <div class="others">
+    <a id="dl-mac" href="https://github.com/dmjdxb/Robin/releases/latest">macOS (.dmg)</a>
+    <a id="dl-win" href="https://github.com/dmjdxb/Robin/releases/latest">Windows (.exe)</a>
+    <a id="dl-linux" href="https://github.com/dmjdxb/Robin/releases/latest">Linux (.AppImage / .deb)</a>
+  </div>
+
+  <p class="note">
+    Served over HTTPS from GitHub Releases. Each build is code-signed and a
+    <strong>SHA-256 checksum</strong> is published next to it — verify it before
+    running. By installing you accept the
+    <a class="inline" href="https://github.com/dmjdxb/Robin/blob/main/docs/TERMS.md">Terms</a>
+    and <a class="inline" href="https://github.com/dmjdxb/Robin/blob/main/docs/PRIVACY.md">Privacy policy</a>.
+    Robin sends model requests to Together AI (US) using your own API key.
+  </p>
+
+  <p class="wordmark">Energy<b>IR</b></p>
+
+  <script>
+    // Detect OS and surface the most likely installer. Exact asset URLs resolve
+    // to the latest GitHub Release; the buttons link to the Releases page where
+    // the per-platform asset and its checksum are listed.
+    (function () {
+      var p = navigator.platform.toLowerCase();
+      var ua = navigator.userAgent.toLowerCase();
+      var primary = document.getElementById('primary');
+      var base = 'https://github.com/dmjdxb/Robin/releases/latest';
+      if (p.indexOf('mac') > -1 || ua.indexOf('mac') > -1) {
+        primary.textContent = 'Download for macOS';
+        primary.href = base;
+      } else if (p.indexOf('win') > -1 || ua.indexOf('win') > -1) {
+        primary.textContent = 'Download for Windows';
+        primary.href = base;
+      } else if (p.indexOf('linux') > -1) {
+        primary.textContent = 'Download for Linux';
+        primary.href = base;
+      }
+    })();
+  </script>
+</body>
+</html>
