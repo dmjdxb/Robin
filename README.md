@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">Robin</h1>
-<p align="center"><em>Your sidekick. Because every superhero needs a sidekick.</em></p>
+<p align="center"><em>Because every superhero needs a sidekick.</em></p>
 <p align="center">A branded desktop AI agent by <strong>EnergyIR</strong>.</p>
 
 ---
