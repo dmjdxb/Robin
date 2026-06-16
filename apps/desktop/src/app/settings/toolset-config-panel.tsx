@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { notify, notifyError } from '@/store/notifications'
 import type { ToolEnvVar, ToolProvider, ToolsetConfig } from '@/types/hermes'
 
+import { credentialToastLabel } from './env-credentials'
 import { EnvVarActionsMenu, EnvVarActionsTrigger } from './env-var-actions-menu'
 import { Pill } from './primitives'
 
@@ -61,7 +62,7 @@ function EnvVarField({ envVar, isSet, onSaved, onCleared }: EnvVarFieldProps) {
   }
 
   async function handleClear() {
-    if (!window.confirm(`Remove ${envVar.key} from .env?`)) {
+    if (!window.confirm(`Remove your ${credentialToastLabel(envVar.key)}?`)) {
       return
     }
 

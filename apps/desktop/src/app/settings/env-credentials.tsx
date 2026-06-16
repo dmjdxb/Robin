@@ -143,7 +143,7 @@ export function useEnvCredentials(): UseEnvCredentials {
   }
 
   async function handleClear(key: string) {
-    if (!window.confirm(`Remove ${key} from .env?`)) {
+    if (!window.confirm(`Remove your ${credentialToastLabel(key)}?`)) {
       return
     }
 

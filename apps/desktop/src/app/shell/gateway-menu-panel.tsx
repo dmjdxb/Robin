@@ -31,7 +31,15 @@ const prettyState = (state: string) => state.replace(/_/g, ' ').replace(/^./, c 
 // log lines so they don't dominate the display. Full text preserved on hover.
 const TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}[,.\d]*\s+/
 const RUNTIME_BRACKET_RE = /^\[[^\]]+]\s+/
-const trimLogLine = (raw: string) => raw.trim().replace(TIMESTAMP_RE, '').replace(RUNTIME_BRACKET_RE, '')
+// Scrub internal Python logger/module names (hermes_cli.web_server,
+// tui_gateway.ws, …) from any log line shown in the UI so users only ever see
+// "robin" — never the upstream module names.
+const INTERNAL_LOGGER_RE =
+  /\b(hermes_cli|tui_gateway|hermes_constants|hermes_logging|hermes_state|run_agent|acp_adapter|tui_gateway)\b(\.\w+)*/g
+const sanitizeLogLine = (raw: string) =>
+  raw.replace(INTERNAL_LOGGER_RE, 'robin').replace(/\bhermes\b/gi, 'robin')
+const trimLogLine = (raw: string) =>
+  sanitizeLogLine(raw.trim()).replace(TIMESTAMP_RE, '').replace(RUNTIME_BRACKET_RE, '')
 
 export function GatewayMenuPanel({
   gatewayState,
@@ -101,7 +109,7 @@ export function GatewayMenuPanel({
           <SectionLabel>Recent activity</SectionLabel>
           <ul className="mt-1.5 space-y-0.5">
             {recentLogs.map((line, index) => (
-              <Tip key={`${index}:${line}`} label={line.trim()}>
+              <Tip key={`${index}:${line}`} label={sanitizeLogLine(line.trim())}>
                 <li className="truncate font-mono text-[0.68rem] text-muted-foreground/85">
                   {trimLogLine(line) || '\u00A0'}
                 </li>

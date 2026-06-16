@@ -345,12 +345,10 @@ export const FIELD_DESCRIPTIONS: Record<string, string> = {
 
 // Curated desktop config surface: only fields a user might tune from the app.
 export const SECTIONS: DesktopConfigSection[] = [
-  {
-    id: 'model',
-    label: 'Model',
-    icon: Sparkles,
-    keys: ['model_context_length', 'fallback_providers']
-  },
+  // Robin (by EnergyIR) ships a single fixed model (DeepSeek V4 Pro) and a
+  // single provider (EnergyIR). The "Model" settings page — model picker,
+  // provider picker, and per-task model routing — is intentionally removed:
+  // users never choose a model.
   {
     id: 'chat',
     label: 'Chat',
