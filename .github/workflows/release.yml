@@ -61,6 +61,21 @@ jobs:
       - name: Install workspace dependencies (root)
         run: npm install --no-audit --no-fund
 
+      # notarytool's --key wants a FILE PATH, and the notarize hook passes
+      # APPLE_API_KEY through verbatim. Write the secret's .p8 contents to a file
+      # and point APPLE_API_KEY at that path (robust regardless of how the key
+      # was pasted into the secret). No-op when the secret is unset.
+      - name: Prepare macOS notarization key
+        if: matrix.platform == 'mac'
+        shell: bash
+        env:
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          if [ -n "$APPLE_API_KEY_CONTENT" ]; then
+            printf '%s\n' "$APPLE_API_KEY_CONTENT" > "$RUNNER_TEMP/notary_key.p8"
+            echo "APPLE_API_KEY=$RUNNER_TEMP/notary_key.p8" >> "$GITHUB_ENV"
+          fi
+
       # electron-builder reads CSC_LINK directly as a base64 string, so no
       # separate decode step is needed. Signing + notarization activate only
       # when the secrets below are set; otherwise the build is unsigned.
@@ -69,10 +84,10 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS signing + notarization (skipped automatically if unset)
+          # macOS signing (skipped automatically if unset). APPLE_API_KEY is set
+          # to a file path by the previous step via $GITHUB_ENV.
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           # Windows signing (skipped automatically if unset)
