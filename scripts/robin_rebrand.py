@@ -93,8 +93,10 @@ def _skip(path: Path) -> bool:
         return True
     if path.suffix.lower() not in INCLUDE_EXT:
         return True
-    # never rewrite this script or the brand checker
-    if path.name in {"robin_rebrand.py", "check_brand.py"}:
+    # never rewrite this script, the brand checker, or the brand-gate workflow —
+    # they all intentionally contain the literal brand words (as detection
+    # patterns / an attribution-retention check), which are not rebrand targets.
+    if path.name in {"robin_rebrand.py", "check_brand.py", "brand-gate.yml"}:
         return True
     # never scrub attribution / licence files — MIT REQUIRES retaining the
     # upstream Hermes Agent (Nous Research) copyright + permission notice.
