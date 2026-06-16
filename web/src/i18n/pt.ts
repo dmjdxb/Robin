@@ -120,8 +120,8 @@ export const pt: Translations = {
     starting: "A iniciar",
     startedInBackground: "Iniciado em segundo plano — verifique os registos para acompanhar",
     stopped: "Parado",
-    updateRobin: "Atualizar Robin",
-    updatingRobin: "A atualizar Robin…",
+    updateHermes: "Atualizar Robin",
+    updatingHermes: "A atualizar Robin…",
     waitingForOutput: "À espera de saída…",
   },
 

@@ -22,7 +22,7 @@ export const zh: Translations = {
       loadingSettings: '正在加载 Robin 设置',
       loadingSessions: '正在加载最近会话',
       startingDesktopConnection: '正在启动桌面连接',
-      startingRobinDesktop: '正在启动 Robin…'
+      startingHermesDesktop: '正在启动 Robin…'
     },
     errors: {
       backgroundExited: 'Robin 后台进程已退出。',
@@ -68,7 +68,7 @@ export const zh: Translations = {
     copyDetailFailed: '无法复制通知详情',
     backendOutOfDateTitle: '后端版本过旧',
     backendOutOfDateMessage: '你的 Robin 后端早于当前桌面构建,可能无法正常工作。请更新以保持一致。',
-    updateRobin: '更新 Robin',
+    updateHermes: '更新 Robin',
     updateReadyTitle: '有可用更新',
     updateReadyMessage: count => `有 ${count} 项新更改可用。`,
     seeWhatsNew: '查看更新内容',
@@ -372,7 +372,7 @@ export const zh: Translations = {
     gatewayStopped: '消息网关已停止',
     hermesActiveSessions: (version, count) => `Robin ${version} · 活跃会话 ${count}`,
     restartMessaging: '重启消息服务',
-    updateRobin: '更新 Robin',
+    updateHermes: '更新 Robin',
     actionRunning: '运行中',
     actionDone: '完成',
     actionFailed: '失败',

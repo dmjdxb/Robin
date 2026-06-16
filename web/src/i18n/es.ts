@@ -120,8 +120,8 @@ export const es: Translations = {
     starting: "Iniciando",
     startedInBackground: "Iniciado en segundo plano — revisa los registros para ver el progreso",
     stopped: "Detenido",
-    updateRobin: "Actualizar Robin",
-    updatingRobin: "Actualizando Robin…",
+    updateHermes: "Actualizar Robin",
+    updatingHermes: "Actualizando Robin…",
     waitingForOutput: "Esperando salida…",
   },
 
