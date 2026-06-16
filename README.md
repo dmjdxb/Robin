@@ -75,8 +75,8 @@ Push a tag (`v1.0.0`) to build, sign, and publish all platforms to Releases.
 
 ## Licence
 
-Robin is a product of **EnergyIR**, released under the MIT License — see
-[`LICENSE`](LICENSE). Robin's modifications and branding are © 2026 EnergyIR.
-Robin is built on open-source software; the required upstream copyright and
-permission notices are retained in [`LICENSE`](LICENSE) and
+Robin is **proprietary software** — © 2026 EnergyIR, all rights reserved. See
+[`LICENSE`](LICENSE) for the terms. Robin is built on open-source components;
+those components keep their own licenses, and the required copyright and
+permission notices are reproduced in
 [docs/THIRD_PARTY_NOTICES.md](docs/THIRD_PARTY_NOTICES.md).

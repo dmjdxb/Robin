@@ -4,12 +4,38 @@ Robin by EnergyIR incorporates open-source software. The principal components
 and their licences are listed below. This file is referenced from the in-app
 **Settings → About & Licences** screen and from `LICENSE`.
 
-## Upstream base
+## Upstream base — Hermes Agent (MIT)
 
-- **Hermes Agent** — © Nous Research — MIT License. Robin is built on Hermes
-  Agent; the full MIT copyright and permission notice is retained verbatim in
-  the repository `LICENSE` file. Robin is independent of, and not endorsed by,
-  Nous Research.
+Robin is built on **Hermes Agent** by Nous Research, used under the MIT License.
+Robin (the larger work) is proprietary to EnergyIR (see `LICENSE`), but the
+Hermes Agent components remain under the MIT License, whose copyright and
+permission notice is retained verbatim below as that license requires. Robin and
+EnergyIR are independent of, and not endorsed by, Nous Research; "Hermes" and
+"Nous Research" remain marks of Nous Research.
+
+```
+MIT License
+
+Copyright (c) 2025 Nous Research
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 ## Runtime / frameworks
 
