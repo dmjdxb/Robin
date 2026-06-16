@@ -160,12 +160,9 @@ export function DesktopOnboardingOverlay({ enabled, onCompleted, requestGateway 
     return null
   }
 
-  // The user chose "I'll choose a provider later" on first run. Stay out of the
-  // way on every subsequent launch — they re-enter via Settings → Providers
-  // (manual mode), which sets manual=true and bypasses this gate.
-  if (onboarding.firstRunSkipped && !onboarding.manual) {
-    return null
-  }
+  // Robin (by EnergyIR) REQUIRES the EnergyIR API key to do anything, so setup
+  // is mandatory: we deliberately do NOT honour a persisted "choose later" skip.
+  // Whenever the app is unconfigured, the EnergyIR setup screen is shown.
 
   const { flow } = onboarding
   const rawReason = onboarding.reason?.trim() || null
@@ -282,11 +279,10 @@ const persistShowAll = (value: boolean) => {
 }
 
 export function Picker({ ctx }: { ctx: OnboardingContext }) {
-  const { manual } = useStore($desktopOnboarding)
-
   // Robin (by EnergyIR) offers exactly one provider — the EnergyIR API — by
-  // design. No third-party providers, no OAuth flows: the user pastes their
-  // EnergyIR API key and that's it. The model (DeepSeek V4 Pro) is fixed.
+  // design. No third-party providers, no OAuth flows, and no "choose later"
+  // escape: the user pastes their EnergyIR API key to begin. The model
+  // (DeepSeek V4 Pro) is fixed.
   return (
     <div className="grid gap-3">
       <ApiKeyForm
@@ -294,11 +290,6 @@ export function Picker({ ctx }: { ctx: OnboardingContext }) {
         onBack={() => undefined}
         onSave={(envKey, value, name) => saveOnboardingApiKey(envKey, value, name, ctx)}
       />
-      {manual ? null : (
-        <div className="flex justify-center border-t border-(--ui-stroke-tertiary) pt-3">
-          <ChooseLaterLink />
-        </div>
-      )}
     </div>
   )
 }

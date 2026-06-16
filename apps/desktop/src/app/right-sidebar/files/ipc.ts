@@ -144,7 +144,12 @@ export async function readProjectDir(dirPath: string, rootPath = dirPath): Promi
 
   const result = await window.hermesDesktop.readDir(dirPath)
 
-  return { ...result, entries: await filterIgnored(result.entries, rootPath, dirPath) }
+  // Hide hidden dotfiles/dot-folders from the file browser — office users never
+  // need to see ~/.cargo, ~/.docker, etc. (The agent's own file tools are not
+  // affected by this view-only filter.)
+  const visible = result.entries.filter(e => !e.name.startsWith('.'))
+
+  return { ...result, entries: await filterIgnored(visible, rootPath, dirPath) }
 }
 
 export function clearProjectDirCache(rootPath?: string) {

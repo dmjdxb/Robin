@@ -15,7 +15,6 @@ import {
   Zap,
   ZapFilled
 } from '@/lib/icons'
-import { formatModelStatusLabel } from '@/lib/model-status-label'
 import type { RuntimeReadinessResult } from '@/lib/runtime-readiness'
 import { contextBarLabel, LiveDuration, usageContextLabel } from '@/lib/statusbar'
 import { cn } from '@/lib/utils'
@@ -332,24 +331,8 @@ export function useStatusbarItems({
           : 'YOLO off — click to auto-approve dangerous commands.',
         variant: 'action'
       },
-      {
-        // Robin (by EnergyIR) ships a single, fixed model (DeepSeek V4 Pro by
-        // design). The model is shown for transparency but is NOT selectable —
-        // the picker menu/overlay is intentionally not wired here.
-        id: 'model-summary',
-        label: (
-          <span className="inline-flex min-w-0 items-center gap-0.5">
-            <span className="truncate">
-              {formatModelStatusLabel(currentModel, {
-                fastMode: currentFastMode,
-                reasoningEffort: currentReasoningEffort
-              })}
-            </span>
-          </span>
-        ),
-        title: 'Powered by DeepSeek V4 Pro via EnergyIR',
-        variant: 'text' as const
-      },
+      // Robin (by EnergyIR) ships a single, fixed model by design. Users never
+      // need to know which model runs, so the model indicator is not shown.
       versionItem
     ],
     [
