@@ -61,6 +61,26 @@ jobs:
       - name: Install workspace dependencies (root)
         run: npm install --no-audit --no-fund
 
+      - name: Install uv (for the bundled backend)
+        uses: astral-sh/setup-uv@v5
+
+      # Build the self-contained Python backend bundle so the desktop app runs
+      # with ZERO developer tooling on the user's machine (no git/compiler/
+      # download). mac + linux use the bash bundler; Windows ships a placeholder
+      # for now (it falls back to the network bootstrap) so extraResources never
+      # references a missing file.
+      - name: Build backend bundle (mac/linux)
+        if: matrix.platform != 'win'
+        shell: bash
+        run: bash scripts/build-backend-bundle.sh
+
+      - name: Backend bundle placeholder (windows)
+        if: matrix.platform == 'win'
+        shell: bash
+        run: |
+          : > apps/desktop/backend.tar.gz
+          echo "placeholder backend.tar.gz (windows uses network bootstrap)"
+
       # notarytool's --key wants a FILE PATH, and the notarize hook passes
       # APPLE_API_KEY through verbatim. Write the secret's .p8 contents to a file
       # and point APPLE_API_KEY at that path (robust regardless of how the key

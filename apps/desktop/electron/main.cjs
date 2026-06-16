@@ -1768,6 +1768,108 @@ function writeBootstrapMarker(payload) {
   return merged
 }
 
+// ── Bundled backend (zero developer tooling) ───────────────────────────────
+// Robin ships a prebuilt, self-contained Python backend (source + a relocatable
+// CPython with all deps) as Contents/Resources/backend.tar.gz. On first launch
+// (and after an app update) we extract it into HERMES_HOME/hermes-agent and seed
+// config.yaml — NO git, NO compiler, NO Command Line Tools, NO pip-at-runtime.
+// This is what makes Robin installable by a non-technical user. If the bundle is
+// absent or extraction fails, we fall back to the network bootstrap.
+function spawnAwait(cmd, args) {
+  return new Promise((resolve, reject) => {
+    let child
+    try {
+      child = spawn(cmd, args, { stdio: 'ignore' })
+    } catch (err) {
+      reject(err)
+      return
+    }
+    child.on('error', reject)
+    child.on('exit', code => (code === 0 ? resolve() : reject(new Error(`${cmd} exited with ${code}`))))
+  })
+}
+
+function seedBundledConfig() {
+  // Seed HERMES_HOME/config.yaml from the bundled cli-config.yaml.example so the
+  // EnergyIR provider + DeepSeek V4 Pro defaults apply (install.sh normally does
+  // this; we skip install.sh entirely with the bundle).
+  try {
+    const target = path.join(HERMES_HOME, 'config.yaml')
+    if (fileExists(target)) return
+    const example = path.join(ACTIVE_HERMES_ROOT, 'cli-config.yaml.example')
+    if (fileExists(example)) {
+      fs.mkdirSync(HERMES_HOME, { recursive: true })
+      fs.copyFileSync(example, target)
+      rememberLog('[bundle] seeded config.yaml from bundled template')
+    }
+  } catch (err) {
+    rememberLog('[bundle] config seed skipped: ' + (err && err.message ? err.message : String(err)))
+  }
+}
+
+async function installBundledBackend() {
+  try {
+    if (!IS_PACKAGED) return false
+    const bundlePath = path.join(process.resourcesPath || '', 'backend.tar.gz')
+    if (!fileExists(bundlePath)) return false
+
+    const marker = readBootstrapMarker()
+    const provisioned = isHermesSourceRoot(ACTIVE_HERMES_ROOT) && fileExists(getVenvPython(VENV_ROOT))
+    const upToDate =
+      provisioned && marker && marker.source === 'bundled' && marker.desktopVersion === app.getVersion()
+    if (upToDate) {
+      seedBundledConfig()
+      return true
+    }
+
+    rememberLog('[bundle] installing bundled Robin backend (no git/compiler/download needed)…')
+    fs.mkdirSync(HERMES_HOME, { recursive: true })
+    // Replace any prior code checkout (code only — user state lives in
+    // HERMES_HOME directly: config.yaml, .env, sessions, logs — and is untouched).
+    try {
+      fs.rmSync(ACTIVE_HERMES_ROOT, { recursive: true, force: true })
+    } catch {
+      void 0
+    }
+    await spawnAwait('tar', ['-xzf', bundlePath, '-C', HERMES_HOME])
+
+    // Ensure a `python` entry exists next to `python3` (the desktop spawns
+    // venv/bin/python via getVenvPython).
+    try {
+      const py = getVenvPython(VENV_ROOT)
+      const py3 = path.join(VENV_ROOT, IS_WINDOWS ? 'Scripts/python.exe' : 'bin/python3')
+      if (!fileExists(py) && fileExists(py3) && !IS_WINDOWS) {
+        fs.symlinkSync('python3', py)
+      }
+    } catch {
+      void 0
+    }
+
+    if (isHermesSourceRoot(ACTIVE_HERMES_ROOT) && fileExists(getVenvPython(VENV_ROOT))) {
+      seedBundledConfig()
+      const m = writeBootstrapMarker({ pinnedCommit: (marker && marker.pinnedCommit) || 'bundled-runtime' })
+      // tag the marker as bundled so app-update re-extraction is detected.
+      try {
+        writeFileAtomic(
+          BOOTSTRAP_COMPLETE_MARKER,
+          JSON.stringify({ ...m, source: 'bundled' }, null, 2) + '\n',
+          'utf8'
+        )
+      } catch {
+        void 0
+      }
+      rememberLog('[bundle] bundled backend ready at ' + ACTIVE_HERMES_ROOT)
+      return true
+    }
+
+    rememberLog('[bundle] extraction did not yield a runnable backend; falling back to network bootstrap')
+    return false
+  } catch (err) {
+    rememberLog('[bundle] install failed: ' + (err && err.message ? err.message : String(err)))
+    return false
+  }
+}
+
 function resolveWebDist() {
   const override = process.env.HERMES_DESKTOP_WEB_DIST
   if (override && directoryExists(path.resolve(override))) return path.resolve(override)
@@ -2054,6 +2156,21 @@ async function ensureRuntime(backend) {
   // will rewire startup to spawn the window first and route bootstrap events
   // to a renderer-side install overlay.
   if (backend.kind === 'bootstrap-needed') {
+    // ZERO-TOOLING PATH: install the prebuilt backend bundled in the app first.
+    // No git, no compiler, no Command Line Tools, no download. Only if that's
+    // unavailable do we fall back to the network bootstrap below.
+    try {
+      if (await installBundledBackend()) {
+        const reresolved = resolveHermesBackend(backend.args || [])
+        if (reresolved && reresolved.kind === 'python') {
+          await advanceBootProgress('runtime.bundled', 'Robin is ready', 32)
+          return reresolved
+        }
+      }
+    } catch (err) {
+      rememberLog('[bundle] bundled-backend path errored, using network bootstrap: ' + (err && err.message))
+    }
+
     rememberLog('[bootstrap] no Robin install found; starting first-launch bootstrap')
 
     // Eagerly flip the bootstrap UI state to 'active' so the renderer
