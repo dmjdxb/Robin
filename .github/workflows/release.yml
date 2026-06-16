@@ -61,12 +61,9 @@ jobs:
       - name: Install workspace dependencies (root)
         run: npm install --no-audit --no-fund
 
-      - name: Decode macOS signing certificate
-        if: matrix.platform == 'mac' && env.CSC_LINK_B64 != ''
-        env:
-          CSC_LINK_B64: ${{ secrets.CSC_LINK }}
-        run: echo "$CSC_LINK_B64" | base64 --decode > $RUNNER_TEMP/cert.p12
-
+      # electron-builder reads CSC_LINK directly as a base64 string, so no
+      # separate decode step is needed. Signing + notarization activate only
+      # when the secrets below are set; otherwise the build is unsigned.
       - name: Build and publish (${{ matrix.platform }})
         working-directory: apps/desktop
         shell: bash
