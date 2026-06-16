@@ -32,12 +32,12 @@ Robin updates itself in place. Verify the checksum before running.
 ## First run
 
 1. Launch Robin.
-2. Paste your **Together AI API key** ([get one here](https://api.together.xyz/settings/api-keys)). It is stored in your OS keychain — never in plaintext on disk.
+2. Paste your **EnergyIR API key**  It is stored in your OS keychain — never in plaintext on disk.
 3. Grant Robin its first folder.
 4. Pick light or dark — Robin ships with both.
 5. Give it a task.
 
-The model is preconfigured (**DeepSeek V4 Pro**) and is not user-selectable by
+The model is preconfigured and is not user-selectable by
 design — there is nothing to choose, it just works.
 
 ## What Robin can do
