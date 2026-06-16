@@ -2453,10 +2453,21 @@ REQUIRED_ENV_VARS = {}
 
 # Optional environment variables that enhance functionality
 OPTIONAL_ENV_VARS = {
+    # Robin (by EnergyIR) ships a single provider credential: the EnergyIR API
+    # key (stored as TOGETHER_API_KEY). It is the only provider key surfaced in
+    # the UI; all others are hidden by the desktop settings.
+    "TOGETHER_API_KEY": {
+        "description": "EnergyIR API key — connect Robin to start chatting",
+        "prompt": "EnergyIR API key",
+        "url": "https://energyir.com",
+        "password": True,
+        "category": "provider",
+        "advanced": False,
+    },
     # ── Provider (handled in provider selection, not shown in checklists) ──
     "NOUS_BASE_URL": {
-        "description": "Together AI base URL override",
-        "prompt": "Together AI base URL (leave empty for default)",
+        "description": "EnergyIR base URL override",
+        "prompt": "EnergyIR base URL (leave empty for default)",
         "url": None,
         "password": False,
         "category": "provider",

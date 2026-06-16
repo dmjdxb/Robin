@@ -3897,18 +3897,9 @@ async def list_oauth_providers():
           expires_at       ISO timestamp string or null
           has_refresh_token bool
     """
-    providers = []
-    for p in _OAUTH_PROVIDER_CATALOG:
-        status = _resolve_provider_status(p["id"], p.get("status_fn"))
-        providers.append({
-            "id": p["id"],
-            "name": p["name"],
-            "flow": p["flow"],
-            "cli_command": p["cli_command"],
-            "docs_url": p["docs_url"],
-            "status": status,
-        })
-    return {"providers": providers}
+    # Robin (by EnergyIR) ships a single API-key provider (EnergyIR) by design.
+    # No third-party OAuth providers are offered, so the OAuth catalog is empty.
+    return {"providers": []}
 
 
 @app.delete("/api/providers/oauth/{provider_id}")

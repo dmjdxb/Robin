@@ -193,7 +193,7 @@ export function ToolsetConfigPanel({ toolset, onConfiguredChange }: ToolsetConfi
   // Default the expanded provider to the one actually active in config
   // (`is_active` / `cfg.active_provider`, mirroring the CLI picker), then the
   // first fully-configured provider, else the first provider. Without this the
-  // panel highlighted the first keyless provider (e.g. Together AI) even when
+  // panel highlighted the first keyless provider (e.g. EnergyIR) even when
   // the user had already selected another (e.g. DuckDuckGo).
   useEffect(() => {
     if (activeProvider || providers.length === 0) {
@@ -288,7 +288,7 @@ export function ToolsetConfigPanel({ toolset, onConfiguredChange }: ToolsetConfi
                 {provider.tag && <p className="text-[0.72rem] text-muted-foreground">{provider.tag}</p>}
                 {provider.requires_nous_auth && (
                   <p className="text-[0.72rem] text-muted-foreground">
-                    Included with a provider subscription — sign in to Together AI to activate.
+                    Included with a provider subscription — sign in to EnergyIR to activate.
                   </p>
                 )}
                 {provider.env_vars.length === 0 ? (

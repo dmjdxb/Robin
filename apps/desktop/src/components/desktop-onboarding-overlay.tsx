@@ -60,52 +60,22 @@ export interface ApiKeyOption {
   short?: string
 }
 
+// Robin (by EnergyIR) ships a SINGLE provider by design: the EnergyIR API.
+// No third-party providers are offered. The key is stored against the EnergyIR
+// inference endpoint; the model (DeepSeek V4 Pro) is fixed and not selectable.
 const API_KEY_OPTIONS: ApiKeyOption[] = [
   {
-    id: 'openrouter',
-    name: 'OpenRouter',
-    short: 'one key, many models',
-    envKey: 'OPENROUTER_API_KEY',
-    description: 'Hosts hundreds of models behind a single key. Good default for new installs.',
-    docsUrl: 'https://openrouter.ai/keys'
-  },
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    short: 'GPT-class models',
-    envKey: 'OPENAI_API_KEY',
-    description: 'Direct access to OpenAI models.',
-    docsUrl: 'https://platform.openai.com/api-keys'
-  },
-  {
-    id: 'gemini',
-    name: 'Google Gemini',
-    short: 'Gemini models',
-    envKey: 'GEMINI_API_KEY',
-    description: 'Direct access to Google Gemini models.',
-    docsUrl: 'https://aistudio.google.com/app/apikey'
-  },
-  {
-    id: 'xai',
-    name: 'xAI Grok',
-    short: 'Grok models',
-    envKey: 'XAI_API_KEY',
-    description: 'Direct access to xAI Grok models.',
-    docsUrl: 'https://console.x.ai/'
-  },
-  {
-    id: 'local',
-    name: 'Local / custom endpoint',
-    short: 'self-hosted',
-    envKey: 'OPENAI_BASE_URL',
-    description: 'Point Robin at a local or self-hosted OpenAI-compatible endpoint (vLLM, llama.cpp, Ollama, etc).',
-    docsUrl: 'https://github.com/dmjdxb/Robin#bring-your-own-endpoint',
-    placeholder: 'http://127.0.0.1:8000/v1'
+    id: 'energyir',
+    name: 'EnergyIR',
+    short: 'Your EnergyIR API key',
+    envKey: 'TOGETHER_API_KEY',
+    description: 'Connect Robin with your EnergyIR API key to start.',
+    docsUrl: 'https://energyir.com'
   }
 ]
 
 const PROVIDER_DISPLAY: Record<string, { order: number; title: string }> = {
-  nous: { order: 0, title: 'Together AI' },
+  nous: { order: 0, title: 'EnergyIR' },
   'openai-codex': { order: 1, title: 'OpenAI OAuth (ChatGPT)' },
   'minimax-oauth': { order: 2, title: 'MiniMax' },
   'qwen-oauth': { order: 3, title: 'Qwen Code' },
@@ -312,74 +282,23 @@ const persistShowAll = (value: boolean) => {
 }
 
 export function Picker({ ctx }: { ctx: OnboardingContext }) {
-  const { manual, mode, providers } = useStore($desktopOnboarding)
-  const [showAll, setShowAll] = useState(readShowAll)
-  const ordered = useMemo(() => (providers ? sortProviders(providers) : []), [providers])
-  const hasOauth = ordered.length > 0
+  const { manual } = useStore($desktopOnboarding)
 
-  if (mode === 'apikey' || !hasOauth) {
-    return (
-      <div className="grid gap-3">
-        <ApiKeyForm
-          canGoBack={hasOauth}
-          onBack={() => setOnboardingMode('oauth')}
-          onSave={(envKey, value, name) => saveOnboardingApiKey(envKey, value, name, ctx)}
-        />
-        {manual ? null : (
-          <div className="flex justify-center border-t border-(--ui-stroke-tertiary) pt-3">
-            <ChooseLaterLink />
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  if (providers === null) {
-    return <Status>Looking up providers...</Status>
-  }
-
-  const select = (p: OAuthProvider) => void startProviderOAuth(p, ctx)
-  const featured = ordered.find(p => p.id === FEATURED_ID) ?? null
-  const rest = featured ? ordered.filter(p => p.id !== FEATURED_ID) : ordered
-  // Collapse the secondary providers behind a disclosure only when EnergyIR
-  // Portal is present to anchor the choice — otherwise show the full list.
-  const collapsible = Boolean(featured) && rest.length > 0
-  const showRest = !collapsible || showAll
-
+  // Robin (by EnergyIR) offers exactly one provider — the EnergyIR API — by
+  // design. No third-party providers, no OAuth flows: the user pastes their
+  // EnergyIR API key and that's it. The model (DeepSeek V4 Pro) is fixed.
   return (
-    <div className="grid gap-2">
-      {featured ? <FeaturedProviderRow onSelect={select} provider={featured} /> : null}
-      {showRest ? (
-        <>
-          {rest.map(p => (
-            <ProviderRow key={p.id} onSelect={select} provider={p} />
-          ))}
-          <KeyProviderRow onClick={() => setOnboardingMode('apikey')} />
-        </>
-      ) : null}
-      {collapsible ? (
-        <button
-          className="flex items-center justify-center gap-1.5 pt-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
-          onClick={() => setShowAll(persistShowAll(!showAll))}
-          type="button"
-        >
-          {showAll ? 'Collapse' : 'Other providers'}
-          <ChevronDown className={cn('size-3.5 transition', showAll && 'rotate-180')} />
-        </button>
-      ) : null}
-      <div className="flex items-center justify-between gap-3 pt-1">
-        {/* First run only: let the user defer the choice and land in the app.
-            In manual mode the overlay already has a close affordance, so the
-            "choose later" escape would be redundant — hide it. */}
-        {manual ? <span /> : <ChooseLaterLink />}
-        <button
-          className="text-xs font-medium text-muted-foreground hover:text-foreground"
-          onClick={() => setOnboardingMode('apikey')}
-          type="button"
-        >
-          I have an API key
-        </button>
-      </div>
+    <div className="grid gap-3">
+      <ApiKeyForm
+        canGoBack={false}
+        onBack={() => undefined}
+        onSave={(envKey, value, name) => saveOnboardingApiKey(envKey, value, name, ctx)}
+      />
+      {manual ? null : (
+        <div className="flex justify-center border-t border-(--ui-stroke-tertiary) pt-3">
+          <ChooseLaterLink />
+        </div>
+      )}
     </div>
   )
 }

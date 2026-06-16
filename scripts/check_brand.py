@@ -62,6 +62,9 @@ ALLOW_SUBSTRINGS = (
     "LICENSE", "NOTICE", "Licence", "License",  # attribution
     "MIT",                # attribution context
     "NOUS_",              # env-var prefix (provider key mapping)
+    "TOGETHER_API_KEY",   # internal env var for the EnergyIR (together) endpoint
+    "api.together",       # internal endpoint host
+    "'together'", '"together"',  # internal provider id literal
     "nous:",              # internal provider id key
     "'nous'", '"nous"',  # internal provider id literal
     "arc-nous",           # css class
@@ -83,7 +86,9 @@ ALLOW_REGEXES = (
     re.compile(r"hermes\.[a-z]"),  # localStorage keys: hermes.desktop.*, hermes.lastLocation …
 )
 
-PATTERN = re.compile(r"\b(hermes|nous)\b", re.IGNORECASE)
+# "together" alone is a common English word — only the brand phrase "Together AI"
+# (any spacing/casing) is a leak.
+PATTERN = re.compile(r"\b(hermes|nous)\b|together[\s-]*ai", re.IGNORECASE)
 
 
 def _iter_files():

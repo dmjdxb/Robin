@@ -347,7 +347,7 @@ export function useStatusbarItems({
             </span>
           </span>
         ),
-        title: 'Powered by DeepSeek V4 Pro via Together AI',
+        title: 'Powered by DeepSeek V4 Pro via EnergyIR',
         variant: 'text' as const
       },
       versionItem

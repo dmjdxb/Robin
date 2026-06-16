@@ -39,7 +39,7 @@ export const CONTROL_TEXT = 'text-xs'
 export const PROVIDER_GROUPS: ProviderPrefix[] = [
   {
     prefix: 'NOUS_',
-    name: 'Together AI',
+    name: 'EnergyIR',
     description: 'Hosted Robin & frontier models',
     docsUrl: 'https://portal.energyir.com',
     priority: 0

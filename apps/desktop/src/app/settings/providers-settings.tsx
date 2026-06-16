@@ -36,13 +36,13 @@ function buildProviderKeyGroups(vars: Record<string, EnvVarInfo>): ProviderKeyGr
       continue
     }
 
-    const name = providerGroup(key)
-
-    if (name === 'Other') {
+    // Robin (by EnergyIR) exposes a single provider credential — the EnergyIR
+    // API key (stored as TOGETHER_API_KEY). Every other provider key is hidden.
+    if (key !== 'TOGETHER_API_KEY') {
       continue
     }
 
-    buckets.set(name, [...(buckets.get(name) ?? []), [key, info]])
+    buckets.set('EnergyIR', [...(buckets.get('EnergyIR') ?? []), [key, info]])
   }
 
   const groups: ProviderKeyGroup[] = []
