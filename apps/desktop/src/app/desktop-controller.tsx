@@ -191,6 +191,26 @@ export function DesktopController() {
     window.hermesDesktop?.setPreviewShortcutActive?.(Boolean(chatOpen && (filePreviewTarget || previewTarget)))
   }, [chatOpen, filePreviewTarget, previewTarget])
 
+  // On boot, resolve the workspace folder via the main process, which redirects
+  // an empty / home-root / missing remembered cwd to the safe Desktop default.
+  // This fixes existing installs that remembered the whole home folder.
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const resolved = await window.hermesDesktop?.resolveWorkspace?.($currentCwd.get())
+        if (!cancelled && resolved && resolved !== $currentCwd.get()) {
+          setCurrentCwd(resolved)
+        }
+      } catch {
+        // best-effort; keep whatever cwd we have
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   useEffect(() => {
     startUpdatePoller()
     const unsubscribe = window.hermesDesktop?.onOpenUpdatesRequested?.(() => openUpdatesWindow())

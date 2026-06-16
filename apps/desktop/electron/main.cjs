@@ -5204,6 +5204,26 @@ function disposeTerminalSession(id) {
   return true
 }
 
+// Resolve the effective workspace folder for the file browser / sessions.
+// Robin (by EnergyIR) NEVER defaults a non-technical user to their entire home
+// folder: an empty, missing, or home-root remembered workspace is redirected to
+// the safe Desktop default. A real folder the user explicitly chose is honoured.
+ipcMain.handle('hermes:fs:resolveWorkspace', async (_event, rememberedCwd) => {
+  const fallback = resolveHermesCwd()
+  let home = ''
+  try {
+    home = path.resolve(app.getPath('home'))
+  } catch {
+    home = ''
+  }
+  const remembered = String(rememberedCwd || '').trim()
+  if (!remembered) return fallback
+  const resolved = path.resolve(remembered)
+  if (home && resolved === home) return fallback
+  if (!directoryExists(resolved)) return fallback
+  return resolved
+})
+
 ipcMain.handle('hermes:fs:readDir', async (_event, dirPath) => {
   const resolved = path.resolve(String(dirPath || ''))
 
