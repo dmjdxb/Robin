@@ -40,8 +40,8 @@ export const PROVIDER_GROUPS: ProviderPrefix[] = [
   {
     prefix: 'NOUS_',
     name: 'EnergyIR',
-    description: 'Hosted Robin & frontier models',
-    docsUrl: 'https://portal.energyir.com',
+    description: 'Your EnergyIR API key powers Robin',
+    docsUrl: 'https://energyir.com',
     priority: 0
   },
   {

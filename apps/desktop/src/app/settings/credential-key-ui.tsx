@@ -67,12 +67,24 @@ export function KeyField({
 
   if (info.is_set && !editing) {
     return (
-      <Input
-        className={cn(CREDENTIAL_CONTROL_CLASS, 'cursor-pointer text-muted-foreground')}
-        onFocus={startEdit}
-        readOnly
-        value={masked}
-      />
+      <div className="flex items-center gap-2">
+        <Input
+          className={cn(CREDENTIAL_CONTROL_CLASS, 'min-w-0 flex-1 cursor-pointer text-muted-foreground')}
+          onFocus={startEdit}
+          readOnly
+          value={masked}
+        />
+        <Button
+          className="h-8 shrink-0 text-destructive hover:text-destructive"
+          disabled={busy}
+          onClick={() => void onClear(varKey)}
+          size="sm"
+          type="button"
+          variant="text"
+        >
+          Remove
+        </Button>
+      </div>
     )
   }
 
