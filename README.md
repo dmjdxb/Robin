@@ -14,9 +14,6 @@ and light research — that reads and writes files in folders you grant, with
 per-action consent. It is built for non-technical users: install it from the
 EnergyIR website and start, no setup required.
 
-Robin is powered by **DeepSeek V4 Pro via the Together AI API** (an
-OpenAI-compatible cloud service hosted in the US). The model runs in Together
-AI's cloud — not on your machine — while the agent and your files stay local.
 
 ## Download
 
