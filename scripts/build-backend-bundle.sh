@@ -73,7 +73,12 @@ echo "[bundle] installing dependencies..."
 # drop the marker, then pip install the project + all pinned deps into the
 # bundled site-packages. -m hermes_cli.main also resolves modules from cwd.
 rm -f "$VENV_DIR"/lib/python*/EXTERNALLY-MANAGED 2>/dev/null || true
-"$VENV_PY" -m pip install --break-system-packages "$AGENT_DIR"
+# Install the [all] extra to match the normal install (uv sync --extra all):
+# it bundles every always-needed extra (cli, pty, mcp, vision, web, cron).
+# Optional backends (other providers, search, TTS, messaging) stay lazy-installed
+# on first use via tools/lazy_deps.py, exactly as in a normal install -- so this
+# does NOT reduce functionality.
+"$VENV_PY" -m pip install --break-system-packages "${AGENT_DIR}[all]"
 
 # 4) Smoke-test: the interpreter must import the agent entry module offline.
 echo "[bundle] smoke test..."
