@@ -28,13 +28,22 @@ mkdir -p "$AGENT_DIR"
 # 1) Copy the Robin source the backend needs (exclude the desktop/web shells,
 #    VCS, node, caches, tests, and big non-runtime assets). The Python agent
 #    imports from this tree at runtime (cwd = hermes-agent).
-echo "[bundle] copying source…"
-# git archive exports exactly the tracked files at HEAD — no caches, no broken
-# symlinks, no node_modules, and identical on macOS and Linux. Plain `tar -xf`
-# (no --exclude) is portable across BSD/GNU. Then prune the non-backend trees.
-git -C "$REPO_ROOT" archive --format=tar HEAD | ( cd "$AGENT_DIR" && tar -xf - )
+echo "[bundle] copying source via git archive…"
+# Write the archive to a FILE first (no pipe), so a failure in git vs tar is
+# unambiguous and SIGPIPE/pipefail can't mask it. git archive exports exactly
+# the tracked files at HEAD — no caches/symlinks/node_modules — identically on
+# macOS and Linux. Then prune the non-backend trees.
+SRC_TAR="$REPO_ROOT/_src-archive.tar"
+rm -f "$SRC_TAR"
+git config --global --add safe.directory "$REPO_ROOT" 2>/dev/null || true
+git -C "$REPO_ROOT" archive --format=tar HEAD > "$SRC_TAR"
+echo "[bundle] archive bytes: $(wc -c < "$SRC_TAR")"
+tar -xf "$SRC_TAR" -C "$AGENT_DIR"
+rm -f "$SRC_TAR"
 ( cd "$AGENT_DIR" && rm -rf apps web ui-tui website site tests docs .github \
     download paper infographic target release dist build )
+test -f "$AGENT_DIR/hermes_cli/main.py" || { echo "[bundle] ERROR: source copy produced no backend"; exit 1; }
+echo "[bundle] source ready"
 
 # 2) Get a relocatable standalone CPython (python-build-standalone via uv) and
 #    copy the WHOLE interpreter install into venv/ so it is self-contained
