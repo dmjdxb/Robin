@@ -29,15 +29,12 @@ mkdir -p "$AGENT_DIR"
 #    VCS, node, caches, tests, and big non-runtime assets). The Python agent
 #    imports from this tree at runtime (cwd = hermes-agent).
 echo "[bundle] copying source…"
-# rsync behaves identically on macOS (BSD) and Linux (GNU), unlike tar --exclude.
-rsync -a \
-  --exclude='.git' --exclude='.backend-bundle' --exclude='node_modules' \
-  --exclude='apps' --exclude='web' --exclude='ui-tui' --exclude='website' \
-  --exclude='site' --exclude='tests' --exclude='docs' --exclude='.github' \
-  --exclude='download' --exclude='paper' --exclude='infographic' \
-  --exclude='__pycache__' --exclude='*.pyc' --exclude='target' \
-  --exclude='release' --exclude='dist' --exclude='build' \
-  "$REPO_ROOT"/ "$AGENT_DIR"/
+# git archive exports exactly the tracked files at HEAD — no caches, no broken
+# symlinks, no node_modules, and identical on macOS and Linux. Plain `tar -xf`
+# (no --exclude) is portable across BSD/GNU. Then prune the non-backend trees.
+git -C "$REPO_ROOT" archive --format=tar HEAD | ( cd "$AGENT_DIR" && tar -xf - )
+( cd "$AGENT_DIR" && rm -rf apps web ui-tui website site tests docs .github \
+    download paper infographic target release dist build )
 
 # 2) Get a relocatable standalone CPython (python-build-standalone via uv) and
 #    copy the WHOLE interpreter install into venv/ so it is self-contained
