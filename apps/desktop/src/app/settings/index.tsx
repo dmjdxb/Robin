@@ -44,11 +44,6 @@ export function SettingsView({ gateway, onClose, onConfigSaved, onMainModelChang
   const [providerView, setProviderView] = useRouteEnumParam<ProviderView>('pview', PROVIDER_VIEWS, 'keys')
   const [keysView, setKeysView] = useRouteEnumParam<KeysView>('kview', KEYS_VIEWS, 'tools')
 
-  const openProviderView = (view: ProviderView) => {
-    setActiveView('providers')
-    setProviderView(view)
-  }
-
   const openKeysView = (view: KeysView) => {
     setActiveView('keys')
     setKeysView(view)
@@ -108,7 +103,7 @@ export function SettingsView({ gateway, onClose, onConfigSaved, onMainModelChang
             active={activeView === 'providers'}
             icon={Zap}
             label="Providers"
-            onClick={() => openProviderView('keys')}
+            onClick={() => setActiveView('providers')}
           />
           <OverlayNavItem
             active={activeView === 'gateway'}

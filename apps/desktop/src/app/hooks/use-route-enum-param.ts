@@ -20,7 +20,13 @@ export function useRouteEnumParam<T extends string>(
 
   const setValue = useCallback(
     (next: T) => {
-      const params = new URLSearchParams(search)
+      // Read the LIVE query string (not the closed-over `search` from this
+      // render). navigate({replace}) updates history synchronously, so two
+      // setValue calls in the same tick (e.g. setActiveView + setSubView)
+      // compose instead of the second clobbering the first — which previously
+      // wiped ?tab=providers and left the page stuck on the default tab.
+      const liveSearch = typeof window !== 'undefined' ? window.location.search : search
+      const params = new URLSearchParams(liveSearch)
 
       if (next === fallback) {
         params.delete(key)

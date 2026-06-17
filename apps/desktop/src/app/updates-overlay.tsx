@@ -145,11 +145,15 @@ function IdleView({
   }
 
   if (!status.supported) {
+    // Packaged Robin has no in-app git self-update (a user's machine has no
+    // source checkout). That's a developer detail — never surface the raw
+    // "isn't a git checkout" backend message. Present the normal up-to-date
+    // resting state; new versions arrive by installing the latest build.
     return (
       <CenteredStatus
-        body={status.message ?? 'This version of Robin can’t update itself from inside the app.'}
-        icon={<AlertCircle className="size-6 text-muted-foreground" />}
-        title="Update not available"
+        body="You’re running the latest version."
+        icon={<CheckCircle2 className="size-7 text-emerald-600 dark:text-emerald-400" />}
+        title="You’re all set"
       />
     )
   }
