@@ -68,11 +68,12 @@ echo "[bundle] venv python: $VENV_PY"
 #    site-packages. Prefer wheels; CI has a compiler for any source builds, and
 #    the resulting binaries run on the user's machine (no compiler needed there).
 echo "[bundle] installing dependencies..."
-# Use uv to install into the bundled interpreter: it targets the given Python
-# directly, doesn't trip PEP 668 (externally-managed) on the uv-managed standalone
-# CPython, and prefers prebuilt wheels. Installs the project + all pinned deps
-# into the bundled site-packages. -m hermes_cli.main also resolves from cwd.
-uv pip install --python "$VENV_PY" "$AGENT_DIR"
+# The copied standalone CPython carries a PEP 668 "externally managed" marker
+# (it was uv-managed). This is now OUR private interpreter to install into, so
+# drop the marker, then pip install the project + all pinned deps into the
+# bundled site-packages. -m hermes_cli.main also resolves modules from cwd.
+rm -f "$VENV_DIR"/lib/python*/EXTERNALLY-MANAGED 2>/dev/null || true
+"$VENV_PY" -m pip install --break-system-packages "$AGENT_DIR"
 
 # 4) Smoke-test: the interpreter must import the agent entry module offline.
 echo "[bundle] smoke test..."
