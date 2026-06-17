@@ -78,6 +78,12 @@ export function useEnvCredentials(): UseEnvCredentials {
         }
       } catch (err) {
         notifyError(err, 'API keys failed to load')
+        // Don't strand the page on the loading spinner if the backend env call
+        // fails — fall back to an empty catalog so the view still renders (the
+        // EnergyIR row is synthesized even with no vars). (#providers-stub)
+        if (!cancelled) {
+          setVars({})
+        }
       }
     })()
 
