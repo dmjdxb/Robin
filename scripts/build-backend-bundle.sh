@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build a self-contained, relocatable Robin backend bundle for the current
 # platform/arch, so the desktop app can run the Python agent with ZERO developer
-# tooling on the user's machine — no git, no compiler, no Command Line Tools, no
+# tooling on the user's machine --- no git, no compiler, no Command Line Tools, no
 # pip-at-runtime. The result is `apps/desktop/backend.tar.gz`, shipped inside the
 # signed app and extracted to ~/.robin/hermes-agent on first launch.
 #
@@ -28,10 +28,10 @@ mkdir -p "$AGENT_DIR"
 # 1) Copy the Robin source the backend needs (exclude the desktop/web shells,
 #    VCS, node, caches, tests, and big non-runtime assets). The Python agent
 #    imports from this tree at runtime (cwd = hermes-agent).
-echo "[bundle] copying source via git archive…"
+echo "[bundle] copying source via git archive..."
 # Write the archive to a FILE first (no pipe), so a failure in git vs tar is
 # unambiguous and SIGPIPE/pipefail can't mask it. git archive exports exactly
-# the tracked files at HEAD — no caches/symlinks/node_modules — identically on
+# the tracked files at HEAD --- no caches/symlinks/node_modules --- identically on
 # macOS and Linux. Then prune the non-backend trees.
 SRC_TAR="$REPO_ROOT/_src-archive.tar"
 rm -f "$SRC_TAR"
@@ -47,19 +47,19 @@ echo "[bundle] source ready"
 
 # 2) Get a relocatable standalone CPython (python-build-standalone via uv) and
 #    copy the WHOLE interpreter install into venv/ so it is self-contained
-#    (its own stdlib + site-packages — no symlink to a system python).
-echo "[bundle] provisioning standalone CPython $PYVER…"
+#    (its own stdlib + site-packages --- no symlink to a system python).
+echo "[bundle] provisioning standalone CPython $PYVER..."
 uv python install "$PYVER"
-PYBIN="$(uv python find "$PYVER")"                 # …/install/bin/python3
+PYBIN="$(uv python find "$PYVER")"                 # .../install/bin/python3
 PYHOME="$(cd "$(dirname "$PYBIN")/.." && pwd)"      # the relocatable install root
 echo "[bundle] standalone python at $PYHOME"
 mkdir -p "$VENV_DIR"
-# copy contents of the standalone install into venv/ (bin/, lib/, include/…)
+# copy contents of the standalone install into venv/ (bin/, lib/, include/...)
 cp -R "$PYHOME"/. "$VENV_DIR"/
 
 VENV_PY="$VENV_DIR/bin/python3"
 [ -x "$VENV_PY" ] || VENV_PY="$VENV_DIR/bin/python"
-# The desktop spawns venv/bin/python (no '3') — guarantee it exists.
+# The desktop spawns venv/bin/python (no '3') --- guarantee it exists.
 [ -e "$VENV_DIR/bin/python" ] || ln -sf python3 "$VENV_DIR/bin/python"
 echo "[bundle] venv python: $VENV_PY"
 "$VENV_PY" --version
@@ -67,14 +67,14 @@ echo "[bundle] venv python: $VENV_PY"
 # 3) Install the project + ALL its dependencies into the bundled interpreter's
 #    site-packages. Prefer wheels; CI has a compiler for any source builds, and
 #    the resulting binaries run on the user's machine (no compiler needed there).
-echo "[bundle] installing dependencies…"
+echo "[bundle] installing dependencies..."
 "$VENV_PY" -m pip install --upgrade pip wheel >/dev/null
 # Install from the bundled source so the project's own packages + pinned deps land
 # in site-packages. `-m hermes_cli.main` still resolves from the source cwd too.
 "$VENV_PY" -m pip install "$AGENT_DIR"
 
 # 4) Smoke-test: the interpreter must import the agent entry module offline.
-echo "[bundle] smoke test…"
+echo "[bundle] smoke test..."
 ( cd "$AGENT_DIR" && "$VENV_PY" -c "import hermes_cli.main; print('[bundle] hermes_cli import OK')" )
 
 # 5) Mark this as a completed install so the desktop trusts it (the desktop also
@@ -84,7 +84,7 @@ cat > "$AGENT_DIR/.hermes-bootstrap-complete" <<EOF
 EOF
 
 # 6) Tarball it (deterministic-ish). This is shipped as extraResources.
-echo "[bundle] packing $OUT…"
+echo "[bundle] packing $OUT..."
 rm -f "$OUT"
 tar -czf "$OUT" -C "$BUNDLE_ROOT" hermes-agent
 ls -lh "$OUT"
