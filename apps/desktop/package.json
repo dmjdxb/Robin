@@ -2,7 +2,7 @@
   "name": "robin",
   "productName": "Robin",
   "private": true,
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "Robin — your everyday sidekick. A desktop AI agent by EnergyIR.",
   "author": "EnergyIR <hello@energyir.com>",
   "homepage": "https://energyir.com",
@@ -170,10 +170,6 @@
       {
         "from": "assets/icon.ico",
         "to": "icon.ico"
-      },
-      {
-        "from": "backend.tar.gz",
-        "to": "backend.tar.gz"
       }
     ],
     "asar": true,

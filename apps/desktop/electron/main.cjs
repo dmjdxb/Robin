@@ -1810,8 +1810,6 @@ function seedBundledConfig() {
 async function installBundledBackend() {
   try {
     if (!IS_PACKAGED) return false
-    const bundlePath = path.join(process.resourcesPath || '', 'backend.tar.gz')
-    if (!fileExists(bundlePath)) return false
 
     const marker = readBootstrapMarker()
     const provisioned = isHermesSourceRoot(ACTIVE_HERMES_ROOT) && fileExists(getVenvPython(VENV_ROOT))
@@ -1822,16 +1820,44 @@ async function installBundledBackend() {
       return true
     }
 
-    rememberLog('[bundle] installing bundled Robin backend (no git/compiler/download needed)…')
+    // Prebuilt, self-contained backend (relocatable Python + all deps + agent
+    // source) hosted as a release asset for THIS app version. Installing it
+    // needs ZERO developer tooling on the user's machine: no git, no compiler,
+    // no Command Line Tools, no pip-at-runtime -- just an HTTPS download +
+    // extract. (It is hosted outside the signed app so the bundled Python is
+    // not subject to macOS notarization, which recurses into in-app archives.)
+    const asset = `robin-backend-${process.platform}-${process.arch}.tar.gz`
+    const url = `https://github.com/dmjdxb/Robin/releases/download/v${app.getVersion()}/${asset}`
+    const tmp = path.join(HERMES_HOME, '.backend-download.tar.gz')
     fs.mkdirSync(HERMES_HOME, { recursive: true })
-    // Replace any prior code checkout (code only — user state lives in
-    // HERMES_HOME directly: config.yaml, .env, sessions, logs — and is untouched).
+    rememberLog('[bundle] downloading prebuilt backend: ' + url)
+    try {
+      // curl ships on macOS, Linux, and Windows 10+. -L follows the GitHub->CDN
+      // redirect; -f fails on HTTP errors so a missing asset falls back cleanly.
+      await spawnAwait('curl', ['-fSL', '--retry', '3', '-o', tmp, url])
+    } catch (e) {
+      rememberLog('[bundle] backend download failed (' + (e && e.message) + '); using network bootstrap')
+      try {
+        fs.rmSync(tmp, { force: true })
+      } catch {
+        void 0
+      }
+      return false
+    }
+
+    // Replace any prior code checkout (code only -- user state lives in
+    // HERMES_HOME directly: config.yaml, .env, sessions, logs -- untouched).
     try {
       fs.rmSync(ACTIVE_HERMES_ROOT, { recursive: true, force: true })
     } catch {
       void 0
     }
-    await spawnAwait('tar', ['-xzf', bundlePath, '-C', HERMES_HOME])
+    await spawnAwait('tar', ['-xzf', tmp, '-C', HERMES_HOME])
+    try {
+      fs.rmSync(tmp, { force: true })
+    } catch {
+      void 0
+    }
 
     // Ensure a `python` entry exists next to `python3` (the desktop spawns
     // venv/bin/python via getVenvPython).
@@ -1848,7 +1874,6 @@ async function installBundledBackend() {
     if (isHermesSourceRoot(ACTIVE_HERMES_ROOT) && fileExists(getVenvPython(VENV_ROOT))) {
       seedBundledConfig()
       const m = writeBootstrapMarker({ pinnedCommit: (marker && marker.pinnedCommit) || 'bundled-runtime' })
-      // tag the marker as bundled so app-update re-extraction is detected.
       try {
         writeFileAtomic(
           BOOTSTRAP_COMPLETE_MARKER,
@@ -1858,11 +1883,11 @@ async function installBundledBackend() {
       } catch {
         void 0
       }
-      rememberLog('[bundle] bundled backend ready at ' + ACTIVE_HERMES_ROOT)
+      rememberLog('[bundle] prebuilt backend ready at ' + ACTIVE_HERMES_ROOT)
       return true
     }
 
-    rememberLog('[bundle] extraction did not yield a runnable backend; falling back to network bootstrap')
+    rememberLog('[bundle] extraction did not yield a runnable backend; using network bootstrap')
     return false
   } catch (err) {
     rememberLog('[bundle] install failed: ' + (err && err.message ? err.message : String(err)))

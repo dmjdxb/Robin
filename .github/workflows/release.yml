@@ -122,6 +122,25 @@ jobs:
             npx electron-builder --${{ matrix.platform }} --publish always
           fi
 
+      # Upload the prebuilt backend bundle to THIS release as a platform-named
+      # asset. The desktop app downloads it on first launch (zero developer
+      # tooling). Name must match main.cjs: robin-backend-<process.platform>-<arch>.
+      - name: Upload backend bundle to release
+        if: matrix.platform != 'win' && startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ matrix.platform }}" = "mac" ]; then NAME="robin-backend-darwin-arm64.tar.gz"; else NAME="robin-backend-linux-x64.tar.gz"; fi
+          cp apps/desktop/backend.tar.gz "$NAME"
+          # Retry in case the release was just created by electron-builder publish.
+          for i in 1 2 3 4 5; do
+            if gh release upload "${{ github.ref_name }}" "$NAME" --clobber --repo dmjdxb/Robin; then
+              echo "uploaded $NAME"; break
+            fi
+            echo "release not ready, retrying ($i)..."; sleep 10
+          done
+
       - name: Publish SHA-256 checksums
         if: always()
         working-directory: apps/desktop
