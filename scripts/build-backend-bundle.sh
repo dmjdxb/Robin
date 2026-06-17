@@ -29,12 +29,15 @@ mkdir -p "$AGENT_DIR"
 #    VCS, node, caches, tests, and big non-runtime assets). The Python agent
 #    imports from this tree at runtime (cwd = hermes-agent).
 echo "[bundle] copying source…"
-tar --exclude='./.git' --exclude='./.backend-bundle' --exclude='./node_modules' \
-    --exclude='./apps' --exclude='./web' --exclude='./ui-tui' --exclude='./website' \
-    --exclude='./site' --exclude='./tests' --exclude='./docs' --exclude='./.github' \
-    --exclude='./download' --exclude='./paper' --exclude='./infographic' \
-    --exclude='*/__pycache__' --exclude='*.pyc' --exclude='./target' \
-    -cf - -C "$REPO_ROOT" . | tar -xf - -C "$AGENT_DIR"
+# rsync behaves identically on macOS (BSD) and Linux (GNU), unlike tar --exclude.
+rsync -a \
+  --exclude='.git' --exclude='.backend-bundle' --exclude='node_modules' \
+  --exclude='apps' --exclude='web' --exclude='ui-tui' --exclude='website' \
+  --exclude='site' --exclude='tests' --exclude='docs' --exclude='.github' \
+  --exclude='download' --exclude='paper' --exclude='infographic' \
+  --exclude='__pycache__' --exclude='*.pyc' --exclude='target' \
+  --exclude='release' --exclude='dist' --exclude='build' \
+  "$REPO_ROOT"/ "$AGENT_DIR"/
 
 # 2) Get a relocatable standalone CPython (python-build-standalone via uv) and
 #    copy the WHOLE interpreter install into venv/ so it is self-contained
@@ -46,7 +49,7 @@ PYHOME="$(cd "$(dirname "$PYBIN")/.." && pwd)"      # the relocatable install ro
 echo "[bundle] standalone python at $PYHOME"
 mkdir -p "$VENV_DIR"
 # copy contents of the standalone install into venv/ (bin/, lib/, include/…)
-tar -cf - -C "$PYHOME" . | tar -xf - -C "$VENV_DIR"
+cp -R "$PYHOME"/. "$VENV_DIR"/
 
 VENV_PY="$VENV_DIR/bin/python3"
 [ -x "$VENV_PY" ] || VENV_PY="$VENV_DIR/bin/python"
