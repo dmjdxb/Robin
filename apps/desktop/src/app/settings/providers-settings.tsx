@@ -15,9 +15,9 @@ import { cn } from '@/lib/utils'
 import { $desktopOnboarding, startManualProviderOAuth } from '@/store/onboarding'
 import type { EnvVarInfo, OAuthProvider } from '@/types/hermes'
 
-import { isKeyVar, ProviderKeyRows } from './credential-key-ui'
+import { ProviderKeyRows } from './credential-key-ui'
 import { SettingsCategoryHeading, useEnvCredentials } from './env-credentials'
-import { providerGroup, providerMeta, providerPriority } from './helpers'
+import { providerMeta } from './helpers'
 import { LoadingState, SettingsContent } from './primitives'
 
 // Sub-views surfaced as a sidebar subnav: account sign-in vs raw API keys.
@@ -25,55 +25,38 @@ export const PROVIDER_VIEWS = ['accounts', 'keys'] as const
 
 export type ProviderView = (typeof PROVIDER_VIEWS)[number]
 
-// Group the env catalog by provider — one ListRow per vendor plus optional
-// advanced overrides (base URL, region, etc.). Groups without a key field and
-// the "Other" bucket are skipped.
+// Robin (by EnergyIR) surfaces exactly ONE provider credential: the EnergyIR
+// API key (stored as TOGETHER_API_KEY). We ALWAYS render its row — so users can
+// see whether they're connected, get a key, or remove it — without gating on
+// the backend env-catalog `category` (gating there made the row disappear).
+// Every other provider key stays hidden (white-label).
 function buildProviderKeyGroups(vars: Record<string, EnvVarInfo>): ProviderKeyGroup[] {
-  const buckets = new Map<string, [string, EnvVarInfo][]>()
-
-  for (const [key, info] of Object.entries(vars)) {
-    if (info.category !== 'provider') {
-      continue
-    }
-
-    // Robin (by EnergyIR) exposes a single provider credential — the EnergyIR
-    // API key (stored as TOGETHER_API_KEY). Every other provider key is hidden.
-    if (key !== 'TOGETHER_API_KEY') {
-      continue
-    }
-
-    buckets.set('EnergyIR', [...(buckets.get('EnergyIR') ?? []), [key, info]])
+  const info: EnvVarInfo = vars['TOGETHER_API_KEY'] ?? {
+    advanced: false,
+    category: 'provider',
+    description: '',
+    is_password: true,
+    is_set: false,
+    redacted_value: null,
+    tools: [],
+    url: null
   }
 
-  const groups: ProviderKeyGroup[] = []
+  const meta = providerMeta('EnergyIR')
 
-  for (const [name, entries] of buckets) {
-    const primary = entries.find(([k, i]) => !i.advanced && isKeyVar(k, i)) ?? entries.find(([k, i]) => isKeyVar(k, i))
-
-    if (!primary) {
-      continue
+  return [
+    {
+      advanced: [],
+      // Description + docs link drive the expandable "Your EnergyIR API key
+      // powers Robin" + "Get a key" affordances.
+      description: meta?.description ?? info.description,
+      docsUrl: meta?.docsUrl ?? info.url ?? undefined,
+      hasAnySet: Boolean(info.is_set),
+      name: 'EnergyIR',
+      primary: ['TOGETHER_API_KEY', info],
+      priority: 0
     }
-
-    const meta = providerMeta(name)
-
-    groups.push({
-      // Advanced = the provider's non-key knobs (base URL, region, deployment).
-      // Skip redundant alias key vars (e.g. ANTHROPIC_TOKEN vs ANTHROPIC_API_KEY)
-      // so we never render a second "Paste key" input — unless one is already
-      // set, in which case keep it visible so it stays clearable.
-      advanced: entries
-        .filter(([k, i]) => k !== primary[0] && (!isKeyVar(k, i) || i.is_set))
-        .sort(([a], [b]) => a.localeCompare(b)),
-      description: meta?.description ?? primary[1].description,
-      docsUrl: meta?.docsUrl ?? primary[1].url ?? undefined,
-      hasAnySet: entries.some(([, i]) => i.is_set),
-      name,
-      primary,
-      priority: providerPriority(name)
-    })
-  }
-
-  return groups.sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name))
+  ]
 }
 
 // Deliberately a near-1:1 replica of the first-run onboarding picker

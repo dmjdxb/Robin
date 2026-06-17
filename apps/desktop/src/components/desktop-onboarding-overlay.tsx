@@ -1,11 +1,9 @@
 import { useStore } from '@nanostores/react'
-import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
 import { Input } from '@/components/ui/input'
-import { getGlobalModelOptions } from '@/hermes'
 import {
   Check,
   ChevronDown,
@@ -728,21 +726,9 @@ function ConfirmingModelPanel({
   ctx: OnboardingContext
   flow: Extract<OnboardingFlow, { status: 'confirming_model' }>
 }) {
-  // Robin has no model picker by design — the default model is locked, so this
-  // card only confirms the connection. Pricing/tier is still surfaced for the
-  // locked model below.
-  const options = useQuery({
-    queryKey: ['onboarding-model-options', flow.providerSlug],
-    queryFn: () => getGlobalModelOptions()
-  })
-
-  const providerRow = options.data?.providers?.find(
-    p => String(p.slug).toLowerCase() === flow.providerSlug.toLowerCase()
-  )
-
-  const price = providerRow?.pricing?.[flow.currentModel]
-  const freeTier = providerRow?.free_tier
-
+  // Robin has no model picker and NEVER reveals its underlying model (white-
+  // label). This card only confirms the connection, then drops the user into
+  // chat — no model name, provider, or pricing is shown.
   return (
     <div className="grid gap-4">
       <div className="flex items-center gap-2 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary">
@@ -750,30 +736,8 @@ function ConfirmingModelPanel({
         <span>{flow.label} connected.</span>
       </div>
 
-      <div className="grid gap-3 rounded-2xl border border-border bg-background/60 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Default model</p>
-              {freeTier === true && (
-                <span className="rounded-sm bg-emerald-500/15 px-1 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
-                  Free tier
-                </span>
-              )}
-              {freeTier === false && (
-                <span className="rounded-sm bg-primary/15 px-1 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide text-primary">
-                  Pro
-                </span>
-              )}
-            </div>
-            <p className="mt-1 truncate font-mono text-sm">{flow.currentModel}</p>
-            {price && (price.input || price.output) && (
-              <p className="mt-1 font-mono text-xs text-muted-foreground">
-                {price.free ? 'Free' : `${price.input || '?'} in / ${price.output || '?'} out per Mtok`}
-              </p>
-            )}
-          </div>
-        </div>
+      <div className="rounded-2xl border border-border bg-background/60 px-4 py-3 text-sm text-muted-foreground">
+        You&apos;re all set — Robin is ready to go.
       </div>
 
       <div className="flex justify-end">
