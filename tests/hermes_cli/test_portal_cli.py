@@ -12,7 +12,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from hermes_cli import portal_cli
+from robin import portal_cli
 
 
 def _args(portal_command):
@@ -32,7 +32,7 @@ def test_bare_portal_and_login_run_one_shot(monkeypatch, sub):
         return 0
 
     monkeypatch.setattr(
-        "hermes_cli.setup._run_portal_one_shot", fake_one_shot
+        "robin.setup._run_portal_one_shot", fake_one_shot
     )
     monkeypatch.setattr(portal_cli, "_cmd_status", fake_status)
     monkeypatch.setattr(portal_cli, "load_config", lambda: {})
@@ -50,7 +50,7 @@ def test_info_and_status_alias_run_status(monkeypatch, sub):
     calls = {"login": 0, "status": 0}
 
     monkeypatch.setattr(
-        "hermes_cli.setup._run_portal_one_shot",
+        "robin.setup._run_portal_one_shot",
         lambda config: calls.__setitem__("login", calls["login"] + 1),
     )
 
@@ -88,7 +88,7 @@ def test_login_cancelled_returns_one(monkeypatch):
     def boom(config):
         raise KeyboardInterrupt
 
-    monkeypatch.setattr("hermes_cli.setup._run_portal_one_shot", boom)
+    monkeypatch.setattr("robin.setup._run_portal_one_shot", boom)
     monkeypatch.setattr(portal_cli, "load_config", lambda: {})
 
     rc = portal_cli.portal_command(_args(None))
@@ -116,18 +116,18 @@ def test_one_shot_delegates_to_model_flow_nous(monkeypatch):
     provider + Tool Gateway), i.e. delegate to `_model_flow_nous` — not the
     lighter auth-only path that skipped model selection.
     """
-    import hermes_cli.setup as setup_mod
+    import robin.setup as setup_mod
 
     calls = {"model_flow": 0}
 
     def fake_model_flow(config):
         calls["model_flow"] += 1
 
-    # _model_flow_nous lives in hermes_cli.main and is imported lazily inside
+    # _model_flow_nous lives in robin.main and is imported lazily inside
     # _run_portal_one_shot, so patch it at the source module.
-    monkeypatch.setattr("hermes_cli.main._model_flow_nous", fake_model_flow)
+    monkeypatch.setattr("robin.main._model_flow_nous", fake_model_flow)
     # Keep the disk re-sync a no-op so the test never touches real config.
-    monkeypatch.setattr("hermes_cli.config.load_config", lambda: {})
+    monkeypatch.setattr("robin.config.load_config", lambda: {})
 
     setup_mod._run_portal_one_shot({})
 
@@ -145,13 +145,13 @@ def test_one_shot_swallows_cancel_and_systemexit(monkeypatch, exc):
     Exception — so SystemExit could otherwise propagate out. The portal handler
     must treat KeyboardInterrupt/EOFError/SystemExit as a graceful cancel.
     """
-    import hermes_cli.setup as setup_mod
+    import robin.setup as setup_mod
 
     def boom(config):
         raise exc
 
-    monkeypatch.setattr("hermes_cli.main._model_flow_nous", boom)
-    monkeypatch.setattr("hermes_cli.config.load_config", lambda: {})
+    monkeypatch.setattr("robin.main._model_flow_nous", boom)
+    monkeypatch.setattr("robin.config.load_config", lambda: {})
 
     # Must return normally (None), not propagate the exception.
     assert setup_mod._run_portal_one_shot({}) is None

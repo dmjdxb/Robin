@@ -37,8 +37,8 @@ def server(hermes_home):
     with patch.dict(
         "sys.modules",
         {
-            "hermes_cli.env_loader": MagicMock(),
-            "hermes_cli.banner": MagicMock(),
+            "robin.env_loader": MagicMock(),
+            "robin.banner": MagicMock(),
         },
     ):
         mod = importlib.import_module("tui_gateway.server")

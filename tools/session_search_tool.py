@@ -119,7 +119,7 @@ def _resolve_profile_db(profile: str):
     if profile is None or not str(profile).strip():
         return None
 
-    from hermes_cli import profiles as profiles_mod
+    from robin import profiles as profiles_mod
     from hermes_state import SessionDB
 
     canon = profiles_mod.normalize_profile_name(profile)
@@ -142,7 +142,7 @@ def _locate_session_db(session_id: str):
     from pathlib import Path
 
     try:
-        from hermes_cli import profiles as profiles_mod
+        from robin import profiles as profiles_mod
         from hermes_state import SessionDB
     except Exception:
         return None, None

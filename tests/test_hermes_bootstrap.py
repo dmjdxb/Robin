@@ -240,7 +240,7 @@ class TestEntryPointsImportBootstrap:
     # Entry points that invoke Robin as a process.  Each one must
     # import hermes_bootstrap before doing any file I/O or stdout writes.
     ENTRY_POINTS = [
-        "hermes_cli/main.py",   # hermes CLI (console_script)
+        "robin/main.py",   # hermes CLI (console_script)
         "run_agent.py",          # hermes-agent (console_script)
         "acp_adapter/entry.py",  # hermes-acp (console_script)
         "gateway/run.py",        # gateway

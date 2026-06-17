@@ -252,12 +252,12 @@ all = [
 
 [project.scripts]
 # User-facing Robin commands (the brand surface).
-robin = "hermes_cli.main:main"
+robin = "robin.main:main"
 robin-agent = "run_agent:main"
 robin-acp = "acp_adapter.entry:main"
 # Internal aliases retained so the desktop bootstrap / self-update plumbing,
 # which resolves the `hermes` venv entry point, keeps working unchanged.
-hermes = "hermes_cli.main:main"
+hermes = "robin.main:main"
 hermes-agent = "run_agent:main"
 hermes-acp = "acp_adapter.entry:main"
 
@@ -274,13 +274,13 @@ py-modules = ["run_agent", "model_tools", "toolsets", "batch_runner", "trajector
 locales = ["locales/*.yaml"]
 
 [tool.setuptools.package-data]
-hermes_cli = ["web_dist/**/*", "tui_dist/**/*", "scripts/install.sh", "scripts/install.ps1"]
+robin = ["web_dist/**/*", "tui_dist/**/*", "scripts/install.sh", "scripts/install.ps1"]
 gateway = ["assets/**/*"]
 plugins = [
   "*/dashboard/manifest.json",
   "*/dashboard/dist/*",
   "*/dashboard/dist/**/*",
-  # Plugin discovery (hermes_cli/plugins.py) reads a plugin.yaml/plugin.yml
+  # Plugin discovery (robin/plugins.py) reads a plugin.yaml/plugin.yml
   # manifest from each bundled plugin directory to register it. Wheels only
   # carry files declared here, so without this glob the wheel ships every
   # plugin's Python code but none of its manifests — the scan finds zero
@@ -292,7 +292,7 @@ plugins = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["agent", "agent.*", "tools", "tools.*", "hermes_cli", "hermes_cli.*", "gateway", "gateway.*", "tui_gateway", "tui_gateway.*", "cron", "acp_adapter", "plugins", "plugins.*", "providers", "providers.*"]
+include = ["agent", "agent.*", "tools", "tools.*", "robin", "robin.*", "gateway", "gateway.*", "tui_gateway", "tui_gateway.*", "cron", "acp_adapter", "plugins", "plugins.*", "providers", "providers.*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

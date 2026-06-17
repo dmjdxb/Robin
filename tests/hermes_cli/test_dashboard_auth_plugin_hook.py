@@ -7,11 +7,11 @@ from __future__ import annotations
 
 import pytest
 
-from hermes_cli.dashboard_auth import clear_providers, get_provider
-from hermes_cli.dashboard_auth.base import (
+from robin.dashboard_auth import clear_providers, get_provider
+from robin.dashboard_auth.base import (
     DashboardAuthProvider, LoginStart, Session,
 )
-from hermes_cli.plugins import PluginContext, PluginManifest
+from robin.plugins import PluginContext, PluginManifest
 
 
 class _Stub(DashboardAuthProvider):

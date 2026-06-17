@@ -17,7 +17,7 @@ def _client():
         pytest.skip("fastapi/starlette not installed")
     import hermes_state
     from hermes_constants import get_hermes_home
-    from hermes_cli.web_server import app, _SESSION_HEADER_NAME, _SESSION_TOKEN
+    from robin.web_server import app, _SESSION_HEADER_NAME, _SESSION_TOKEN
 
     client = TestClient(app)
     client.headers[_SESSION_HEADER_NAME] = _SESSION_TOKEN
@@ -45,7 +45,7 @@ class TestMcpEndpoints:
         assert [s["name"] for s in servers] == ["srv1"]
 
         # CLI parity: the server is in config.yaml under mcp_servers.
-        from hermes_cli.mcp_config import _get_mcp_servers
+        from robin.mcp_config import _get_mcp_servers
 
         assert "srv1" in _get_mcp_servers()
 
@@ -208,7 +208,7 @@ class TestOpsEndpoints:
         self.client, _ = _client()
 
     def test_hooks_list_reads_config(self):
-        from hermes_cli.config import load_config, save_config
+        from robin.config import load_config, save_config
 
         cfg = load_config()
         cfg["hooks"] = {
@@ -364,7 +364,7 @@ class TestWebhookToggleEndpoint:
     def _setup(self, _isolate_hermes_home):
         self.client, _ = _client()
         # Enable the webhook platform so a subscription can be created.
-        from hermes_cli.config import load_config, save_config
+        from robin.config import load_config, save_config
 
         cfg = load_config()
         cfg.setdefault("platforms", {})["webhook"] = {
@@ -394,7 +394,7 @@ class TestAdminEndpointsAuthGate:
     @pytest.fixture(autouse=True)
     def _setup(self, _isolate_hermes_home):
         from starlette.testclient import TestClient
-        from hermes_cli.web_server import app
+        from robin.web_server import app
 
         # No session header → must be rejected.
         self.client = TestClient(app)
@@ -433,11 +433,11 @@ class TestUpdateCheckEndpoint:
         self.client, _ = _client()
 
     def test_git_install_reports_behind_count(self, monkeypatch):
-        import hermes_cli.web_server as ws
+        import robin.web_server as ws
 
         monkeypatch.setattr(ws, "detect_install_method", lambda *a, **k: "git")
         # Stub the shared checker so the contract is deterministic (no network).
-        import hermes_cli.banner as banner
+        import robin.banner as banner
 
         monkeypatch.setattr(banner, "check_for_updates", lambda: 5)
 
@@ -460,8 +460,8 @@ class TestUpdateCheckEndpoint:
         assert body["can_apply"] is True
 
     def test_up_to_date(self, monkeypatch):
-        import hermes_cli.web_server as ws
-        import hermes_cli.banner as banner
+        import robin.web_server as ws
+        import robin.banner as banner
 
         monkeypatch.setattr(ws, "detect_install_method", lambda *a, **k: "git")
         monkeypatch.setattr(banner, "check_for_updates", lambda: 0)
@@ -471,7 +471,7 @@ class TestUpdateCheckEndpoint:
         assert body["update_available"] is False
 
     def test_docker_is_not_applyable(self, monkeypatch):
-        import hermes_cli.web_server as ws
+        import robin.web_server as ws
 
         monkeypatch.setattr(ws, "detect_install_method", lambda *a, **k: "docker")
         body = self.client.get("/api/hermes/update/check").json()
@@ -481,8 +481,8 @@ class TestUpdateCheckEndpoint:
         assert body["behind"] is None
 
     def test_check_failure_is_soft(self, monkeypatch):
-        import hermes_cli.web_server as ws
-        import hermes_cli.banner as banner
+        import robin.web_server as ws
+        import robin.banner as banner
 
         monkeypatch.setattr(ws, "detect_install_method", lambda *a, **k: "git")
 
@@ -515,7 +515,7 @@ class TestDebugShareEndpoint:
         (logs / "gateway.log").write_text("gw line\n")
 
     def test_returns_structured_urls(self, monkeypatch):
-        import hermes_cli.debug as dbg
+        import robin.debug as dbg
 
         count = [0]
 
@@ -526,7 +526,7 @@ class TestDebugShareEndpoint:
         monkeypatch.setattr(dbg, "upload_to_pastebin", _upload)
         monkeypatch.setattr(dbg, "_schedule_auto_delete", lambda *a, **k: None)
         monkeypatch.setattr(dbg, "_best_effort_sweep_expired_pastes", lambda: None)
-        monkeypatch.setattr("hermes_cli.dump.run_dump", lambda a: None)
+        monkeypatch.setattr("robin.dump.run_dump", lambda a: None)
 
         r = self.client.post("/api/ops/debug-share", json={"redact": True})
         assert r.status_code == 200
@@ -538,28 +538,28 @@ class TestDebugShareEndpoint:
         assert isinstance(body["failures"], list)
 
     def test_redact_false_is_honored(self, monkeypatch):
-        import hermes_cli.debug as dbg
+        import robin.debug as dbg
 
         monkeypatch.setattr(
             dbg, "upload_to_pastebin", lambda c, expiry_days=7: "https://paste.rs/x"
         )
         monkeypatch.setattr(dbg, "_schedule_auto_delete", lambda *a, **k: None)
         monkeypatch.setattr(dbg, "_best_effort_sweep_expired_pastes", lambda: None)
-        monkeypatch.setattr("hermes_cli.dump.run_dump", lambda a: None)
+        monkeypatch.setattr("robin.dump.run_dump", lambda a: None)
 
         r = self.client.post("/api/ops/debug-share", json={"redact": False})
         assert r.status_code == 200
         assert r.json()["redacted"] is False
 
     def test_default_body_redacts(self, monkeypatch):
-        import hermes_cli.debug as dbg
+        import robin.debug as dbg
 
         monkeypatch.setattr(
             dbg, "upload_to_pastebin", lambda c, expiry_days=7: "https://paste.rs/x"
         )
         monkeypatch.setattr(dbg, "_schedule_auto_delete", lambda *a, **k: None)
         monkeypatch.setattr(dbg, "_best_effort_sweep_expired_pastes", lambda: None)
-        monkeypatch.setattr("hermes_cli.dump.run_dump", lambda a: None)
+        monkeypatch.setattr("robin.dump.run_dump", lambda a: None)
 
         # No JSON body at all — should default redact=True.
         r = self.client.post("/api/ops/debug-share")
@@ -567,7 +567,7 @@ class TestDebugShareEndpoint:
         assert r.json()["redacted"] is True
 
     def test_upload_failure_returns_502(self, monkeypatch):
-        import hermes_cli.debug as dbg
+        import robin.debug as dbg
 
         monkeypatch.setattr(
             dbg,
@@ -576,7 +576,7 @@ class TestDebugShareEndpoint:
         )
         monkeypatch.setattr(dbg, "_schedule_auto_delete", lambda *a, **k: None)
         monkeypatch.setattr(dbg, "_best_effort_sweep_expired_pastes", lambda: None)
-        monkeypatch.setattr("hermes_cli.dump.run_dump", lambda a: None)
+        monkeypatch.setattr("robin.dump.run_dump", lambda a: None)
 
         r = self.client.post("/api/ops/debug-share", json={"redact": True})
         assert r.status_code == 502

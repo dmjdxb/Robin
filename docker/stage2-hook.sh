@@ -275,7 +275,7 @@ fi
 # sweep so host-owned files in a bind-mounted $HERMES_HOME are never
 # touched — same targeted-ownership contract as the subdir chown above
 # (issue #19788, PR #19795). The list mirrors the top-level *file*
-# entries of hermes_cli.profile_distribution.USER_OWNED_EXCLUDE plus the
+# entries of robin.profile_distribution.USER_OWNED_EXCLUDE plus the
 # runtime lock files; keep them in sync if that set changes.
 for f in \
     auth.json auth.lock .env \

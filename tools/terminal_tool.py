@@ -1000,7 +1000,7 @@ def _resolve_container_task_id(task_id: Optional[str]) -> str:
     ``"default"`` here so subagents share the parent's long-lived container
     (one bash, one /workspace, one set of installed packages).
 
-    Exception: RL / benchmark environments (TerminalBench2, HermesSweEnv, ...)
+    Exception: RL / benchmark environments (TerminalBench2, RobinSweEnv, ...)
     call ``register_task_env_overrides(task_id, {...})`` to request a
     per-task Docker/Modal image. When an override is registered for a
     task_id, we honour it by returning the task_id unchanged -- those
@@ -2313,7 +2313,7 @@ def terminal_tool(
             # replace it by returning a string from transform_terminal_output.
             # The hook is fail-open, and the first valid string return wins.
             try:
-                from hermes_cli.plugins import invoke_hook
+                from robin.plugins import invoke_hook
                 hook_results = invoke_hook(
                     "transform_terminal_output",
                     command=command,

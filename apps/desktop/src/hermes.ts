@@ -13,8 +13,8 @@ import type {
   CronJobUpdates,
   ElevenLabsVoicesResponse,
   EnvVarInfo,
-  HermesConfig,
-  HermesConfigRecord,
+  RobinConfig,
+  RobinConfigRecord,
   LogsResponse,
   MessagingPlatformsResponse,
   MessagingPlatformTestResponse,
@@ -64,8 +64,8 @@ export type {
   ElevenLabsVoicesResponse,
   EnvVarInfo,
   GatewayReadyPayload,
-  HermesConfig,
-  HermesConfigRecord,
+  RobinConfig,
+  RobinConfigRecord,
   LogsResponse,
   MessagingEnvVarInfo,
   MessagingHomeChannel,
@@ -99,7 +99,7 @@ export type {
   ToolsetInfo
 } from '@/types/hermes'
 
-export class HermesGateway extends JsonRpcGatewayClient {
+export class RobinGateway extends JsonRpcGatewayClient {
   constructor() {
     super({
       closedErrorMessage: 'Robin gateway connection closed',
@@ -265,35 +265,35 @@ export function getLogs(params: {
   })
 }
 
-export function getHermesConfig(): Promise<HermesConfig> {
-  return window.hermesDesktop.api<HermesConfig>({
+export function getRobinConfig(): Promise<RobinConfig> {
+  return window.hermesDesktop.api<RobinConfig>({
     ...profileScoped(),
     path: '/api/config'
   })
 }
 
-export function getHermesConfigRecord(): Promise<HermesConfigRecord> {
-  return window.hermesDesktop.api<HermesConfigRecord>({
+export function getRobinConfigRecord(): Promise<RobinConfigRecord> {
+  return window.hermesDesktop.api<RobinConfigRecord>({
     ...profileScoped(),
     path: '/api/config'
   })
 }
 
-export function getHermesConfigDefaults(): Promise<HermesConfigRecord> {
-  return window.hermesDesktop.api<HermesConfigRecord>({
+export function getRobinConfigDefaults(): Promise<RobinConfigRecord> {
+  return window.hermesDesktop.api<RobinConfigRecord>({
     ...profileScoped(),
     path: '/api/config/defaults'
   })
 }
 
-export function getHermesConfigSchema(): Promise<ConfigSchemaResponse> {
+export function getRobinConfigSchema(): Promise<ConfigSchemaResponse> {
   return window.hermesDesktop.api<ConfigSchemaResponse>({
     ...profileScoped(),
     path: '/api/config/schema'
   })
 }
 
-export function saveHermesConfig(config: HermesConfigRecord): Promise<{ ok: boolean }> {
+export function saveRobinConfig(config: RobinConfigRecord): Promise<{ ok: boolean }> {
   return window.hermesDesktop.api<{ ok: boolean }>({
     ...profileScoped(),
     path: '/api/config',

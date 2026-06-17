@@ -102,8 +102,8 @@ from agent.process_bootstrap import (
 from agent.iteration_budget import IterationBudget
 
 
-from hermes_cli.env_loader import load_hermes_dotenv
-from hermes_cli.timeouts import (
+from robin.env_loader import load_hermes_dotenv
+from robin.timeouts import (
     get_provider_request_timeout,
     get_provider_stale_timeout,
 )
@@ -222,10 +222,10 @@ _QWEN_CODE_VERSION = "0.14.1"
 
 def _routermint_headers() -> dict:
     """Return the User-Agent RouterMint needs to avoid Cloudflare 1010 blocks."""
-    from hermes_cli import __version__ as _HERMES_VERSION
+    from robin import __version__ as _HERMES_VERSION
 
     return {
-        "User-Agent": f"HermesAgent/{_HERMES_VERSION}",
+        "User-Agent": f"RobinAgent/{_HERMES_VERSION}",
     }
 
 
@@ -650,7 +650,7 @@ class AIAgent:
             return
         try:
             from agent.model_metadata import MINIMUM_CONTEXT_LENGTH
-            from hermes_cli.models import ensure_lmstudio_model_loaded
+            from robin.models import ensure_lmstudio_model_loaded
             if config_context_length is None:
                 config_context_length = getattr(self, "_config_context_length", None)
             target_ctx = max(config_context_length or 0, MINIMUM_CONTEXT_LENGTH)
@@ -1212,7 +1212,7 @@ class AIAgent:
             return False
         if normalized_provider == "copilot":
             try:
-                from hermes_cli.models import _should_use_copilot_responses_api
+                from robin.models import _should_use_copilot_responses_api
                 return _should_use_copilot_responses_api(model)
             except Exception:
                 # Fall back to the generic GPT-5 rule if Copilot-specific
@@ -2059,11 +2059,11 @@ class AIAgent:
         reason: Optional[str] = None,
     ) -> None:
         # Lazy module import (not from-import) so tests that
-        # ``monkeypatch.setattr("hermes_cli.plugins.has_hook", ...)`` still
+        # ``monkeypatch.setattr("robin.plugins.has_hook", ...)`` still
         # take effect on this call site. After first call the import is a
         # ``sys.modules`` dict lookup, so retries don't repay any real cost.
         try:
-            from hermes_cli import plugins as _plugins
+            from robin import plugins as _plugins
 
             if not _plugins.has_hook("api_request_error"):
                 return
@@ -2442,7 +2442,7 @@ class AIAgent:
             # Read from the persisted config.yaml so gateway and CLI share
             # the same setting.  Import lazily to avoid a startup-time cycle.
             try:
-                from hermes_cli.config import load_config as _load_config
+                from robin.config import load_config as _load_config
                 _cfg = _load_config() or {}
             except Exception:
                 _cfg = {}
@@ -2539,7 +2539,7 @@ class AIAgent:
             # Read from the persisted config.yaml so gateway and CLI share
             # the same setting.  Import lazily to avoid a startup-time cycle.
             try:
-                from hermes_cli.config import load_config as _load_config
+                from robin.config import load_config as _load_config
                 _cfg = _load_config() or {}
             except Exception:
                 _cfg = {}
@@ -3350,7 +3350,7 @@ class AIAgent:
         return any(_contains_image(item) for item in candidates)
 
     def _copilot_headers_for_request(self, *, is_vision: bool) -> dict:
-        from hermes_cli.copilot_auth import copilot_request_headers
+        from robin.copilot_auth import copilot_request_headers
 
         return copilot_request_headers(is_agent_turn=True, is_vision=is_vision)
 
@@ -3444,13 +3444,13 @@ class AIAgent:
         # MUST only fire when the agent really is on singleton tokens.
         try:
             if self.provider == "openai-codex":
-                from hermes_cli.auth import resolve_codex_runtime_credentials
+                from robin.auth import resolve_codex_runtime_credentials
 
                 singleton_now = resolve_codex_runtime_credentials(
                     refresh_if_expiring=False,
                 )
             else:
-                from hermes_cli.auth import resolve_xai_oauth_runtime_credentials
+                from robin.auth import resolve_xai_oauth_runtime_credentials
 
                 singleton_now = resolve_xai_oauth_runtime_credentials(
                     refresh_if_expiring=False,
@@ -3472,11 +3472,11 @@ class AIAgent:
 
         try:
             if self.provider == "openai-codex":
-                from hermes_cli.auth import resolve_codex_runtime_credentials
+                from robin.auth import resolve_codex_runtime_credentials
 
                 creds = resolve_codex_runtime_credentials(force_refresh=force)
             else:
-                from hermes_cli.auth import resolve_xai_oauth_runtime_credentials
+                from robin.auth import resolve_xai_oauth_runtime_credentials
 
                 creds = resolve_xai_oauth_runtime_credentials(force_refresh=force)
         except Exception as exc:
@@ -3509,7 +3509,7 @@ class AIAgent:
             return False
 
         try:
-            from hermes_cli.auth import resolve_nous_runtime_credentials
+            from robin.auth import resolve_nous_runtime_credentials
 
             creds = resolve_nous_runtime_credentials(
                 timeout_seconds=float(os.getenv("HERMES_NOUS_TIMEOUT_SECONDS", "15")),
@@ -3550,7 +3550,7 @@ class AIAgent:
             return False
 
         try:
-            from hermes_cli.copilot_auth import resolve_copilot_token
+            from robin.copilot_auth import resolve_copilot_token
 
             new_token, token_source = resolve_copilot_token()
         except Exception as exc:
@@ -3637,7 +3637,7 @@ class AIAgent:
         elif base_url_host_matches(base_url, "api.routermint.com"):
             self._client_kwargs["default_headers"] = _routermint_headers()
         elif base_url_host_matches(base_url, "api.githubcopilot.com"):
-            from hermes_cli.models import copilot_default_headers
+            from robin.models import copilot_default_headers
 
             self._client_kwargs["default_headers"] = copilot_default_headers()
         elif base_url_host_matches(base_url, "api.kimi.com"):
@@ -4066,7 +4066,7 @@ class AIAgent:
         misclassified as non-vision and have their images stripped.
         """
         try:
-            from hermes_cli.config import load_config
+            from robin.config import load_config
             from agent.image_routing import _lookup_supports_vision
             cfg = load_config()
             provider = (getattr(self, "provider", "") or "").strip()
@@ -4453,7 +4453,7 @@ class AIAgent:
             or base_url_host_matches(self._base_url_lower, "api.githubcopilot.com")
         ):
             try:
-                from hermes_cli.models import github_model_reasoning_efforts
+                from robin.models import github_model_reasoning_efforts
 
                 return bool(github_model_reasoning_efforts(self.model))
             except Exception:
@@ -4506,7 +4506,7 @@ class AIAgent:
             if opts or (_time.monotonic() - ts) < 60:
                 return opts
         try:
-            from hermes_cli.models import lmstudio_model_reasoning_options
+            from robin.models import lmstudio_model_reasoning_options
             opts = lmstudio_model_reasoning_options(
                 self.model, self.base_url, getattr(self, "api_key", ""),
             )
@@ -4531,7 +4531,7 @@ class AIAgent:
     def _github_models_reasoning_extra_body(self) -> dict | None:
         """Format reasoning payload for GitHub Models/OpenAI-compatible routes."""
         try:
-            from hermes_cli.models import github_model_reasoning_efforts
+            from robin.models import github_model_reasoning_efforts
         except Exception:
             return None
 

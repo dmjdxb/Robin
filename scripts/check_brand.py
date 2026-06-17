@@ -8,7 +8,7 @@ release build." It scans the SHIPPED renderer/desktop sources (and, in CI, the
 built `dist/` output) for the bare brand words inside display strings, while
 deliberately ignoring:
 
-  - internal identifiers that must keep working (HERMES_HOME, hermes_cli,
+  - internal identifiers that must keep working (HERMES_HOME, robin,
     hermesDesktop, @hermes/shared, @nous-research/ui, types/hermes, the
     `hermes` venv entry point, IPC/env var names);
   - required legal attribution (LICENSE / NOTICE / About-licences), which MUST
@@ -45,7 +45,6 @@ SCAN_EXT = {".ts", ".tsx", ".js", ".jsx", ".html", ".json", ".jsonl"}
 # attribution and are not user-visible brand leaks.
 ALLOW_SUBSTRINGS = (
     "HERMES_",            # env vars / constants
-    "hermes_cli",         # python module path
     "hermesDesktop",      # preload bridge namespace
     "@hermes/",           # workspace package
     "@nous-research/",    # vendored UI package

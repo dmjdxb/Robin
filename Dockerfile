@@ -182,8 +182,8 @@ RUN cd web && npm run build && \
 # The venv needs to be traversable too.
 # node_modules trees additionally need to be writable by the hermes user
 # so the runtime `npm install` triggered by _tui_need_npm_install() in
-# hermes_cli/main.py succeeds (see #18800). /opt/hermes/web is build-time
-# only (HERMES_WEB_DIST points at hermes_cli/web_dist) and is intentionally
+# robin/main.py succeeds (see #18800). /opt/hermes/web is build-time
+# only (HERMES_WEB_DIST points at robin/web_dist) and is intentionally
 # not chowned here.
 # /opt/hermes/gateway is runtime-writable: Python may create __pycache__ and
 # gateway state artifacts beneath the package after services drop privileges,
@@ -214,7 +214,7 @@ RUN uv pip install --no-cache-dir --no-deps -e "."
 #
 # Fix: write the commit SHA passed via the HERMES_GIT_SHA build-arg to
 # /opt/hermes/.hermes_build_sha at build time, and have
-# hermes_cli/build_info.py read it at runtime.  Both `hermes dump` and
+# robin/build_info.py read it at runtime.  Both `hermes dump` and
 # banner.get_git_banner_state() try the baked SHA first, then fall back
 # to live `git rev-parse` for source installs (unchanged behaviour).
 #
@@ -252,7 +252,7 @@ COPY --chmod=0755 docker/cont-init.d/015-supervise-perms /etc/cont-init.d/015-su
 COPY --chmod=0755 docker/cont-init.d/02-reconcile-profiles /etc/cont-init.d/02-reconcile-profiles
 
 # ---------- Runtime ----------
-ENV HERMES_WEB_DIST=/opt/hermes/hermes_cli/web_dist
+ENV HERMES_WEB_DIST=/opt/hermes/robin/web_dist
 # Point the TUI launcher at the prebuilt bundle baked at build time (Layer 8:
 # `ui-tui && npm run build`). This makes _make_tui_argv take the prebuilt-bundle
 # fast path (`node --expose-gc /opt/hermes/ui-tui/dist/entry.js`) and skip the

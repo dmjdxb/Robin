@@ -53,8 +53,8 @@ from typing import Dict, Optional, Any, List, Union
 from agent.account_usage import fetch_account_usage, render_account_usage_lines
 from agent.async_utils import safe_schedule_threadsafe
 from agent.i18n import t
-from hermes_cli.config import cfg_get
-from hermes_cli.fallback_config import get_fallback_chain
+from robin.config import cfg_get
+from robin.fallback_config import get_fallback_chain
 
 # --- Agent cache tuning ---------------------------------------------------
 # Bounds the per-session AIAgent cache to prevent unbounded growth in
@@ -343,7 +343,7 @@ def _telegramize_command_mentions(text: str, platform: Any) -> str:
     if platform_value != "telegram":
         return text
 
-    from hermes_cli.commands import _sanitize_telegram_name
+    from robin.commands import _sanitize_telegram_name
 
     def _replace(match: re.Match[str]) -> str:
         sanitized = _sanitize_telegram_name(match.group(1))
@@ -847,7 +847,7 @@ _hermes_home = get_hermes_home()
 # Load environment variables from ~/.hermes/.env first.
 # User-managed env files should override stale shell exports on restart.
 from dotenv import load_dotenv  # noqa: F401  # backward-compat for tests that monkeypatch this symbol
-from hermes_cli.env_loader import load_hermes_dotenv
+from robin.env_loader import load_hermes_dotenv
 _env_path = _hermes_home / '.env'
 load_hermes_dotenv(hermes_home=_hermes_home, project_env=Path(__file__).resolve().parents[1] / '.env')
 
@@ -872,7 +872,7 @@ def _reload_runtime_env_preserving_config_authority() -> None:
         import yaml as _yaml
         with open(config_path, encoding="utf-8") as f:
             cfg = _yaml.safe_load(f) or {}
-        from hermes_cli.config import _expand_env_vars
+        from robin.config import _expand_env_vars
         cfg = _expand_env_vars(cfg)
     except Exception:
         return
@@ -894,7 +894,7 @@ if _config_path.exists():
         with open(_config_path, encoding="utf-8") as _f:
             _cfg = _yaml.safe_load(_f) or {}
         # Expand ${ENV_VAR} references before bridging to env vars.
-        from hermes_cli.config import _expand_env_vars
+        from robin.config import _expand_env_vars
         _cfg = _expand_env_vars(_cfg)
         # Top-level simple values (fallback only — don't override .env)
         for _key, _val in _cfg.items():
@@ -964,7 +964,7 @@ if _config_path.exists():
             # below via the plugin auxiliary registry.
             _aux_bridged_keys = {"vision", "web_extract", "approval"}
             try:
-                from hermes_cli.plugins import get_plugin_auxiliary_tasks
+                from robin.plugins import get_plugin_auxiliary_tasks
                 for _entry in get_plugin_auxiliary_tasks():
                     _aux_bridged_keys.add(_entry["key"])
             except Exception:
@@ -1085,14 +1085,14 @@ except Exception as _bootstrap_exc:
 
 # Validate config structure early — log warnings so gateway operators see problems
 try:
-    from hermes_cli.config import print_config_warnings
+    from robin.config import print_config_warnings
     print_config_warnings()
 except Exception as _bootstrap_exc:
     print(f"  Warning: config validation failed: {_bootstrap_exc}", file=sys.stderr)
 
 # Warn if user has deprecated MESSAGING_CWD / TERMINAL_CWD in .env
 try:
-    from hermes_cli.config import warn_deprecated_cwd_env_vars
+    from robin.config import warn_deprecated_cwd_env_vars
     warn_deprecated_cwd_env_vars()
 except Exception as _bootstrap_exc:
     print(f"  Warning: deprecation check failed: {_bootstrap_exc}", file=sys.stderr)
@@ -1176,12 +1176,12 @@ def _resolve_runtime_agent_kwargs() -> dict:
     resolve credentials using the fallback provider chain from config.yaml
     before giving up.
     """
-    from hermes_cli.runtime_provider import (
+    from robin.runtime_provider import (
         resolve_runtime_provider,
         format_runtime_provider_error,
         _get_model_config,
     )
-    from hermes_cli.auth import AuthError, is_rate_limited_auth_error
+    from robin.auth import AuthError, is_rate_limited_auth_error
 
     try:
         runtime = resolve_runtime_provider()
@@ -1235,7 +1235,7 @@ def _resolve_runtime_agent_kwargs() -> dict:
 
 def _try_resolve_fallback_provider() -> dict | None:
     """Attempt to resolve credentials from the fallback_model/fallback_providers config."""
-    from hermes_cli.runtime_provider import resolve_runtime_provider
+    from robin.runtime_provider import resolve_runtime_provider
     try:
         import yaml as _y
         cfg_path = _hermes_home / "config.yaml"
@@ -1532,11 +1532,11 @@ def _load_gateway_config() -> dict:
 
     Uses the module-level ``_hermes_home`` (so tests that monkeypatch it
     still see their fixture) and shares the mtime-keyed raw-yaml cache
-    from ``hermes_cli.config.read_raw_config`` when the paths match.
+    from ``robin.config.read_raw_config`` when the paths match.
     """
     config_path = _hermes_home / 'config.yaml'
     try:
-        from hermes_cli.config import get_config_path, read_raw_config
+        from robin.config import get_config_path, read_raw_config
         # Fast path: if _hermes_home agrees with the canonical config
         # location, reuse the shared cache. Otherwise fall through to a
         # direct read (keeps test fixtures with a monkeypatched
@@ -1570,7 +1570,7 @@ def _load_gateway_runtime_config() -> dict:
     cfg = _load_gateway_config()
     if not isinstance(cfg, dict) or not cfg:
         return {}
-    from hermes_cli.config import _expand_env_vars
+    from robin.config import _expand_env_vars
 
     expanded = _expand_env_vars(cfg)
     return expanded if isinstance(expanded, dict) else {}
@@ -1597,7 +1597,7 @@ def _resolve_hermes_bin() -> Optional[list[str]]:
 
     Tries in order:
     1. ``shutil.which("hermes")`` — standard PATH lookup
-    2. ``sys.executable -m hermes_cli.main`` — fallback when Robin is running
+    2. ``sys.executable -m robin.main`` — fallback when Robin is running
        from a venv/module invocation and the ``hermes`` shim is not on PATH
 
     Returns argv parts ready for quoting/joining, or ``None`` if neither works.
@@ -1611,8 +1611,8 @@ def _resolve_hermes_bin() -> Optional[list[str]]:
     try:
         import importlib.util
 
-        if importlib.util.find_spec("hermes_cli") is not None:
-            return [sys.executable, "-m", "hermes_cli.main"]
+        if importlib.util.find_spec("robin") is not None:
+            return [sys.executable, "-m", "robin.main"]
     except Exception:
         pass
 
@@ -1997,7 +1997,7 @@ class GatewayRunner:
         # so operators knowingly enable tirith or configure auxiliary.approval
         # for unattended gateways.
         try:
-            from hermes_cli.config import load_config as _load_full_config
+            from robin.config import load_config as _load_full_config
             _appr_cfg = _load_full_config()
             _appr_mode = str(
                 cfg_get(_appr_cfg, "approvals", "mode", default="manual") or "manual"
@@ -2038,7 +2038,7 @@ class GatewayRunner:
         # but never raised.
         if self._session_db is not None:
             try:
-                from hermes_cli.config import load_config as _load_full_config
+                from robin.config import load_config as _load_full_config
                 _sess_cfg = (_load_full_config().get("sessions") or {})
                 if _sess_cfg.get("auto_prune", False):
                     self._session_db.maybe_auto_prune_and_vacuum(
@@ -2054,7 +2054,7 @@ class GatewayRunner:
         # checkpoint repos under ~/.hermes/checkpoints/.  Opt-in via
         # checkpoints.auto_prune, idempotent via .last_prune marker.
         try:
-            from hermes_cli.config import load_config as _load_full_config
+            from robin.config import load_config as _load_full_config
             _ckpt_cfg = (_load_full_config().get("checkpoints") or {})
             if _ckpt_cfg.get("auto_prune", False):
                 from tools.checkpoint_manager import maybe_auto_prune_checkpoints
@@ -2269,9 +2269,9 @@ class GatewayRunner:
             return
 
         # Push the global voice.auto_tts default (config.yaml) onto the adapter.
-        # Lazy import to avoid adding a module-level dep from gateway → hermes_cli.
+        # Lazy import to avoid adding a module-level dep from gateway → robin.
         try:
-            from hermes_cli.config import load_config as _load_full_config
+            from robin.config import load_config as _load_full_config
             _full_cfg = _load_full_config()
             _auto_tts_default = bool(
                 (_full_cfg.get("voice") or {}).get("auto_tts", False)
@@ -2660,7 +2660,7 @@ class GatewayRunner:
         # doesn't fail with "model must be a non-empty string".
         if not model and runtime_kwargs.get("provider"):
             try:
-                from hermes_cli.models import get_default_model_for_provider
+                from robin.models import get_default_model_for_provider
                 model = get_default_model_for_provider(runtime_kwargs["provider"])
                 if model:
                     logger.info(
@@ -2706,7 +2706,7 @@ class GatewayRunner:
         mode, attach `request_overrides` so the API call is marked
         accordingly.
         """
-        from hermes_cli.models import resolve_fast_mode_overrides
+        from robin.models import resolve_fast_mode_overrides
 
         runtime = {
             "api_key": runtime_kwargs.get("api_key"),
@@ -2947,7 +2947,7 @@ class GatewayRunner:
         if not session_id:
             return False
         try:
-            from hermes_cli.goals import GoalManager
+            from robin.goals import GoalManager
             return GoalManager(session_id=session_id).is_active()
         except Exception as exc:
             logger.debug("goal continuation: active-state recheck failed: %s", exc)
@@ -3826,7 +3826,7 @@ class GatewayRunner:
     def _finalize_shutdown_agents(self, active_agents: Dict[str, Any]) -> None:
         for agent in active_agents.values():
             try:
-                from hermes_cli.plugins import invoke_hook as _invoke_hook
+                from robin.plugins import invoke_hook as _invoke_hook
                 _invoke_hook(
                     "on_session_finalize",
                     session_id=getattr(agent, "session_id", None),
@@ -3996,7 +3996,7 @@ class GatewayRunner:
         # that triggered the /restart command closing its console.
         if sys.platform == "win32":
             import textwrap
-            from hermes_cli._subprocess_compat import windows_detach_popen_kwargs
+            from robin._subprocess_compat import windows_detach_popen_kwargs
 
             cmd_argv = [*hermes_cmd, "gateway", "restart"]
             watcher = textwrap.dedent(
@@ -4100,7 +4100,7 @@ class GatewayRunner:
                 return
 
             try:
-                from hermes_cli.gateway import get_service_name
+                from robin.gateway import get_service_name
 
                 service_name = get_service_name()
             except Exception:
@@ -4332,7 +4332,7 @@ class GatewayRunner:
         except Exception:
             pass
         try:
-            from hermes_cli.profiles import get_active_profile_name
+            from robin.profiles import get_active_profile_name
             _profile = get_active_profile_name()
             if _profile and _profile != "default":
                 logger.info("Active profile: %s", _profile)
@@ -4348,9 +4348,9 @@ class GatewayRunner:
         # in gateway.log and `hermes status` surfaces it; we do NOT block
         # startup or surface it inline to user messages, since the gateway
         # operator is the one who can act on it (uninstall the package,
-        # rotate credentials).  See hermes_cli/security_advisories.py.
+        # rotate credentials).  See robin/security_advisories.py.
         try:
-            from hermes_cli.security_advisories import (
+            from robin.security_advisories import (
                 detect_compromised,
                 gateway_log_message,
             )
@@ -4434,12 +4434,12 @@ class GatewayRunner:
         
         # Discover Python plugins before shell hooks so plugin block
         # decisions take precedence in tie cases.  The CLI startup path
-        # does this via an explicit call in hermes_cli/main.py; the
+        # does this via an explicit call in robin/main.py; the
         # gateway lazily imports run_agent inside per-request handlers,
         # so the discover_plugins() side-effect in model_tools.py is NOT
         # guaranteed to have run by the time we reach this point.
         try:
-            from hermes_cli.plugins import discover_plugins
+            from robin.plugins import discover_plugins
             discover_plugins()
         except Exception:
             logger.warning(
@@ -4456,7 +4456,7 @@ class GatewayRunner:
         # hooks_auto_accept here would just duplicate that lookup.
         # Failures are logged but must never block gateway startup.
         try:
-            from hermes_cli.config import load_config
+            from robin.config import load_config
             from agent.shell_hooks import register_from_config
             register_from_config(load_config(), accept_hooks=False)
         except Exception:
@@ -5071,7 +5071,7 @@ class GatewayRunner:
                 for key, entry in _expired_entries:
                     try:
                         try:
-                            from hermes_cli.plugins import invoke_hook as _invoke_hook
+                            from robin.plugins import invoke_hook as _invoke_hook
                             _parts = key.split(":")
                             _platform = _parts[2] if len(_parts) > 2 else ""
                             _invoke_hook(
@@ -5194,7 +5194,7 @@ class GatewayRunner:
     def _active_profile_name(self) -> str:
         """Return the profile name this gateway represents."""
         try:
-            from hermes_cli.profiles import get_active_profile_name
+            from robin.profiles import get_active_profile_name
             return get_active_profile_name() or "default"
         except Exception:
             return "default"
@@ -5223,7 +5223,7 @@ class GatewayRunner:
         # in the dispatch owner's per-board DBs. This prevents N-gateway -shm contention.
         # TODO: gate per-board when per-board dispatcher_owner tracking lands.
         try:
-            from hermes_cli.config import load_config as _load_config
+            from robin.config import load_config as _load_config
         except Exception:
             logger.warning("kanban notifier: config loader unavailable; disabled")
             return
@@ -5244,7 +5244,7 @@ class GatewayRunner:
             return
         from gateway.config import Platform as _Platform
         try:
-            from hermes_cli import kanban_db as _kb
+            from robin import kanban_db as _kb
         except Exception:
             logger.warning("kanban notifier: kanban_db not importable; notifier disabled")
             return
@@ -5569,7 +5569,7 @@ class GatewayRunner:
         ``board`` scopes the DB connection to the board that owns this
         subscription. Unsub cursors in one board can't touch another's.
         """
-        from hermes_cli import kanban_db as _kb
+        from robin import kanban_db as _kb
         conn = _kb.connect(board=board)
         try:
             _kb.advance_notify_cursor(
@@ -5584,7 +5584,7 @@ class GatewayRunner:
             conn.close()
 
     def _kanban_unsub(self, sub: dict, board: Optional[str] = None) -> None:
-        from hermes_cli import kanban_db as _kb
+        from robin import kanban_db as _kb
         conn = _kb.connect(board=board)
         try:
             _kb.remove_notify_sub(
@@ -5605,7 +5605,7 @@ class GatewayRunner:
         board: Optional[str] = None,
     ) -> None:
         """Sync helper: undo a claimed notification cursor after send failure."""
-        from hermes_cli import kanban_db as _kb
+        from robin import kanban_db as _kb
         conn = _kb.connect(board=board)
         try:
             _kb.rewind_notify_cursor(
@@ -5752,7 +5752,7 @@ class GatewayRunner:
         # watcher here. Honours HERMES_KANBAN_DISPATCH_IN_GATEWAY env var
         # as an escape hatch (false-y value disables without editing YAML).
         try:
-            from hermes_cli.config import load_config as _load_config
+            from robin.config import load_config as _load_config
         except Exception:
             logger.warning("kanban dispatcher: config loader unavailable; disabled")
             return
@@ -5774,7 +5774,7 @@ class GatewayRunner:
             return
 
         try:
-            from hermes_cli import kanban_db as _kb
+            from robin import kanban_db as _kb
         except Exception:
             logger.warning("kanban dispatcher: kanban_db not importable; dispatcher disabled")
             return
@@ -6097,7 +6097,7 @@ class GatewayRunner:
             successfully decomposed or specified this tick.
             """
             try:
-                from hermes_cli import kanban_decompose as _decomp
+                from robin import kanban_decompose as _decomp
             except Exception as exc:  # pragma: no cover
                 logger.warning(
                     "kanban auto-decompose: import failed (%s); skipping", exc,
@@ -7424,7 +7424,7 @@ class GatewayRunner:
         # (e.g. customer handover ingest) without triggering the pairing flow.
         if not is_internal:
             try:
-                from hermes_cli.plugins import invoke_hook as _invoke_hook
+                from robin.plugins import invoke_hook as _invoke_hook
                 _hook_results = _invoke_hook(
                     "pre_gateway_dispatch",
                     event=event,
@@ -7525,7 +7525,7 @@ class GatewayRunner:
                 _recognized_cmd = None
                 if cmd:
                     try:
-                        from hermes_cli.commands import resolve_command as _resolve_update_cmd
+                        from robin.commands import resolve_command as _resolve_update_cmd
                     except Exception:
                         _resolve_update_cmd = None
                     if _resolve_update_cmd is not None:
@@ -7719,7 +7719,7 @@ class GatewayRunner:
                 return await self._handle_status_command(event)
 
             # Resolve the command once for all early-intercept checks below.
-            from hermes_cli.commands import (
+            from robin.commands import (
                 ACTIVE_SESSION_BYPASS_COMMANDS as _DEDICATED_HANDLERS,
                 resolve_command as _resolve_cmd_inner,
             )
@@ -8056,7 +8056,7 @@ class GatewayRunner:
         # Check for commands
         command = event.get_command()
 
-        from hermes_cli.commands import (
+        from robin.commands import (
             GATEWAY_KNOWN_COMMANDS,
             is_gateway_known_command,
             resolve_command as _resolve_cmd,
@@ -8388,10 +8388,10 @@ class GatewayRunner:
         # Plugin-registered slash commands
         if command:
             try:
-                from hermes_cli.plugins import get_plugin_command_handler
+                from robin.plugins import get_plugin_command_handler
                 # Normalize underscores to hyphens so Telegram's underscored
                 # autocomplete form matches plugin commands registered with
-                # hyphens. See hermes_cli/commands.py:_build_telegram_menu.
+                # hyphens. See robin/commands.py:_build_telegram_menu.
                 plugin_handler = get_plugin_command_handler(command.replace("_", "-"))
                 if plugin_handler:
                     user_args = event.get_command_args().strip()
@@ -9164,7 +9164,7 @@ class GatewayRunner:
                 if _hyg_config_context_length is None and _hyg_base_url:
                     try:
                         try:
-                            from hermes_cli.config import get_compatible_custom_providers as _gw_gcp
+                            from robin.config import get_compatible_custom_providers as _gw_gcp
                             _hyg_custom_providers = _gw_gcp(_hyg_data)
                         except Exception:
                             _hyg_custom_providers = _hyg_data.get("custom_providers")
@@ -9957,7 +9957,7 @@ class GatewayRunner:
                     provider = model_cfg.get("provider") or None
                     base_url = model_cfg.get("base_url") or None
                 try:
-                    from hermes_cli.config import get_compatible_custom_providers
+                    from robin.config import get_compatible_custom_providers
                     custom_provs = get_compatible_custom_providers(data)
                 except Exception:
                     custom_provs = data.get("custom_providers")
@@ -10113,7 +10113,7 @@ class GatewayRunner:
 
         # Fire plugin on_session_finalize hook (session boundary)
         try:
-            from hermes_cli.plugins import invoke_hook as _invoke_hook
+            from robin.plugins import invoke_hook as _invoke_hook
             _invoke_hook(
                 "on_session_finalize",
                 session_id=_old_sid,
@@ -10188,7 +10188,7 @@ class GatewayRunner:
 
         # Fire plugin on_session_reset hook (new session guaranteed to exist)
         try:
-            from hermes_cli.plugins import invoke_hook as _invoke_hook
+            from robin.plugins import invoke_hook as _invoke_hook
             _new_sid = new_entry.session_id if new_entry else None
             _invoke_hook(
                 "on_session_reset",
@@ -10203,7 +10203,7 @@ class GatewayRunner:
 
         # Append a random tip to the reset message
         try:
-            from hermes_cli.tips import get_random_tip
+            from robin.tips import get_random_tip
             _tip_line = t("gateway.reset.tip", tip=get_random_tip())
         except Exception:
             _tip_line = ""
@@ -10215,7 +10215,7 @@ class GatewayRunner:
     async def _handle_profile_command(self, event: MessageEvent) -> str:
         """Handle /profile — show active profile name and home directory."""
         from hermes_constants import display_hermes_home
-        from hermes_cli.profiles import get_active_profile_name
+        from robin.profiles import get_active_profile_name
 
         display = display_hermes_home()
         profile_name = get_active_profile_name()
@@ -10340,7 +10340,7 @@ class GatewayRunner:
         import asyncio
         import re
         import shlex
-        from hermes_cli.kanban import run_slash
+        from robin.kanban import run_slash
 
         text = (event.text or "").strip()
         # Strip the leading "/kanban" (with or without slash), leaving args.
@@ -10394,7 +10394,7 @@ class GatewayRunner:
                     user_id = str(getattr(source, "user_id", "") or "") or None
                     if platform_str and chat_id:
                         def _sub():
-                            from hermes_cli import kanban_db as _kb
+                            from robin import kanban_db as _kb
                             conn = _kb.connect(board=requested_board)
                             try:
                                 _kb.add_notify_sub(
@@ -10915,7 +10915,7 @@ class GatewayRunner:
 
     async def _handle_help_command(self, event: MessageEvent) -> str:
         """Handle /help command - list available commands."""
-        from hermes_cli.commands import gateway_help_lines
+        from robin.commands import gateway_help_lines
         lines = [
             t("gateway.help.header"),
             *gateway_help_lines(),
@@ -10939,7 +10939,7 @@ class GatewayRunner:
         )
 
     async def _handle_commands_command(self, event: MessageEvent) -> str:
-        from hermes_cli.commands import gateway_help_lines
+        from robin.commands import gateway_help_lines
 
         raw_args = event.get_command_args().strip()
         if raw_args:
@@ -11004,12 +11004,12 @@ class GatewayRunner:
           /model --provider <provider>        — switch to provider, auto-detect model
         """
         import yaml
-        from hermes_cli.model_switch import (
+        from robin.model_switch import (
             switch_model as _switch_model, parse_model_flags,
             list_authenticated_providers,
             list_picker_providers,
         )
-        from hermes_cli.providers import get_label
+        from robin.providers import get_label
 
         raw_args = event.get_command_args().strip()
 
@@ -11019,7 +11019,7 @@ class GatewayRunner:
         # --refresh: bust the disk cache so the picker shows live data.
         if force_refresh:
             try:
-                from hermes_cli.models import clear_provider_models_cache
+                from robin.models import clear_provider_models_cache
                 clear_provider_models_cache()
             except Exception:
                 pass
@@ -11042,7 +11042,7 @@ class GatewayRunner:
                     current_base_url = model_cfg.get("base_url", "")
                 user_provs = cfg.get("providers")
                 try:
-                    from hermes_cli.config import get_compatible_custom_providers
+                    from robin.config import get_compatible_custom_providers
                     custom_provs = get_compatible_custom_providers(cfg)
                 except Exception:
                     custom_provs = cfg.get("custom_providers")
@@ -11170,7 +11170,7 @@ class GatewayRunner:
                         lines = [t("gateway.model.switched", model=result.new_model)]
                         lines.append(t("gateway.model.provider_label", provider=plabel))
                         mi = result.model_info
-                        from hermes_cli.model_switch import resolve_display_context_length
+                        from robin.model_switch import resolve_display_context_length
                         _sw_config_ctx = None
                         try:
                             _sw_cfg = _load_gateway_config()
@@ -11345,7 +11345,7 @@ class GatewayRunner:
                 model_cfg["provider"] = result.target_provider
                 if result.base_url:
                     model_cfg["base_url"] = result.base_url
-                from hermes_cli.config import save_config
+                from robin.config import save_config
                 save_config(cfg)
             except Exception as e:
                 logger.warning("Failed to persist model switch: %s", e)
@@ -11358,7 +11358,7 @@ class GatewayRunner:
         # Context: always resolve via the provider-aware chain so Codex OAuth,
         # Copilot, and EnergyIR-enforced caps win over the raw models.dev entry.
         mi = result.model_info
-        from hermes_cli.model_switch import resolve_display_context_length
+        from robin.model_switch import resolve_display_context_length
         _sw2_config_ctx = None
         try:
             _sw2_cfg = _load_gateway_config()
@@ -11417,7 +11417,7 @@ class GatewayRunner:
         On change, the cached agent for this session is evicted so the next
         message creates a fresh AIAgent with the new api_mode wired in
         (avoids prompt-cache invalidation mid-session)."""
-        from hermes_cli import codex_runtime_switch as crs
+        from robin import codex_runtime_switch as crs
 
         raw_args = event.get_command_args().strip() if event else ""
         new_value, errors = crs.parse_args(raw_args)
@@ -11426,7 +11426,7 @@ class GatewayRunner:
 
         # Load + persist via the same helpers used for /model and /yolo
         try:
-            from hermes_cli.config import load_config, save_config
+            from robin.config import load_config, save_config
         except Exception as exc:
             return f"❌ Could not load config: {exc}"
         cfg = load_config()
@@ -11563,7 +11563,7 @@ class GatewayRunner:
 
         GatewayRunner.config is a GatewayConfig dataclass, not the full
         user config mapping. Top-level config blocks such as ``goals`` are
-        therefore only available through hermes_cli.config.load_config().
+        therefore only available through robin.config.load_config().
         """
         try:
             goals_cfg = (
@@ -11572,7 +11572,7 @@ class GatewayRunner:
                 else getattr(self.config, "goals", {}) or {}
             )
             if not goals_cfg:
-                from hermes_cli.config import load_config
+                from robin.config import load_config
 
                 goals_cfg = (load_config() or {}).get("goals") or {}
             return int(goals_cfg.get("max_turns", 20) or 20)
@@ -11586,7 +11586,7 @@ class GatewayRunner:
         goals module can't be loaded.
         """
         try:
-            from hermes_cli.goals import GoalManager
+            from robin.goals import GoalManager
         except Exception as exc:
             logger.debug("goal manager unavailable: %s", exc)
             return None, None
@@ -11809,7 +11809,7 @@ class GatewayRunner:
         queue and takes priority naturally.
         """
         try:
-            from hermes_cli.goals import GoalManager
+            from robin.goals import GoalManager
         except Exception as exc:
             logger.debug("goal continuation: goals module unavailable: %s", exc)
             return
@@ -11922,7 +11922,7 @@ class GatewayRunner:
 
         # Save to .env so it persists across restarts
         try:
-            from hermes_cli.config import save_env_value
+            from robin.config import save_env_value
             save_env_value(env_key, str(chat_id))
             # Keep thread/topic routing explicit and clear stale values when
             # /sethome is run from the parent chat instead of a thread.
@@ -12618,7 +12618,7 @@ class GatewayRunner:
 
             platform_key = _platform_config_key(source.platform)
 
-            from hermes_cli.tools_config import _get_platform_tools
+            from robin.tools_config import _get_platform_tools
             enabled_toolsets = sorted(_get_platform_tools(user_config, platform_key))
             agent_cfg = user_config.get("agent") or {}
             disabled_toolsets = agent_cfg.get("disabled_toolsets") or None
@@ -12900,7 +12900,7 @@ class GatewayRunner:
     async def _handle_fast_command(self, event: MessageEvent) -> str:
         """Handle /fast — mirror the CLI Priority Processing toggle in gateway chats."""
         import yaml
-        from hermes_cli.models import model_supports_fast_mode
+        from robin.models import model_supports_fast_mode
 
         args = event.get_command_args().strip().lower()
         config_path = _hermes_home / "config.yaml"
@@ -13136,7 +13136,7 @@ class GatewayRunner:
 
         # Parse args: either a focus topic (full compress) or the
         # boundary-aware "here [N]" form (partial compress).
-        from hermes_cli.partial_compress import (
+        from robin.partial_compress import (
             parse_partial_compress_args,
             rejoin_compressed_head_and_tail,
             split_history_for_partial_compress,
@@ -14715,7 +14715,7 @@ class GatewayRunner:
         (e.g. a prior "Always Approve" click) without a gateway restart.
         """
         try:
-            from hermes_cli.config import load_config
+            from robin.config import load_config
             cfg = load_config()
             return cfg if isinstance(cfg, dict) else {}
         except Exception:
@@ -14924,7 +14924,7 @@ class GatewayRunner:
         full log uploads should use ``hermes debug share`` from the CLI.
         """
         import asyncio
-        from hermes_cli.debug import (
+        from robin.debug import (
             _capture_dump, collect_debug_report,
             upload_to_pastebin, _schedule_auto_delete,
             _GATEWAY_PRIVACY_NOTICE, _best_effort_sweep_expired_pastes,
@@ -14972,7 +14972,7 @@ class GatewayRunner:
         import shutil
         import subprocess
         from datetime import datetime
-        from hermes_cli.config import is_managed, format_managed_message
+        from robin.config import is_managed, format_managed_message
 
         # Block non-messaging platforms (API server, webhooks, ACP)
         platform = event.source.platform
@@ -15048,7 +15048,7 @@ class GatewayRunner:
         try:
             if sys.platform == "win32":
                 import textwrap
-                from hermes_cli._subprocess_compat import windows_detach_popen_kwargs
+                from robin._subprocess_compat import windows_detach_popen_kwargs
 
                 # hermes_cmd is a list of argv parts we can pass directly
                 # (no shell-quoting needed).
@@ -15649,7 +15649,7 @@ class GatewayRunner:
         try:
             from agent.image_routing import decide_image_input_mode
             from agent.auxiliary_client import _read_main_model, _read_main_provider
-            from hermes_cli.config import load_config
+            from robin.config import load_config
 
             cfg = load_config()
             provider = _read_main_provider()
@@ -16989,7 +16989,7 @@ class GatewayRunner:
         user_config = _load_gateway_config()
         platform_key = _platform_config_key(source.platform)
 
-        from hermes_cli.tools_config import _get_platform_tools
+        from robin.tools_config import _get_platform_tools
         enabled_toolsets = sorted(_get_platform_tools(user_config, platform_key))
         agent_cfg_local = user_config.get("agent") or {}
         disabled_toolsets = agent_cfg_local.get("disabled_toolsets") or None
@@ -18960,7 +18960,7 @@ class GatewayRunner:
                 _pending_cmd_word = _pending_parts[0][1:].lower() if _pending_parts else ""
                 if _pending_cmd_word:
                     try:
-                        from hermes_cli.commands import resolve_command as _rc_pending
+                        from robin.commands import resolve_command as _rc_pending
                         if _rc_pending(_pending_cmd_word):
                             logger.info(
                                 "Discarding command '/%s' from pending queue — "
@@ -19315,7 +19315,7 @@ def _run_planned_stop_watcher(
     This watcher runs on every platform (cheap, defensive) and bridges
     the gap on Windows by translating a filesystem marker into the
     same shutdown-handler invocation a real SIGTERM would have produced
-    on POSIX. The CLI's ``hermes_cli.gateway_windows.stop()`` writes
+    on POSIX. The CLI's ``robin.gateway_windows.stop()`` writes
     the marker via ``write_planned_stop_marker(pid)`` and then waits
     for the gateway PID to exit; this watcher is what makes that
     exit happen cleanly.
@@ -19398,7 +19398,7 @@ def _start_cron_ticker(stop_event: threading.Event, adapters=None, loop=None, in
     """
     from cron.scheduler import tick as cron_tick
     from gateway.platforms.base import cleanup_image_cache, cleanup_document_cache
-    from hermes_cli.debug import _sweep_expired_pastes
+    from robin.debug import _sweep_expired_pastes
 
     IMAGE_CACHE_EVERY = 60   # ticks — once per hour at default 60s interval
     CHANNEL_DIR_EVERY = 5    # ticks — every 5 minutes
@@ -19904,7 +19904,7 @@ def main():
     # Force UTF-8 stdio on Windows — gateway logs and startup banner would
     # otherwise UnicodeEncodeError on cp1252 consoles.  No-op on POSIX.
     try:
-        from hermes_cli.stdio import configure_windows_stdio
+        from robin.stdio import configure_windows_stdio
         configure_windows_stdio()
     except Exception:
         pass

@@ -1,4 +1,4 @@
-import type { HermesConfigRecord, ToolsetInfo } from '@/types/hermes'
+import type { RobinConfigRecord, ToolsetInfo } from '@/types/hermes'
 
 import { BUILTIN_PERSONALITIES, ENUM_OPTIONS, PROVIDER_GROUPS } from './constants'
 
@@ -95,7 +95,7 @@ function safeSet(target: Record<string, unknown>, key: string, value: unknown): 
   })
 }
 
-export function getNested(obj: HermesConfigRecord, path: string): unknown {
+export function getNested(obj: RobinConfigRecord, path: string): unknown {
   let cur: unknown = obj
 
   for (const part of configPathParts(path)) {
@@ -113,7 +113,7 @@ export function getNested(obj: HermesConfigRecord, path: string): unknown {
   return cur
 }
 
-export function setNested(obj: HermesConfigRecord, path: string, value: unknown): HermesConfigRecord {
+export function setNested(obj: RobinConfigRecord, path: string, value: unknown): RobinConfigRecord {
   const clone = structuredClone(obj)
   const parts = configPathParts(path)
   let cur: Record<string, unknown> = clone
@@ -139,7 +139,7 @@ export function setNested(obj: HermesConfigRecord, path: string, value: unknown)
   return clone
 }
 
-function personalityOptions(config: HermesConfigRecord): string[] {
+function personalityOptions(config: RobinConfigRecord): string[] {
   const custom = getNested(config, 'agent.personalities')
 
   const customNames =
@@ -151,7 +151,7 @@ function personalityOptions(config: HermesConfigRecord): string[] {
 export function enumOptionsFor(
   key: string,
   value: unknown,
-  config: HermesConfigRecord,
+  config: RobinConfigRecord,
   dynamicOptions?: string[]
 ): string[] | undefined {
   const opts = dynamicOptions ?? (key === 'display.personality' ? personalityOptions(config) : ENUM_OPTIONS[key])

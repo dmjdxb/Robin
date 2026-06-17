@@ -71,8 +71,8 @@ def get_hermes_home() -> Path:
     the platform-native default — because raising here would brick 30+ module-level
     callers that import this at load time.  Subprocess spawners are
     expected to propagate ``HERMES_HOME`` explicitly (see the systemd
-    template in ``hermes_cli/gateway.py`` and the kanban dispatcher in
-    ``hermes_cli/kanban_db.py``).  See https://github.com/dmjdxb/Robin/issues/18594.
+    template in ``robin/gateway.py`` and the kanban dispatcher in
+    ``robin/kanban_db.py``).  See https://github.com/dmjdxb/Robin/issues/18594.
     """
     override = get_hermes_home_override()
     if override:

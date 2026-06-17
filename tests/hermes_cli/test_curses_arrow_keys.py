@@ -9,7 +9,7 @@ user pressed up or down.
 """
 import curses
 
-from hermes_cli.curses_ui import (
+from robin.curses_ui import (
     NAV_CANCEL,
     NAV_DOWN,
     NAV_NONE,

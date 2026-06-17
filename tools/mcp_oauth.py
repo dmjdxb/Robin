@@ -11,7 +11,7 @@ which handles discovery, dynamic client registration, PKCE, token exchange,
 refresh, and step-up authorization automatically.
 
 This module provides the glue:
-    - ``HermesTokenStorage``: persists tokens/client-info to disk so they
+    - ``RobinTokenStorage``: persists tokens/client-info to disk so they
       survive across process restarts.
     - Callback server: ephemeral localhost HTTP server to capture the OAuth
       redirect with the authorization code.
@@ -211,11 +211,11 @@ def _write_json(path: Path, data: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
-# HermesTokenStorage -- persistent token/client-info on disk
+# RobinTokenStorage -- persistent token/client-info on disk
 # ---------------------------------------------------------------------------
 
 
-class HermesTokenStorage:
+class RobinTokenStorage:
     """Persist OAuth tokens and client registration to JSON files.
 
     File layout::
@@ -626,7 +626,7 @@ def _paste_callback_reader(result: dict) -> None:
 
 def remove_oauth_tokens(server_name: str) -> None:
     """Delete stored OAuth tokens and client info for a server."""
-    storage = HermesTokenStorage(server_name)
+    storage = RobinTokenStorage(server_name)
     storage.remove()
     logger.info("OAuth tokens removed for '%s'", server_name)
 
@@ -692,7 +692,7 @@ def _build_client_metadata(cfg: dict) -> "OAuthClientMetadata":
 
 
 def _maybe_preregister_client(
-    storage: "HermesTokenStorage",
+    storage: "RobinTokenStorage",
     cfg: dict,
     client_metadata: "OAuthClientMetadata",
 ) -> None:
@@ -751,7 +751,7 @@ def build_oauth_auth(
         return None
 
     cfg = dict(oauth_config or {})  # copy — we mutate _resolved_port
-    storage = HermesTokenStorage(server_name)
+    storage = RobinTokenStorage(server_name)
 
     if not _is_interactive() and not storage.has_cached_tokens():
         logger.warning(

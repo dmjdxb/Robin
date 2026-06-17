@@ -204,7 +204,7 @@ export default function SystemPage() {
       api.getPortal(),
       // Cached (non-forced) check so the version row shows update status on
       // load without a separate effect / a forced network round-trip.
-      api.checkHermesUpdate(false),
+      api.checkRobinUpdate(false),
     ])
       .then(([s, st, m, p, c, h, cur, prt, upd]) => {
         if (s.status === "fulfilled") setStatus(s.value);
@@ -383,7 +383,7 @@ export default function SystemPage() {
     async (force = false) => {
       setCheckingUpdate(true);
       try {
-        const info = await api.checkHermesUpdate(force);
+        const info = await api.checkRobinUpdate(force);
         setUpdateInfo(info);
         if (force) {
           if (info.update_available) {

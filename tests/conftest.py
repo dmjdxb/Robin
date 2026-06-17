@@ -383,7 +383,7 @@ def _hermetic_environment(tmp_path, monkeypatch):
     #    ~/.hermes/plugins/ (which, per step 3, is now empty — but the
     #    singleton might still be cached from a previous test).
     try:
-        import hermes_cli.plugins as _plugins_mod
+        import robin.plugins as _plugins_mod
         monkeypatch.setattr(_plugins_mod, "_plugin_manager", None)
     except Exception:
         pass
@@ -502,7 +502,7 @@ def _ensure_current_event_loop(request):
 # environment and finds the developer's live ``hermes-gateway`` process
 # via ``psutil`` — sending it SIGTERM mid-test. The shutdown forensics in
 # PR #23285 caught this happening 5+ times in 3 days, every time
-# correlated with a ``tests/hermes_cli/`` pytest run starting up.
+# correlated with a ``tests/robin/`` pytest run starting up.
 #
 # This fixture makes the leak impossible by intercepting the two
 # primitives that actually do damage:
@@ -646,8 +646,8 @@ def _live_system_guard(request, monkeypatch):
     _HERMES_TOKENS = (
         "hermes-gateway",
         "hermes.service",
-        "hermes_cli.main gateway",
-        "hermes_cli/main.py gateway",
+        "robin.main gateway",
+        "robin/main.py gateway",
         "gateway/run.py",
         "hermes gateway",
     )
@@ -705,7 +705,7 @@ def _live_system_guard(request, monkeypatch):
                 low = cmd_str.lower()
                 # pkill -f pattern: catch hermes-themed patterns + a
                 # plain "python" -f which would catch the live gateway
-                # whose cmdline contains "python -m hermes_cli.main".
+                # whose cmdline contains "python -m robin.main".
                 if (
                     "hermes" in low
                     or "gateway" in low

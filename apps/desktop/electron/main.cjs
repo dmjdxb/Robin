@@ -26,7 +26,7 @@ const { fileURLToPath, pathToFileURL } = require('node:url')
 const { execFileSync, spawn } = require('node:child_process')
 const { detectRemoteDisplay, isWindowsBinaryPathInWsl, isWslEnvironment } = require('./bootstrap-platform.cjs')
 const { runBootstrap } = require('./bootstrap-runner.cjs')
-const { canImportHermesCli, verifyHermesCli } = require('./backend-probes.cjs')
+const { canImportRobinCli, verifyRobinCli } = require('./backend-probes.cjs')
 const { probeGatewayWebSocket } = require('./gateway-ws-probe.cjs')
 const {
   authModeFromStatus,
@@ -175,7 +175,7 @@ if (INSTALL_STAMP) {
 }
 
 // HERMES_HOME — the user-facing root for everything Robin-related. Mirrors
-// scripts/install.ps1's $HermesHome and scripts/install.sh's $HERMES_HOME.
+// scripts/install.ps1's $RobinHome and scripts/install.sh's $HERMES_HOME.
 //
 // Defaults:
 //   Windows: %LOCALAPPDATA%\hermes (matches install.ps1)
@@ -189,7 +189,7 @@ if (INSTALL_STAMP) {
 // HERMES_DESKTOP_USER_DATA_DIR (used by test:desktop:fresh) puts the sandbox
 // HERMES_HOME beneath the throwaway userData dir so a fresh-install run never
 // touches the user's real ~/.hermes / %LOCALAPPDATA%\hermes.
-function resolveHermesHome() {
+function resolveRobinHome() {
   // Robin keeps its OWN isolated home (~/.robin, %LOCALAPPDATA%\robin) so it
   // never collides with — or adopts the backend of — a separate upstream
   // Hermes install on the same machine (PRD §11.4). We deliberately do NOT
@@ -203,7 +203,7 @@ function resolveHermesHome() {
   return path.join(app.getPath('home'), '.robin')
 }
 
-const HERMES_HOME = resolveHermesHome()
+const HERMES_HOME = resolveRobinHome()
 // ACTIVE_HERMES_ROOT — the canonical mutable Robin install. Same path
 // install.ps1 / install.sh use, so a desktop-only user and a CLI-only user end
 // up with identical layouts and can share one install.
@@ -214,7 +214,7 @@ const VENV_ROOT = path.join(ACTIVE_HERMES_ROOT, 'venv')
 // (Phase 1D) after install.ps1 has completed all stages and the user has
 // finished initial configuration. Presence of this marker means the install
 // is in a known-good state and we can skip the bootstrap flow on subsequent
-// boots, going straight to `resolveHermesBackend()`. Missing or stale marker
+// boots, going straight to `resolveRobinBackend()`. Missing or stale marker
 // means we re-run the bootstrap; install.ps1's stages are idempotent so a
 // re-run on an already-good install just discovers everything in place.
 //
@@ -229,11 +229,11 @@ const DESKTOP_UPDATE_CONFIG_PATH = path.join(app.getPath('userData'), 'updates.j
 // active-profile.json records which Robin profile the desktop launches its
 // local backend as. When set, startHermes() passes `hermes --profile <name>
 // dashboard …`, which deterministically pins HERMES_HOME (see
-// _apply_profile_override in hermes_cli/main.py) and bypasses the sticky
+// _apply_profile_override in robin/main.py) and bypasses the sticky
 // ~/.hermes/active_profile file. Unset (null) preserves the legacy behavior:
 // no --profile flag, so the backend honors active_profile / default.
 const DESKTOP_PROFILE_CONFIG_PATH = path.join(app.getPath('userData'), 'active-profile.json')
-// Mirrors hermes_cli.profiles._PROFILE_ID_RE so we never hand the backend a
+// Mirrors robin.profiles._PROFILE_ID_RE so we never hand the backend a
 // value its profile resolver would reject and exit on.
 const PROFILE_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/
 // Branch we track for self-update. The GUI work has merged to main, so this
@@ -916,8 +916,8 @@ function looksLikeDesktopAppBinary(commandPath) {
   )
 }
 
-function isHermesSourceRoot(root) {
-  return directoryExists(root) && fileExists(path.join(root, 'hermes_cli', 'main.py'))
+function isRobinSourceRoot(root) {
+  return directoryExists(root) && fileExists(path.join(root, 'robin', 'main.py'))
 }
 
 function findPythonForRoot(root) {
@@ -1126,7 +1126,7 @@ function resolveGitBinary() {
   return _gitBinaryCache
 }
 
-function recentHermesLog() {
+function recentRobinLog() {
   return hermesLog.slice(-20).join('\n')
 }
 
@@ -1161,8 +1161,8 @@ function writeDesktopUpdateConfig(config) {
 function resolveUpdateRoot() {
   const candidates = [
     process.env.HERMES_DESKTOP_HERMES_ROOT && path.resolve(process.env.HERMES_DESKTOP_HERMES_ROOT),
-    !IS_PACKAGED && isHermesSourceRoot(SOURCE_REPO_ROOT) ? SOURCE_REPO_ROOT : null,
-    isHermesSourceRoot(ACTIVE_HERMES_ROOT) ? ACTIVE_HERMES_ROOT : null
+    !IS_PACKAGED && isRobinSourceRoot(SOURCE_REPO_ROOT) ? SOURCE_REPO_ROOT : null,
+    isRobinSourceRoot(ACTIVE_HERMES_ROOT) ? ACTIVE_HERMES_ROOT : null
   ].filter(Boolean)
 
   return candidates.find(c => directoryExists(path.join(c, '.git'))) || candidates[0] || ACTIVE_HERMES_ROOT
@@ -1316,7 +1316,7 @@ function resolveUpdaterBinary() {
 // Path to the venv shim whose lock decides whether `hermes update` can write
 // fresh entry points. On Windows this is the file the running backend
 // `hermes.exe` holds open; on POSIX it's never mandatory-locked.
-function venvHermesShimPath(updateRoot) {
+function venvRobinShimPath(updateRoot) {
   return IS_WINDOWS
     ? path.join(updateRoot, 'venv', 'Scripts', 'hermes.exe')
     : path.join(updateRoot, 'venv', 'bin', 'hermes')
@@ -1403,7 +1403,7 @@ async function releaseBackendLockForUpdate(updateRoot) {
   stopAllPoolBackends()
   for (const pid of pids) forceKillProcessTree(pid)
 
-  const shim = venvHermesShimPath(updateRoot)
+  const shim = venvRobinShimPath(updateRoot)
   const deadlineMs = Date.now() + 15000
   while (Date.now() < deadlineMs) {
     if (!isShimLocked(shim)) {
@@ -1521,7 +1521,7 @@ async function applyUpdates(opts = {}) {
 
 // Resolve the hermes CLI to drive an in-app update: prefer the venv shim in
 // the install we're updating, fall back to `hermes` on PATH.
-function resolveHermesCliBinary(updateRoot) {
+function resolveRobinCliBinary(updateRoot) {
   const venvHermes = path.join(updateRoot, 'venv', 'bin', 'hermes')
   if (fileExists(venvHermes)) return venvHermes
   return findOnPath('hermes') || null
@@ -1573,7 +1573,7 @@ function shellQuote(value) {
 // restart to load the new GUI" if the swap can't be performed.
 async function applyUpdatesPosixInApp() {
   const updateRoot = resolveUpdateRoot()
-  const hermes = resolveHermesCliBinary(updateRoot)
+  const hermes = resolveRobinCliBinary(updateRoot)
   if (!hermes) {
     emitUpdateProgress({ stage: 'manual', message: 'hermes update', percent: null })
     return { ok: true, manual: true, command: 'hermes update', hermesRoot: updateRoot }
@@ -1752,7 +1752,7 @@ function isBootstrapComplete() {
   // a runnable venv: an interrupted or split-home install can leave the marker
   // + checkout without a venv, and trusting that spawns a dead backend
   // ("gateway offline") instead of re-running bootstrap to repair it.
-  return isHermesSourceRoot(ACTIVE_HERMES_ROOT) && fileExists(getVenvPython(VENV_ROOT))
+  return isRobinSourceRoot(ACTIVE_HERMES_ROOT) && fileExists(getVenvPython(VENV_ROOT))
 }
 
 function writeBootstrapMarker(payload) {
@@ -1812,7 +1812,7 @@ async function installBundledBackend() {
     if (!IS_PACKAGED) return false
 
     const marker = readBootstrapMarker()
-    const provisioned = isHermesSourceRoot(ACTIVE_HERMES_ROOT) && fileExists(getVenvPython(VENV_ROOT))
+    const provisioned = isRobinSourceRoot(ACTIVE_HERMES_ROOT) && fileExists(getVenvPython(VENV_ROOT))
     const upToDate =
       provisioned && marker && marker.source === 'bundled' && marker.desktopVersion === app.getVersion()
     if (upToDate) {
@@ -1871,7 +1871,7 @@ async function installBundledBackend() {
       void 0
     }
 
-    if (isHermesSourceRoot(ACTIVE_HERMES_ROOT) && fileExists(getVenvPython(VENV_ROOT))) {
+    if (isRobinSourceRoot(ACTIVE_HERMES_ROOT) && fileExists(getVenvPython(VENV_ROOT))) {
       seedBundledConfig()
       const m = writeBootstrapMarker({ pinnedCommit: (marker && marker.pinnedCommit) || 'bundled-runtime' })
       try {
@@ -1910,7 +1910,7 @@ function resolveRendererIndex() {
   return candidates.find(fileExists) || candidates[0]
 }
 
-function resolveHermesCwd() {
+function resolveRobinCwd() {
   // In a packaged build, `process.cwd()` resolves to the install root (e.g.
   // `…/win-unpacked` on Windows or `/Applications/Robin.app/Contents/...`
   // on macOS). Sessions spawned there leave files inside the app bundle
@@ -1998,7 +1998,7 @@ function createPythonBackend(root, label, dashboardArgs, options = {}) {
     kind: 'python',
     label,
     command: python,
-    args: ['-m', 'hermes_cli.main', ...dashboardArgs],
+    args: ['-m', 'robin.main', ...dashboardArgs],
     env: {
       PYTHONPATH: [root, process.env.PYTHONPATH].filter(Boolean).join(path.delimiter)
     },
@@ -2019,7 +2019,7 @@ function createActiveBackend(dashboardArgs) {
     kind: 'python',
     label: `Robin at ${ACTIVE_HERMES_ROOT}`,
     command: fileExists(venvPython) ? venvPython : findSystemPython(),
-    args: ['-m', 'hermes_cli.main', ...dashboardArgs],
+    args: ['-m', 'robin.main', ...dashboardArgs],
     env: {
       PYTHONPATH: [ACTIVE_HERMES_ROOT, process.env.PYTHONPATH].filter(Boolean).join(path.delimiter)
     },
@@ -2029,11 +2029,11 @@ function createActiveBackend(dashboardArgs) {
   }
 }
 
-function resolveHermesBackend(dashboardArgs) {
+function resolveRobinBackend(dashboardArgs) {
   // 1. Explicit override -- HERMES_DESKTOP_HERMES_ROOT points at a developer
   //    checkout. Honour it as-is (no bootstrap; the user is driving).
   const overrideRoot = process.env.HERMES_DESKTOP_HERMES_ROOT && path.resolve(process.env.HERMES_DESKTOP_HERMES_ROOT)
-  if (overrideRoot && isHermesSourceRoot(overrideRoot)) {
+  if (overrideRoot && isRobinSourceRoot(overrideRoot)) {
     const backend = createPythonBackend(overrideRoot, `Robin source at ${overrideRoot}`, dashboardArgs)
     if (backend) return backend
   }
@@ -2041,8 +2041,8 @@ function resolveHermesBackend(dashboardArgs) {
   // 2. Development source -- when running `npm run dev` from a checkout, the
   //    cloned repo at SOURCE_REPO_ROOT takes precedence over ACTIVE and any
   //    installed `hermes` on PATH so local Python edits are actually exercised.
-  //    (In dev with no checkout, SOURCE_REPO_ROOT won't pass isHermesSourceRoot.)
-  if (!IS_PACKAGED && isHermesSourceRoot(SOURCE_REPO_ROOT)) {
+  //    (In dev with no checkout, SOURCE_REPO_ROOT won't pass isRobinSourceRoot.)
+  if (!IS_PACKAGED && isRobinSourceRoot(SOURCE_REPO_ROOT)) {
     const backend = createPythonBackend(SOURCE_REPO_ROOT, `Robin source at ${SOURCE_REPO_ROOT}`, dashboardArgs)
     if (backend) return backend
   }
@@ -2095,7 +2095,7 @@ function resolveHermesBackend(dashboardArgs) {
       // `--version` probe (see backend-probes.cjs) catches that case
       // and lets the resolver fall through to step 6 / bootstrap.
       const shellForProbe = isCommandScript(hermesCommand)
-      if (verifyHermesCli(hermesCommand, { shell: shellForProbe })) {
+      if (verifyRobinCli(hermesCommand, { shell: shellForProbe })) {
         return {
           label: `existing Robin CLI at ${hermesCommand}`,
           command: hermesCommand,
@@ -2112,31 +2112,31 @@ function resolveHermesBackend(dashboardArgs) {
     }
   }
 
-  // 5. Last-ditch: pip-installed hermes_cli module via system Python.
+  // 5. Last-ditch: pip-installed robin module via system Python.
   //    Same rationale as #4 -- the user installed this; we use it but don't
   //    take ownership.
   const python = findSystemPython()
   if (python) {
     // Same smoke-test rationale as step 4: a system Python in the
     // SUPPORTED_VERSIONS range can be registered (PEP 514) without
-    // having hermes_cli installed -- common on dev boxes that have
+    // having robin installed -- common on dev boxes that have
     // a python.org install from prior unrelated work. Returning that
     // backend hands the spawn step a guaranteed ModuleNotFoundError.
     // Verify the import works before trusting the candidate; on
     // failure, fall through to step 6 so the bootstrap runner pulls
     // a uv-managed 3.11 into %LOCALAPPDATA%\hermes\hermes-agent\venv.
-    if (canImportHermesCli(python)) {
+    if (canImportRobinCli(python)) {
       return {
         kind: 'python',
-        label: `installed hermes_cli module via ${python}`,
+        label: `installed robin module via ${python}`,
         command: python,
-        args: ['-m', 'hermes_cli.main', ...dashboardArgs],
+        args: ['-m', 'robin.main', ...dashboardArgs],
         bootstrap: false,
         env: {},
         shell: false
       }
     }
-    rememberLog(`Ignoring system Python ${python}: hermes_cli is not importable; falling through to bootstrap.`)
+    rememberLog(`Ignoring system Python ${python}: robin is not importable; falling through to bootstrap.`)
   }
 
   // 6. Nothing usable yet -- signal the bootstrap runner that we need to
@@ -2146,7 +2146,7 @@ function resolveHermesBackend(dashboardArgs) {
   //    explaining what's missing.
   //
   //    We deliberately do NOT throw here -- throwing inside
-  //    resolveHermesBackend was the old "no payload" path and forced the
+  //    resolveRobinBackend was the old "no payload" path and forced the
   //    user into a dead end. With the bootstrap protocol, "no install yet"
   //    is a recoverable state the GUI can drive through.
   return {
@@ -2171,7 +2171,7 @@ async function ensureRuntime(backend) {
     return backend
   }
 
-  // backend.kind === 'bootstrap-needed' means resolveHermesBackend couldn't
+  // backend.kind === 'bootstrap-needed' means resolveRobinBackend couldn't
   // find anything to spawn. Hand off to the bootstrap runner which drives the
   // platform installer, writes the bootstrap-complete marker on success, then
   // we re-resolve to get the now-installed backend.
@@ -2186,7 +2186,7 @@ async function ensureRuntime(backend) {
     // unavailable do we fall back to the network bootstrap below.
     try {
       if (await installBundledBackend()) {
-        const reresolved = resolveHermesBackend(backend.args || [])
+        const reresolved = resolveRobinBackend(backend.args || [])
         if (reresolved && reresolved.kind === 'python') {
           await advanceBootProgress('runtime.bundled', 'Robin is ready', 32)
           return reresolved
@@ -2270,7 +2270,7 @@ async function ensureRuntime(backend) {
     rememberLog('[bootstrap] bootstrap complete; marker written. Re-resolving backend.')
     // Re-resolve now that the install exists. The new resolution lands in
     // step 3 (bootstrap-complete marker) and we recurse to wire venvPython.
-    return ensureRuntime(resolveHermesBackend(backend.args))
+    return ensureRuntime(resolveRobinBackend(backend.args))
   }
 
   // bootstrap=true with a real backend (createActiveBackend path) means we
@@ -2279,7 +2279,7 @@ async function ensureRuntime(backend) {
   // sync flow exited through, minus all the factory/pip/marker machinery
   // (install.ps1 owns those concerns now and the bootstrap-complete marker
   // attests they ran successfully).
-  if (!isHermesSourceRoot(ACTIVE_HERMES_ROOT)) {
+  if (!isRobinSourceRoot(ACTIVE_HERMES_ROOT)) {
     throw new Error(
       `Robin install at ${ACTIVE_HERMES_ROOT} is missing or incomplete. ` +
         'Reinstall via the desktop installer or scripts/install.ps1.'
@@ -2307,7 +2307,7 @@ async function ensureRuntime(backend) {
     // means we have a half-installed checkout: .git exists, source files
     // exist, but venv is missing or broken. This shouldn't happen in
     // normal flow because isBootstrapComplete() requires
-    // isHermesSourceRoot() and the bootstrap writes the marker only after
+    // isRobinSourceRoot() and the bootstrap writes the marker only after
     // install.ps1 succeeds. If we hit this, the user (or a deleted venv)
     // broke the invariant; tell them to re-run the install.
     throw new Error(
@@ -2851,7 +2851,7 @@ function expandUserPath(filePath) {
 
 function previewFileTarget(rawTarget, baseDir) {
   const raw = String(rawTarget || '').trim()
-  const base = baseDir ? path.resolve(expandUserPath(baseDir)) : resolveHermesCwd()
+  const base = baseDir ? path.resolve(expandUserPath(baseDir)) : resolveRobinCwd()
   const filePath = raw.startsWith('file:') ? fileURLToPath(raw) : path.resolve(base, expandUserPath(raw))
   let resolved = filePath
 
@@ -4235,7 +4235,7 @@ function resetBootProgressForReconnect() {
   )
 }
 
-function resetHermesConnection() {
+function resetRobinConnection() {
   connectionPromise = null
 
   if (hermesProcess && !hermesProcess.killed) {
@@ -4251,9 +4251,9 @@ function resetHermesConnection() {
 // startHermes() spawns fresh instead of racing the dying one. Shared by the
 // connection-config and profile switch flows.
 async function teardownPrimaryBackendAndWait() {
-  // Capture the reference before resetHermesConnection() nulls hermesProcess.
+  // Capture the reference before resetRobinConnection() nulls hermesProcess.
   const dying = hermesProcess && !hermesProcess.killed ? hermesProcess : null
-  resetHermesConnection()
+  resetRobinConnection()
 
   if (!dying) {
     return
@@ -4382,10 +4382,10 @@ async function spawnPoolBackend(profile, entry) {
   const port = await pickPort()
   const token = crypto.randomBytes(32).toString('base64url')
   // --profile wins over the inherited HERMES_HOME env (see _apply_profile_override
-  // step 3 in hermes_cli/main.py), so the child re-homes to this profile.
+  // step 3 in robin/main.py), so the child re-homes to this profile.
   const dashboardArgs = ['--profile', profile, 'dashboard', '--no-open', '--host', '127.0.0.1', '--port', String(port)]
-  const backend = await ensureRuntime(resolveHermesBackend(dashboardArgs))
-  const hermesCwd = resolveHermesCwd()
+  const backend = await ensureRuntime(resolveRobinBackend(dashboardArgs))
+  const hermesCwd = resolveRobinCwd()
   const webDist = resolveWebDist()
 
   rememberLog(`Starting Robin backend for profile "${profile}" via ${backend.label}`)
@@ -4516,8 +4516,8 @@ async function startHermes() {
       dashboardArgs.unshift('--profile', activeProfile)
     }
     await advanceBootProgress('backend.runtime', 'Resolving Robin runtime', 28)
-    const backend = await ensureRuntime(resolveHermesBackend(dashboardArgs))
-    const hermesCwd = resolveHermesCwd()
+    const backend = await ensureRuntime(resolveRobinBackend(dashboardArgs))
+    const hermesCwd = resolveRobinCwd()
     const webDist = resolveWebDist()
 
     await advanceBootProgress('backend.spawn', `Starting Robin backend via ${backend.label}`, 84)
@@ -4528,7 +4528,7 @@ async function startHermes() {
       env: {
         ...process.env,
         // Explicitly pin HERMES_HOME for the child so Python's get_hermes_home()
-        // resolves to the SAME location our resolveHermesHome() picked. Without
+        // resolves to the SAME location our resolveRobinHome() picked. Without
         // this pin, Python falls back to ~/.hermes on every platform — fine on
         // mac/linux (where our default matches), but on Windows our default is
         // %LOCALAPPDATA%\hermes, which differs from C:\Users\<u>\.hermes.
@@ -4585,7 +4585,7 @@ async function startHermes() {
         )
         rejectBackendStart?.(
           new Error(
-            `Robin backend exited before it became ready (${signal || code}). Log: ${DESKTOP_LOG_PATH}\n${recentHermesLog()}`
+            `Robin backend exited before it became ready (${signal || code}). Log: ${DESKTOP_LOG_PATH}\n${recentRobinLog()}`
           )
         )
       }
@@ -4797,7 +4797,7 @@ ipcMain.handle('hermes:bootstrap:repair', async () => {
     rememberLog(`[bootstrap] failed to remove marker during repair: ${error.message}`)
   }
   bootstrapFailure = null
-  resetHermesConnection()
+  resetRobinConnection()
   return { ok: true }
 })
 ipcMain.handle('hermes:bootstrap:cancel', async () => {
@@ -5172,7 +5172,7 @@ ipcMain.handle('hermes:openExternal', (_event, url) => {
 
 // User-configurable default project directory. The renderer reads this on
 // settings mount and seeds the value into the picker; writing back persists
-// it via writeDefaultProjectDir so resolveHermesCwd picks it up on the next
+// it via writeDefaultProjectDir so resolveRobinCwd picks it up on the next
 // session spawn (no app restart needed).
 ipcMain.handle('hermes:setting:defaultProjectDir:get', async () => ({
   dir: readDefaultProjectDir(),
@@ -5351,7 +5351,7 @@ function disposeTerminalSession(id) {
 // folder: an empty, missing, or home-root remembered workspace is redirected to
 // the safe Desktop default. A real folder the user explicitly chose is honoured.
 ipcMain.handle('hermes:fs:resolveWorkspace', async (_event, rememberedCwd) => {
-  const fallback = resolveHermesCwd()
+  const fallback = resolveRobinCwd()
   let home = ''
   try {
     home = path.resolve(app.getPath('home'))
@@ -5500,14 +5500,14 @@ ipcMain.handle('hermes:updates:branch:set', async (_event, name) => {
 })
 
 // Resolve the canonical Robin version (the one `release.py` bumps in
-// hermes_cli/__init__.py + pyproject.toml) so the desktop About panel shows the
+// robin/__init__.py + pyproject.toml) so the desktop About panel shows the
 // real Robin version instead of the Electron app's own package.json version,
 // which historically drifted (stuck at 0.0.2). Falls back to app.getVersion()
 // when the source tree can't be read (e.g. a packaged build without the repo).
-function resolveHermesVersion() {
+function resolveRobinVersion() {
   try {
     const root = resolveUpdateRoot()
-    const initPath = path.join(root, 'hermes_cli', '__init__.py')
+    const initPath = path.join(root, 'robin', '__init__.py')
     if (fileExists(initPath)) {
       const raw = fs.readFileSync(initPath, 'utf8')
       const match = raw.match(/__version__\s*=\s*["']([^"']+)["']/)
@@ -5522,7 +5522,7 @@ function resolveHermesVersion() {
 }
 
 ipcMain.handle('hermes:version', async () => ({
-  appVersion: resolveHermesVersion(),
+  appVersion: resolveRobinVersion(),
   electronVersion: process.versions.electron,
   nodeVersion: process.versions.node,
   platform: process.platform,

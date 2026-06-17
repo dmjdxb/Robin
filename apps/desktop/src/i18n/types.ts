@@ -34,7 +34,7 @@ export interface Translations {
       loadingSettings: string
       loadingSessions: string
       startingDesktopConnection: string
-      startingHermesDesktop: string
+      startingRobinDesktop: string
     }
     errors: {
       backgroundExited: string

@@ -24,7 +24,7 @@ export const ar: Translations = {
       loadingSettings: 'جارٍ تحميل إعدادات روبن',
       loadingSessions: 'جارٍ تحميل الجلسات الأخيرة',
       startingDesktopConnection: 'جارٍ بدء اتصال سطح المكتب',
-      startingHermesDesktop: 'جارٍ تشغيل روبن…'
+      startingRobinDesktop: 'جارٍ تشغيل روبن…'
     },
     errors: {
       backgroundExited: 'تم إنهاء عملية روبن في الخلفية.',

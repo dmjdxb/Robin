@@ -8,15 +8,15 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import {
   getElevenLabsVoices,
-  getHermesConfigDefaults,
-  getHermesConfigRecord,
-  getHermesConfigSchema,
-  saveHermesConfig
+  getRobinConfigDefaults,
+  getRobinConfigRecord,
+  getRobinConfigSchema,
+  saveRobinConfig
 } from '@/hermes'
 import { useI18n } from '@/i18n'
 import { cn } from '@/lib/utils'
 import { notify, notifyError } from '@/store/notifications'
-import type { ConfigFieldSchema, HermesConfigRecord } from '@/types/hermes'
+import type { ConfigFieldSchema, RobinConfigRecord } from '@/types/hermes'
 
 import { CONTROL_TEXT, EMPTY_SELECT_VALUE, FIELD_DESCRIPTIONS, FIELD_LABELS, SECTIONS } from './constants'
 import {
@@ -200,8 +200,8 @@ export function ConfigSettings({
   onMainModelChanged?: (provider: string, model: string) => void
   importInputRef: React.RefObject<HTMLInputElement | null>
 }) {
-  const [config, setConfig] = useState<HermesConfigRecord | null>(null)
-  const [_defaults, setDefaults] = useState<HermesConfigRecord | null>(null)
+  const [config, setConfig] = useState<RobinConfigRecord | null>(null)
+  const [_defaults, setDefaults] = useState<RobinConfigRecord | null>(null)
   const [schema, setSchema] = useState<Record<string, ConfigFieldSchema> | null>(null)
   const [elevenLabsVoiceOptions, setElevenLabsVoiceOptions] = useState<string[] | null>(null)
   const [elevenLabsVoiceLabels, setElevenLabsVoiceLabels] = useState<Record<string, string>>({})
@@ -210,7 +210,7 @@ export function ConfigSettings({
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([getHermesConfigRecord(), getHermesConfigDefaults(), getHermesConfigSchema()])
+    Promise.all([getRobinConfigRecord(), getRobinConfigDefaults(), getRobinConfigSchema()])
       .then(([c, d, s]) => {
         if (cancelled) {
           return
@@ -257,7 +257,7 @@ export function ConfigSettings({
     const t = window.setTimeout(() => {
       void (async () => {
         try {
-          await saveHermesConfig(config)
+          await saveRobinConfig(config)
 
           if (saveVersionRef.current === v) {
             onConfigSaved?.()
@@ -273,7 +273,7 @@ export function ConfigSettings({
     return () => window.clearTimeout(t)
   }, [config, onConfigSaved, saveVersion])
 
-  const updateConfig = (next: HermesConfigRecord) => {
+  const updateConfig = (next: RobinConfigRecord) => {
     saveVersionRef.current += 1
     setConfig(next)
     setSaveVersion(saveVersionRef.current)

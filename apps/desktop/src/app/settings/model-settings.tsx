@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 import { CONTROL_TEXT } from './constants'
 import { ListRow, LoadingState, Pill, SectionHeading } from './primitives'
 
-// Mirrors `_AUX_TASK_SLOTS` in hermes_cli/web_server.py. Friendly labels and
+// Mirrors `_AUX_TASK_SLOTS` in robin/web_server.py. Friendly labels and
 // hints make the assignments readable; raw task keys (vision, mcp, …) are
 // opaque to most users.
 interface AuxTaskMeta {

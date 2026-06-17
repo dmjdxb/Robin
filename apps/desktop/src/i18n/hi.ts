@@ -24,7 +24,7 @@ export const hi: Translations = {
       loadingSettings: 'Robin सेटिंग्स लोड की जा रही हैं',
       loadingSessions: 'हाल की सत्र लोड की जा रही हैं',
       startingDesktopConnection: 'डेस्कटॉप कनेक्शन शुरू किया जा रहा है',
-      startingHermesDesktop: 'Robin शुरू हो रहा है…'
+      startingRobinDesktop: 'Robin शुरू हो रहा है…'
     },
     errors: {
       backgroundExited: 'Robin बैकग्राउंड प्रक्रिया बंद हो गई।',

@@ -49,7 +49,7 @@ const APP = (() => {
 })()
 
 // Default HERMES_HOME for non-sandboxed runs -- matches main.cjs's
-// resolveHermesHome(). On Windows it's %LOCALAPPDATA%\hermes; elsewhere
+// resolveRobinHome(). On Windows it's %LOCALAPPDATA%\hermes; elsewhere
 // it's ~/.hermes. The fresh-install sandbox launchFresh() sets its own
 // HERMES_HOME and never touches this.
 const DEFAULT_HERMES_HOME = (() => {
@@ -290,9 +290,9 @@ function validateBundle() {
   }
 
   // Negative assertion: the OLD fat-installer factory payload must NOT be
-  // present anymore. If a stray ship of hermes_cli sneaks back in we want
+  // present anymore. If a stray ship of robin sneaks back in we want
   // to fail loudly rather than re-introduce the 400MB delta we just removed.
-  const staleFactoryMarker = path.join(APP.resourcesPath, 'hermes-agent', 'hermes_cli', 'main.py')
+  const staleFactoryMarker = path.join(APP.resourcesPath, 'hermes-agent', 'robin', 'main.py')
   if (exists(staleFactoryMarker)) {
     die(
       `Thin-installer regression: factory-payload file should NOT be in the package: ${staleFactoryMarker}`

@@ -267,7 +267,7 @@ export async function cancelInstall(): Promise<void> {
   await invoke('cancel_bootstrap')
 }
 
-export async function launchHermesDesktop(): Promise<void> {
+export async function launchRobinDesktop(): Promise<void> {
   const installRoot = $bootstrap.get().installRoot
   if (!installRoot) throw new Error('no install root')
   await invoke('launch_hermes_desktop', { installRoot })

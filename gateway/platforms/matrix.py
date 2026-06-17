@@ -139,7 +139,7 @@ def _resolve_matrix_bang_command(name: str) -> str | None:
         candidates.append(hyphenated)
 
     try:
-        from hermes_cli.commands import is_gateway_known_command
+        from robin.commands import is_gateway_known_command
 
         for candidate in candidates:
             if is_gateway_known_command(candidate):

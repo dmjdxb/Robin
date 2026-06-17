@@ -24,7 +24,7 @@ export const en: Translations = {
       loadingSettings: 'Loading Robin settings',
       loadingSessions: 'Loading recent sessions',
       startingDesktopConnection: 'Starting desktop connection',
-      startingHermesDesktop: 'Starting Robin…'
+      startingRobinDesktop: 'Starting Robin…'
     },
     errors: {
       backgroundExited: 'Robin background process exited.',

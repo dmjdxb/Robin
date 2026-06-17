@@ -187,7 +187,7 @@ export async function checkUpdates(): Promise<DesktopUpdateStatus | null> {
     const status = await bridge.check()
     $updateStatus.set(status)
     maybeNotifyUpdateAvailable(status)
-    // The update check pulls the latest hermes_cli + bundled package metadata
+    // The update check pulls the latest robin + bundled package metadata
     // into place. Re-read the running version so About reflects the now-fresh
     // checkout rather than the one captured at process start.
     void refreshDesktopVersion()

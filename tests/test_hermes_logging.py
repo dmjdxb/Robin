@@ -387,7 +387,7 @@ class TestGuiMode:
     def test_gui_log_receives_only_gui_components(self, hermes_home):
         hermes_logging.setup_logging(hermes_home=hermes_home, mode="gui")
 
-        logging.getLogger("hermes_cli.web_server").info("dashboard online")
+        logging.getLogger("robin.web_server").info("dashboard online")
         logging.getLogger("tui_gateway.ws").info("ws connected")
         logging.getLogger("gateway.run").info("gateway event")
 
@@ -601,7 +601,7 @@ class TestComponentPrefixes:
 
     def test_cli_prefix(self):
         prefixes = hermes_logging.COMPONENT_PREFIXES["cli"]
-        assert "hermes_cli" in prefixes
+        assert "robin" in prefixes
         assert "cli" in prefixes
 
     def test_cron_prefix(self):
@@ -609,7 +609,7 @@ class TestComponentPrefixes:
 
     def test_gui_prefix(self):
         prefixes = hermes_logging.COMPONENT_PREFIXES["gui"]
-        assert "hermes_cli.web_server" in prefixes
+        assert "robin.web_server" in prefixes
         assert "tui_gateway" in prefixes
 
 
@@ -753,7 +753,7 @@ class TestAddRotatingHandler:
 
         old_umask = os.umask(0o022)
         try:
-            with patch("hermes_cli.config.is_managed", return_value=True):
+            with patch("robin.config.is_managed", return_value=True):
                 hermes_logging._add_rotating_handler(
                     logger, log_path,
                     level=logging.INFO, max_bytes=1024, backup_count=1,
@@ -777,7 +777,7 @@ class TestAddRotatingHandler:
 
         old_umask = os.umask(0o022)
         try:
-            with patch("hermes_cli.config.is_managed", return_value=True):
+            with patch("robin.config.is_managed", return_value=True):
                 hermes_logging._add_rotating_handler(
                     logger, log_path,
                     level=logging.INFO, max_bytes=1, backup_count=1,

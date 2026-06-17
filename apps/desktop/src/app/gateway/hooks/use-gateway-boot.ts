@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 
-import type { HermesConnection } from '@/global'
-import { HermesGateway } from '@/hermes'
+import type { RobinConnection } from '@/global'
+import { RobinGateway } from '@/hermes'
 import { translateNow } from '@/i18n'
 import { isGatewayReauthRequired, resolveGatewayWsUrl } from '@/lib/gateway-ws-url'
 import {
@@ -39,8 +39,8 @@ interface GatewayBootOptions {
   onConnectionReady: (
     connection: Awaited<ReturnType<NonNullable<typeof window.hermesDesktop>['getConnection']>> | null
   ) => void
-  onGatewayReady: (gateway: HermesGateway | null) => void
-  refreshHermesConfig: () => Promise<void>
+  onGatewayReady: (gateway: RobinGateway | null) => void
+  refreshRobinConfig: () => Promise<void>
   refreshSessions: () => Promise<void>
 }
 
@@ -48,14 +48,14 @@ export function useGatewayBoot({
   handleGatewayEvent,
   onConnectionReady,
   onGatewayReady,
-  refreshHermesConfig,
+  refreshRobinConfig,
   refreshSessions
 }: GatewayBootOptions) {
   const callbacksRef = useRef({
     handleGatewayEvent,
     onConnectionReady,
     onGatewayReady,
-    refreshHermesConfig,
+    refreshRobinConfig,
     refreshSessions
   })
 
@@ -63,7 +63,7 @@ export function useGatewayBoot({
     handleGatewayEvent,
     onConnectionReady,
     onGatewayReady,
-    refreshHermesConfig,
+    refreshRobinConfig,
     refreshSessions
   }
 
@@ -71,7 +71,7 @@ export function useGatewayBoot({
     let cancelled = false
     const desktop = window.hermesDesktop
 
-    const publish = (next: HermesConnection | null) => {
+    const publish = (next: RobinConnection | null) => {
       callbacksRef.current.onConnectionReady(next)
       setConnection(next)
     }
@@ -143,7 +143,7 @@ export function useGatewayBoot({
 
         reconnectAttempt = 0
         // Resync state that may have moved on the backend while we were asleep.
-        await callbacksRef.current.refreshHermesConfig().catch(() => undefined)
+        await callbacksRef.current.refreshRobinConfig().catch(() => undefined)
         await callbacksRef.current.refreshSessions().catch(() => undefined)
       } catch (err) {
         // OAuth session expired mid-reconnect: surface the actionable "sign in
@@ -203,7 +203,7 @@ export function useGatewayBoot({
       progress: 6
     })
 
-    const gateway = new HermesGateway()
+    const gateway = new RobinGateway()
     callbacksRef.current.onGatewayReady(gateway)
     setPrimaryGateway(gateway, normalizeProfileKey($activeGatewayProfile.get()))
     // Secondary (background-profile) sockets funnel into the same handler.
@@ -335,7 +335,7 @@ export function useGatewayBoot({
           message: 'Loading Robin settings',
           progress: 97
         })
-        await callbacksRef.current.refreshHermesConfig()
+        await callbacksRef.current.refreshRobinConfig()
 
         if (cancelled) {
           return

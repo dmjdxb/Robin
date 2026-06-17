@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from hermes_cli.main import cmd_update, PROJECT_ROOT
+from robin.main import cmd_update, PROJECT_ROOT
 
 
 def _make_run_side_effect(branch="main", verify_ok=True, commit_count="0"):
@@ -64,9 +64,9 @@ def _patch_managed_uv(request):
     def _fake_update_managed_uv():
         return None  # never actually self-update in tests
 
-    with patch("hermes_cli.managed_uv.resolve_uv", side_effect=_fake_resolve_uv), \
-         patch("hermes_cli.managed_uv.ensure_uv", side_effect=_fake_ensure_uv), \
-         patch("hermes_cli.managed_uv.update_managed_uv", side_effect=_fake_update_managed_uv):
+    with patch("robin.managed_uv.resolve_uv", side_effect=_fake_resolve_uv), \
+         patch("robin.managed_uv.ensure_uv", side_effect=_fake_ensure_uv), \
+         patch("robin.managed_uv.update_managed_uv", side_effect=_fake_update_managed_uv):
         yield
 
 
@@ -78,7 +78,7 @@ class TestCmdUpdatePip:
     def test_update_pip_exports_virtualenv_from_sys_prefix(
         self, mock_run, _mock_which, mock_args, monkeypatch
     ):
-        from hermes_cli import main as hm
+        from robin import main as hm
 
         mock_run.return_value = subprocess.CompletedProcess([], 0, stdout="", stderr="")
         monkeypatch.delenv("VIRTUAL_ENV", raising=False)
@@ -96,7 +96,7 @@ class TestCmdUpdatePip:
     def test_update_pip_does_not_export_virtualenv_for_system_python(
         self, mock_run, _mock_which, mock_args, monkeypatch
     ):
-        from hermes_cli import main as hm
+        from robin import main as hm
 
         mock_run.return_value = subprocess.CompletedProcess([], 0, stdout="", stderr="")
         monkeypatch.delenv("VIRTUAL_ENV", raising=False)
@@ -186,7 +186,7 @@ class TestCmdUpdateBranchFallback:
         "Already up to date!" — otherwise a fork that's caught up to its own
         origin but behind NousResearch/hermes-agent silently misses updates.
         """
-        from hermes_cli import main as hm
+        from robin import main as hm
 
         mock_run.side_effect = _make_run_side_effect(
             branch="main", verify_ok=True, commit_count="0"
@@ -208,7 +208,7 @@ class TestCmdUpdateBranchFallback:
     def test_update_refreshes_repo_and_tui_node_dependencies(
         self, mock_run, mock_which, mock_args
     ):
-        from hermes_cli import main as hm
+        from robin import main as hm
 
         mock_which.side_effect = {"uv": "/usr/bin/uv", "npm": "/usr/bin/npm"}.get
         mock_run.side_effect = _make_run_side_effect(
@@ -306,14 +306,14 @@ class TestCmdUpdateBranchFallback:
         with patch("shutil.which", return_value=None), patch(
             "subprocess.run"
         ) as mock_run, patch("builtins.input") as mock_input, patch(
-            "hermes_cli.config.get_missing_env_vars", return_value=["MISSING_KEY"]
+            "robin.config.get_missing_env_vars", return_value=["MISSING_KEY"]
         ), patch(
-            "hermes_cli.config.get_missing_config_fields",
+            "robin.config.get_missing_config_fields",
             return_value=[{"key": "new.option", "default": True}],
-        ), patch("hermes_cli.config.check_config_version", return_value=(1, 2)), patch(
-            "hermes_cli.config.migrate_config",
+        ), patch("robin.config.check_config_version", return_value=(1, 2)), patch(
+            "robin.config.migrate_config",
             return_value={"env_added": [], "config_added": ["new.option"]},
-        ), patch("hermes_cli.main.sys") as mock_sys:
+        ), patch("robin.main.sys") as mock_sys:
             mock_sys.stdin.isatty.return_value = False
             mock_sys.stdout.isatty.return_value = False
             mock_run.side_effect = _make_run_side_effect(
@@ -323,7 +323,7 @@ class TestCmdUpdateBranchFallback:
             cmd_update(mock_args)
 
             mock_input.assert_not_called()
-            from hermes_cli.config import migrate_config
+            from robin.config import migrate_config
 
             migrate_config.assert_called_once_with(interactive=False, quiet=False)
             captured = capsys.readouterr()
@@ -348,13 +348,13 @@ class TestCmdUpdateMigrationPrompt:
         with patch("shutil.which", return_value=None), patch(
             "subprocess.run"
         ) as mock_run, patch("builtins.input") as mock_input, patch(
-            "hermes_cli.config.get_missing_env_vars", return_value=[]
+            "robin.config.get_missing_env_vars", return_value=[]
         ), patch(
-            "hermes_cli.config.get_missing_config_fields", return_value=[]
+            "robin.config.get_missing_config_fields", return_value=[]
         ), patch(
-            "hermes_cli.config.check_config_version", return_value=(5, 24)
+            "robin.config.check_config_version", return_value=(5, 24)
         ), patch(
-            "hermes_cli.config.migrate_config",
+            "robin.config.migrate_config",
             return_value={"env_added": [], "config_added": [], "warnings": []},
         ) as mock_migrate:
             mock_run.side_effect = _make_run_side_effect(
@@ -384,15 +384,15 @@ class TestCmdUpdateMigrationPrompt:
         with patch("shutil.which", return_value=None), patch(
             "subprocess.run"
         ) as mock_run, patch("builtins.input", return_value="n"), patch(
-            "hermes_cli.config.get_missing_env_vars", return_value=env_items
+            "robin.config.get_missing_env_vars", return_value=env_items
         ), patch(
-            "hermes_cli.config.get_missing_config_fields", return_value=cfg_items
+            "robin.config.get_missing_config_fields", return_value=cfg_items
         ), patch(
-            "hermes_cli.config.check_config_version", return_value=(1, 24)
+            "robin.config.check_config_version", return_value=(1, 24)
         ), patch(
-            "hermes_cli.config.migrate_config",
+            "robin.config.migrate_config",
             return_value={"env_added": [], "config_added": [], "warnings": []},
-        ), patch("hermes_cli.main.sys") as mock_sys:
+        ), patch("robin.main.sys") as mock_sys:
             mock_sys.stdin.isatty.return_value = True
             mock_sys.stdout.isatty.return_value = True
             mock_run.side_effect = _make_run_side_effect(
@@ -440,8 +440,8 @@ class TestCmdUpdateProfileSkillSync:
         empty_sync = {"copied": [], "updated": [], "user_modified": [], "cleaned": []}
 
         with (
-            patch("hermes_cli.profiles.list_profiles", return_value=all_profiles),
-            patch("hermes_cli.profiles.seed_profile_skills", side_effect=fake_seed),
+            patch("robin.profiles.list_profiles", return_value=all_profiles),
+            patch("robin.profiles.seed_profile_skills", side_effect=fake_seed),
             patch("tools.skills_sync.sync_skills", return_value=empty_sync),
         ):
             cmd_update(mock_args)
@@ -474,8 +474,8 @@ class TestCmdUpdateProfileSkillSync:
         empty_sync = {"copied": [], "updated": [], "user_modified": [], "cleaned": []}
 
         with (
-            patch("hermes_cli.profiles.list_profiles", return_value=[default_p]),
-            patch("hermes_cli.profiles.seed_profile_skills", side_effect=fake_seed),
+            patch("robin.profiles.list_profiles", return_value=[default_p]),
+            patch("robin.profiles.seed_profile_skills", side_effect=fake_seed),
             patch("tools.skills_sync.sync_skills", return_value=empty_sync),
         ):
             cmd_update(mock_args)
@@ -678,7 +678,7 @@ class TestCmdUpdateCheckBranchFlag:
 
         return side_effect
 
-    @patch("hermes_cli.config.detect_install_method", return_value="git")
+    @patch("robin.config.detect_install_method", return_value="git")
     @patch("subprocess.run")
     def test_check_branch_compares_against_named_origin_branch(
         self, mock_run, _mock_method, capsys
@@ -701,7 +701,7 @@ class TestCmdUpdateCheckBranchFlag:
         assert any("origin/bb/gui" in c for c in rev_list_cmds), rev_list_cmds
         assert not any("origin/main" in c for c in rev_list_cmds), rev_list_cmds
 
-    @patch("hermes_cli.config.detect_install_method", return_value="git")
+    @patch("robin.config.detect_install_method", return_value="git")
     @patch("subprocess.run")
     def test_check_branch_missing_on_origin_exits_cleanly(
         self, mock_run, _mock_method, capsys
@@ -732,7 +732,7 @@ class TestCmdUpdateCheckBranchFlag:
         commands = [" ".join(str(a) for a in c.args[0]) for c in mock_run.call_args_list]
         assert not any("rev-list" in c for c in commands), commands
 
-    @patch("hermes_cli.config.detect_install_method", return_value="git")
+    @patch("robin.config.detect_install_method", return_value="git")
     @patch("subprocess.run")
     def test_check_default_main_still_prefers_upstream(
         self, mock_run, _mock_method, capsys
@@ -752,8 +752,8 @@ class TestCmdUpdateCheckBranchFlag:
         rev_list_cmds = [c for c in commands if "rev-list" in c]
         assert any("upstream/main" in c for c in rev_list_cmds), rev_list_cmds
 
-    @patch("hermes_cli.config.detect_install_method", return_value="pip")
-    @patch("hermes_cli.banner.check_via_pypi", return_value=0)
+    @patch("robin.config.detect_install_method", return_value="pip")
+    @patch("robin.banner.check_via_pypi", return_value=0)
     @patch("subprocess.run")
     def test_check_branch_warns_on_pypi_install(
         self, mock_run, _mock_pypi, _mock_method, capsys
@@ -778,7 +778,7 @@ class TestCmdUpdateZipBranchRefusal:
     """
 
     def test_zip_fallback_refuses_non_main_branch(self, capsys):
-        from hermes_cli.main import _update_via_zip
+        from robin.main import _update_via_zip
 
         args = SimpleNamespace(branch="bb/gui")
         with pytest.raises(SystemExit) as exc_info:
@@ -793,19 +793,19 @@ class TestCmdUpdateZipBranchRefusal:
 
 
 def test_is_termux_env_true_for_termux_prefix():
-    from hermes_cli import main as hm
+    from robin import main as hm
 
     assert hm._is_termux_env({"PREFIX": "/data/data/com.termux/files/usr"}) is True
 
 
 def test_is_termux_env_false_for_non_termux_prefix():
-    from hermes_cli import main as hm
+    from robin import main as hm
 
     assert hm._is_termux_env({"PREFIX": "/usr/local"}) is False
 
 
 def test_load_installable_optional_extras_supports_termux_group(tmp_path, monkeypatch):
-    from hermes_cli import main as hm
+    from robin import main as hm
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(

@@ -1730,7 +1730,7 @@ class TelegramAdapter(BasePlatformAdapter):
                     BotCommandScopeAllGroupChats,
                     BotCommandScopeDefault,
                 )
-                from hermes_cli.commands import telegram_menu_commands
+                from robin.commands import telegram_menu_commands
                 # Telegram allows up to 100 commands but has an undocumented
                 # payload size limit (~4KB total).  Limit to 30 core commands
                 # to stay well under the threshold while covering all categories.
@@ -2867,7 +2867,7 @@ class TelegramAdapter(BasePlatformAdapter):
             return SendResult(success=False, error="Not connected")
 
         try:
-            from hermes_cli.providers import get_label
+            from robin.providers import get_label
         except ImportError:
             def get_label(slug):
                 return slug
@@ -2932,7 +2932,7 @@ class TelegramAdapter(BasePlatformAdapter):
         so all surfaces stay consistent.
         """
         try:
-            from hermes_cli.models import group_providers
+            from robin.models import group_providers
         except Exception:
             group_providers = None
 
@@ -3022,7 +3022,7 @@ class TelegramAdapter(BasePlatformAdapter):
             return
 
         try:
-            from hermes_cli.providers import get_label
+            from robin.providers import get_label
         except ImportError:
             def get_label(slug):
                 return slug
@@ -3153,7 +3153,7 @@ class TelegramAdapter(BasePlatformAdapter):
             # --- Provider group selected: show member providers ---
             group_id = data[4:]
             try:
-                from hermes_cli.models import PROVIDER_GROUPS
+                from robin.models import PROVIDER_GROUPS
                 _label, _desc, member_slugs = PROVIDER_GROUPS.get(group_id, ("", "", []))
             except Exception:
                 _label, member_slugs = "", []
@@ -5161,7 +5161,7 @@ class TelegramAdapter(BasePlatformAdapter):
                 if chat_id in self._forum_command_registered:
                     return
                 from telegram import BotCommand, BotCommandScopeChat
-                from hermes_cli.commands import telegram_menu_commands
+                from robin.commands import telegram_menu_commands
                 menu_commands, _ = telegram_menu_commands(max_commands=MAX_COMMANDS_PER_SCOPE)
                 bot_commands = [BotCommand(name, desc) for name, desc in menu_commands]
                 await self._bot.set_my_commands(bot_commands, scope=BotCommandScopeChat(chat_id=chat_id))

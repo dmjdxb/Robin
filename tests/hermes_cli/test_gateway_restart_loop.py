@@ -11,7 +11,7 @@ from argparse import Namespace
 
 import pytest
 
-from hermes_cli.cron import (
+from robin.cron import (
     _contains_gateway_lifecycle_command,
     cron_command,
 )
@@ -198,7 +198,7 @@ class TestGatewaySelfTargetingGuard:
 
     def test_stop_refuses_inside_gateway(self, monkeypatch):
         monkeypatch.setenv("_HERMES_GATEWAY", "1")
-        from hermes_cli.gateway import gateway_command
+        from robin.gateway import gateway_command
         args = Namespace(gateway_command="stop", all=False, system=False)
         with pytest.raises(SystemExit) as exc_info:
             gateway_command(args)
@@ -206,7 +206,7 @@ class TestGatewaySelfTargetingGuard:
 
     def test_restart_refuses_inside_gateway(self, monkeypatch):
         monkeypatch.setenv("_HERMES_GATEWAY", "1")
-        from hermes_cli.gateway import gateway_command
+        from robin.gateway import gateway_command
         args = Namespace(gateway_command="restart", all=False, system=False)
         with pytest.raises(SystemExit) as exc_info:
             gateway_command(args)
@@ -218,7 +218,7 @@ class TestGatewaySelfTargetingGuard:
         # real signal delivery, which would trip the live-system guard) by
         # short-circuiting the first downstream call with a sentinel.
         monkeypatch.delenv("_HERMES_GATEWAY", raising=False)
-        import hermes_cli.gateway as gw
+        import robin.gateway as gw
 
         class _Reached(Exception):
             pass
@@ -237,7 +237,7 @@ class TestGatewaySelfTargetingGuard:
         # unset. The first thing restart does after the guard is the s6
         # dispatch check — sentinel it so we never reach real signal delivery.
         monkeypatch.delenv("_HERMES_GATEWAY", raising=False)
-        import hermes_cli.gateway as gw
+        import robin.gateway as gw
 
         class _Reached(Exception):
             pass

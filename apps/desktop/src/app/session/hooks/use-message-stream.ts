@@ -47,7 +47,7 @@ interface MessageStreamOptions {
     runtimeSessionId?: string | null
   ) => Promise<void>
   queryClient: QueryClient
-  refreshHermesConfig: () => Promise<void>
+  refreshRobinConfig: () => Promise<void>
   refreshSessions: () => Promise<void>
   updateSessionState: (
     sessionId: string,
@@ -187,7 +187,7 @@ export function useMessageStream({
   activeSessionIdRef,
   hydrateFromStoredSession,
   queryClient,
-  refreshHermesConfig,
+  refreshRobinConfig,
   refreshSessions,
   updateSessionState
 }: MessageStreamOptions) {
@@ -699,7 +699,7 @@ export function useMessageStream({
           requestDesktopOnboarding(payload.credential_warning)
         }
 
-        void refreshHermesConfig()
+        void refreshRobinConfig()
 
         if (modelChanged || providerChanged) {
           void queryClient.invalidateQueries({
@@ -924,7 +924,7 @@ export function useMessageStream({
       failAssistantMessage,
       flushQueuedDeltas,
       queryClient,
-      refreshHermesConfig,
+      refreshRobinConfig,
       updateSessionState,
       upsertToolCall
     ]

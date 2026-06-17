@@ -3,7 +3,7 @@ cannot initialize (e.g. non-TTY, curses unavailable, terminal error)."""
 
 import subprocess
 
-from hermes_cli.config import load_config, save_config
+from robin.config import load_config, save_config
 
 
 def _raise_menu(*args, **kwargs):
@@ -13,9 +13,9 @@ def _raise_menu(*args, **kwargs):
 
 
 def test_prompt_model_selection_falls_back_on_menu_runtime_error(monkeypatch):
-    from hermes_cli.auth import _prompt_model_selection
+    from robin.auth import _prompt_model_selection
 
-    monkeypatch.setattr("hermes_cli.curses_ui.curses_radiolist", _raise_menu)
+    monkeypatch.setattr("robin.curses_ui.curses_radiolist", _raise_menu)
     responses = iter(["2"])
     monkeypatch.setattr("builtins.input", lambda _prompt="": next(responses))
 
@@ -25,9 +25,9 @@ def test_prompt_model_selection_falls_back_on_menu_runtime_error(monkeypatch):
 
 
 def test_prompt_reasoning_effort_falls_back_on_menu_runtime_error(monkeypatch):
-    from hermes_cli.main import _prompt_reasoning_effort_selection
+    from robin.main import _prompt_reasoning_effort_selection
 
-    monkeypatch.setattr("hermes_cli.curses_ui.curses_radiolist", _raise_menu)
+    monkeypatch.setattr("robin.curses_ui.curses_radiolist", _raise_menu)
     responses = iter(["3"])
     monkeypatch.setattr("builtins.input", lambda _prompt="": next(responses))
 
@@ -37,10 +37,10 @@ def test_prompt_reasoning_effort_falls_back_on_menu_runtime_error(monkeypatch):
 
 
 def test_remove_custom_provider_falls_back_on_menu_runtime_error(tmp_path, monkeypatch):
-    from hermes_cli.main import _remove_custom_provider
+    from robin.main import _remove_custom_provider
 
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    monkeypatch.setattr("hermes_cli.curses_ui.curses_radiolist", _raise_menu)
+    monkeypatch.setattr("robin.curses_ui.curses_radiolist", _raise_menu)
 
     cfg = load_config()
     cfg["custom_providers"] = [
@@ -61,12 +61,12 @@ def test_remove_custom_provider_falls_back_on_menu_runtime_error(tmp_path, monke
 
 
 def test_named_custom_provider_model_picker_falls_back_on_menu_runtime_error(tmp_path, monkeypatch):
-    from hermes_cli.main import _model_flow_named_custom
+    from robin.main import _model_flow_named_custom
 
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    monkeypatch.setattr("hermes_cli.curses_ui.curses_radiolist", _raise_menu)
-    monkeypatch.setattr("hermes_cli.models.fetch_api_models", lambda *args, **kwargs: ["model-a", "model-b"])
-    monkeypatch.setattr("hermes_cli.auth.deactivate_provider", lambda: None)
+    monkeypatch.setattr("robin.curses_ui.curses_radiolist", _raise_menu)
+    monkeypatch.setattr("robin.models.fetch_api_models", lambda *args, **kwargs: ["model-a", "model-b"])
+    monkeypatch.setattr("robin.auth.deactivate_provider", lambda: None)
 
     cfg = load_config()
     save_config(cfg)

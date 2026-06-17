@@ -6,7 +6,7 @@ declare global {
       // Resolve a backend connection. Omit `profile` (or pass the primary) for
       // the window's backend; pass a named profile to lazily spawn/reuse that
       // profile's backend from the pool.
-      getConnection: (profile?: string | null) => Promise<HermesConnection>
+      getConnection: (profile?: string | null) => Promise<RobinConnection>
       // Keepalive: mark a pool profile backend as recently used so the idle
       // reaper spares it while its chat is active.
       touchBackend: (profile?: string | null) => Promise<{ ok: boolean }>
@@ -26,21 +26,21 @@ declare global {
         // clear the preference.
         set: (name: string | null) => Promise<DesktopActiveProfile>
       }
-      api: <T>(request: HermesApiRequest) => Promise<T>
-      notify: (payload: HermesNotification) => Promise<boolean>
+      api: <T>(request: RobinApiRequest) => Promise<T>
+      notify: (payload: RobinNotification) => Promise<boolean>
       requestMicrophoneAccess: () => Promise<boolean>
       readFileDataUrl: (filePath: string) => Promise<string>
-      readFileText: (filePath: string) => Promise<HermesReadFileTextResult>
-      selectPaths: (options?: HermesSelectPathsOptions) => Promise<string[]>
+      readFileText: (filePath: string) => Promise<RobinReadFileTextResult>
+      selectPaths: (options?: RobinSelectPathsOptions) => Promise<string[]>
       writeClipboard: (text: string) => Promise<boolean>
       saveImageFromUrl: (url: string) => Promise<boolean>
       saveImageBuffer: (data: ArrayBuffer | Uint8Array, ext: string) => Promise<string>
       saveClipboardImage: () => Promise<string>
       getPathForFile: (file: File) => string
-      normalizePreviewTarget: (target: string, baseDir?: string) => Promise<HermesPreviewTarget | null>
-      watchPreviewFile: (url: string) => Promise<HermesPreviewWatch>
+      normalizePreviewTarget: (target: string, baseDir?: string) => Promise<RobinPreviewTarget | null>
+      watchPreviewFile: (url: string) => Promise<RobinPreviewWatch>
       stopPreviewFileWatch: (id: string) => Promise<boolean>
-      setTitleBarTheme?: (payload: HermesTitleBarTheme) => void
+      setTitleBarTheme?: (payload: RobinTitleBarTheme) => void
       setPreviewShortcutActive?: (active: boolean) => void
       openExternal: (url: string) => Promise<void>
       fetchLinkTitle: (url: string) => Promise<string>
@@ -51,21 +51,21 @@ declare global {
       }
       revealLogs: () => Promise<{ ok: boolean; path: string; error?: string }>
       getRecentLogs: () => Promise<{ path: string; lines: string[] }>
-      readDir: (path: string) => Promise<HermesReadDirResult>
+      readDir: (path: string) => Promise<RobinReadDirResult>
       resolveWorkspace: (rememberedCwd: string) => Promise<string>
       gitRoot?: (path: string) => Promise<string | null>
       terminal: {
         dispose: (id: string) => Promise<boolean>
         onData: (id: string, callback: (payload: string) => void) => () => void
-        onExit: (id: string, callback: (payload: HermesTerminalExit) => void) => () => void
+        onExit: (id: string, callback: (payload: RobinTerminalExit) => void) => () => void
         resize: (id: string, size: { cols: number; rows: number }) => Promise<boolean>
-        start: (options?: { cols?: number; cwd?: string; rows?: number }) => Promise<HermesTerminalSession>
+        start: (options?: { cols?: number; cwd?: string; rows?: number }) => Promise<RobinTerminalSession>
         write: (id: string, data: string) => Promise<boolean>
       }
       onClosePreviewRequested?: (callback: () => void) => () => void
       onOpenUpdatesRequested?: (callback: () => void) => () => void
-      onWindowStateChanged?: (callback: (payload: HermesWindowState) => void) => () => void
-      onPreviewFileChanged: (callback: (payload: HermesPreviewFileChanged) => void) => () => void
+      onWindowStateChanged?: (callback: (payload: RobinWindowState) => void) => () => void
+      onPreviewFileChanged: (callback: (payload: RobinPreviewFileChanged) => void) => () => void
       onBackendExit: (callback: (payload: BackendExit) => void) => () => void
       onPowerResume?: (callback: () => void) => () => void
       onBootProgress: (callback: (payload: DesktopBootProgress) => void) => () => void
@@ -86,13 +86,13 @@ declare global {
   }
 }
 
-export interface HermesTerminalSession {
+export interface RobinTerminalSession {
   cwd: string
   id: string
   shell: string
 }
 
-export interface HermesTerminalExit {
+export interface RobinTerminalExit {
   code: number | null
   signal: string | null
 }
@@ -155,7 +155,7 @@ export interface DesktopUpdateProgress {
   at: number
 }
 
-export interface HermesConnection {
+export interface RobinConnection {
   baseUrl: string
   isFullscreen: boolean
   mode?: 'local' | 'remote'
@@ -171,12 +171,12 @@ export interface HermesConnection {
   windowButtonPosition: { x: number; y: number } | null
 }
 
-export interface HermesTitleBarTheme {
+export interface RobinTitleBarTheme {
   background: string
   foreground: string
 }
 
-export interface HermesWindowState {
+export interface RobinWindowState {
   isFullscreen: boolean
   nativeOverlayWidth: number
   windowButtonPosition: { x: number; y: number } | null
@@ -317,7 +317,7 @@ export type DesktopBootstrapEvent =
       docsUrl: string
     }
 
-export interface HermesApiRequest {
+export interface RobinApiRequest {
   path: string
   method?: string
   body?: unknown
@@ -328,13 +328,13 @@ export interface HermesApiRequest {
   profile?: string | null
 }
 
-export interface HermesNotification {
+export interface RobinNotification {
   title?: string
   body?: string
   silent?: boolean
 }
 
-export interface HermesPreviewTarget {
+export interface RobinPreviewTarget {
   binary?: boolean
   byteSize?: number
   kind: 'file' | 'url'
@@ -349,7 +349,7 @@ export interface HermesPreviewTarget {
   url: string
 }
 
-export interface HermesReadFileTextResult {
+export interface RobinReadFileTextResult {
   binary?: boolean
   byteSize?: number
   language?: string
@@ -359,29 +359,29 @@ export interface HermesReadFileTextResult {
   truncated?: boolean
 }
 
-export interface HermesPreviewWatch {
+export interface RobinPreviewWatch {
   id: string
   path: string
 }
 
-export interface HermesReadDirEntry {
+export interface RobinReadDirEntry {
   name: string
   path: string
   isDirectory: boolean
 }
 
-export interface HermesReadDirResult {
-  entries: HermesReadDirEntry[]
+export interface RobinReadDirResult {
+  entries: RobinReadDirEntry[]
   error?: string
 }
 
-export interface HermesPreviewFileChanged {
+export interface RobinPreviewFileChanged {
   id: string
   path: string
   url: string
 }
 
-export interface HermesSelectPathsOptions {
+export interface RobinSelectPathsOptions {
   title?: string
   defaultPath?: string
   directories?: boolean

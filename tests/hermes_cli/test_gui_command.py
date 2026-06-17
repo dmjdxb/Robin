@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from hermes_cli import main as cli_main
+from robin import main as cli_main
 
 
 def _ns(**kw):
@@ -60,12 +60,12 @@ def test_gui_installs_packages_and_launches_desktop_app(tmp_path, monkeypatch):
     pack_ok = subprocess.CompletedProcess(["npm", "run", "pack"], 0)
     launch_ok = subprocess.CompletedProcess([str(packaged_exe)], 0)
 
-    with patch("hermes_cli.main.shutil.which", return_value="/usr/bin/npm"), \
-         patch("hermes_cli.main._run_npm_install_deterministic", return_value=install_ok) as mock_install, \
-         patch("hermes_cli.main._desktop_build_needed", return_value=True), \
-         patch("hermes_cli.main._write_desktop_build_stamp"), \
-         patch("hermes_cli.main._desktop_macos_relaunchable_fixup"), \
-         patch("hermes_cli.main.subprocess.run", side_effect=[pack_ok, launch_ok]) as mock_run, \
+    with patch("robin.main.shutil.which", return_value="/usr/bin/npm"), \
+         patch("robin.main._run_npm_install_deterministic", return_value=install_ok) as mock_install, \
+         patch("robin.main._desktop_build_needed", return_value=True), \
+         patch("robin.main._write_desktop_build_stamp"), \
+         patch("robin.main._desktop_macos_relaunchable_fixup"), \
+         patch("robin.main.subprocess.run", side_effect=[pack_ok, launch_ok]) as mock_run, \
          pytest.raises(SystemExit) as exc:
         cli_main.cmd_gui(_ns())
 
@@ -88,12 +88,12 @@ def test_gui_forwards_desktop_environment_overrides(tmp_path, monkeypatch):
 
     ok = subprocess.CompletedProcess([], 0)
 
-    with patch("hermes_cli.main.shutil.which", return_value="/usr/bin/npm"), \
-         patch("hermes_cli.main._run_npm_install_deterministic", return_value=ok), \
-         patch("hermes_cli.main._desktop_build_needed", return_value=True), \
-         patch("hermes_cli.main._write_desktop_build_stamp"), \
-         patch("hermes_cli.main._desktop_macos_relaunchable_fixup"), \
-         patch("hermes_cli.main.subprocess.run", side_effect=[ok, ok]) as mock_run, \
+    with patch("robin.main.shutil.which", return_value="/usr/bin/npm"), \
+         patch("robin.main._run_npm_install_deterministic", return_value=ok), \
+         patch("robin.main._desktop_build_needed", return_value=True), \
+         patch("robin.main._write_desktop_build_stamp"), \
+         patch("robin.main._desktop_macos_relaunchable_fixup"), \
+         patch("robin.main.subprocess.run", side_effect=[ok, ok]) as mock_run, \
          pytest.raises(SystemExit):
         cli_main.cmd_gui(_ns(
             fake_boot=True,
@@ -113,7 +113,7 @@ def test_gui_exits_when_npm_missing(tmp_path, monkeypatch, capsys):
     root = _make_desktop_tree(tmp_path)
     monkeypatch.setattr(cli_main, "PROJECT_ROOT", root)
 
-    with patch("hermes_cli.main.shutil.which", return_value=None), \
+    with patch("robin.main.shutil.which", return_value=None), \
          pytest.raises(SystemExit) as exc:
         cli_main.cmd_gui(_ns())
 
@@ -141,9 +141,9 @@ def test_gui_skip_build_launches_existing_packaged_app_without_npm(tmp_path, mon
 
     launch_ok = subprocess.CompletedProcess([str(packaged_exe)], 0)
 
-    with patch("hermes_cli.main.shutil.which", return_value=None), \
-         patch("hermes_cli.main._run_npm_install_deterministic") as mock_install, \
-         patch("hermes_cli.main.subprocess.run", return_value=launch_ok) as mock_run, \
+    with patch("robin.main.shutil.which", return_value=None), \
+         patch("robin.main._run_npm_install_deterministic") as mock_install, \
+         patch("robin.main.subprocess.run", return_value=launch_ok) as mock_run, \
          pytest.raises(SystemExit) as exc:
         cli_main.cmd_gui(_ns(skip_build=True))
 
@@ -162,8 +162,8 @@ def test_gui_linux_configures_sandbox_before_launch(tmp_path, monkeypatch):
     sandbox.chmod(0o755)
     ok = subprocess.CompletedProcess([], 0)
 
-    with patch("hermes_cli.main.shutil.which", return_value="/usr/bin/sudo"), \
-         patch("hermes_cli.main.subprocess.run", return_value=ok) as mock_run, \
+    with patch("robin.main.shutil.which", return_value="/usr/bin/sudo"), \
+         patch("robin.main.subprocess.run", return_value=ok) as mock_run, \
          pytest.raises(SystemExit) as exc:
         cli_main.cmd_gui(_ns(skip_build=True))
 
@@ -183,8 +183,8 @@ def test_gui_linux_rejects_symlink_sandbox(tmp_path, monkeypatch):
     sandbox = packaged_exe.parent / "chrome-sandbox"
     sandbox.symlink_to(target)
 
-    with patch("hermes_cli.main.shutil.which", return_value="/usr/bin/sudo"), \
-         patch("hermes_cli.main.subprocess.run") as mock_run, \
+    with patch("robin.main.shutil.which", return_value="/usr/bin/sudo"), \
+         patch("robin.main.subprocess.run") as mock_run, \
          pytest.raises(SystemExit) as exc:
         cli_main.cmd_gui(_ns(skip_build=True))
 
@@ -211,8 +211,8 @@ def test_gui_linux_skips_fixup_when_already_configured(tmp_path, monkeypatch):
 
     launch_ok = subprocess.CompletedProcess([str(packaged_exe)], 0)
 
-    with patch("hermes_cli.main.shutil.which", return_value="/usr/bin/sudo"), \
-         patch("hermes_cli.main.subprocess.run", return_value=launch_ok) as mock_run, \
+    with patch("robin.main.shutil.which", return_value="/usr/bin/sudo"), \
+         patch("robin.main.subprocess.run", return_value=launch_ok) as mock_run, \
          pytest.raises(SystemExit) as exc:
         cli_main.cmd_gui(_ns(skip_build=True))
 
@@ -231,11 +231,11 @@ def test_gui_source_mode_uses_renderer_build_and_electron(tmp_path, monkeypatch)
     build_ok = subprocess.CompletedProcess(["npm", "run", "build"], 0)
     launch_ok = subprocess.CompletedProcess(["npm", "exec", "--", "electron", "."], 0)
 
-    with patch("hermes_cli.main.shutil.which", return_value="/usr/bin/npm"), \
-         patch("hermes_cli.main._run_npm_install_deterministic", return_value=install_ok), \
-         patch("hermes_cli.main._desktop_build_needed", return_value=True), \
-         patch("hermes_cli.main._write_desktop_build_stamp"), \
-         patch("hermes_cli.main.subprocess.run", side_effect=[build_ok, launch_ok]) as mock_run, \
+    with patch("robin.main.shutil.which", return_value="/usr/bin/npm"), \
+         patch("robin.main._run_npm_install_deterministic", return_value=install_ok), \
+         patch("robin.main._desktop_build_needed", return_value=True), \
+         patch("robin.main._write_desktop_build_stamp"), \
+         patch("robin.main.subprocess.run", side_effect=[build_ok, launch_ok]) as mock_run, \
          pytest.raises(SystemExit) as exc:
         cli_main.cmd_gui(_ns(source=True))
 
@@ -270,10 +270,10 @@ def test_desktop_build_stamp_skips_build_when_up_to_date(tmp_path, monkeypatch):
 
     launch_ok = subprocess.CompletedProcess([], 0)
 
-    with patch("hermes_cli.main._desktop_build_needed", return_value=False), \
-         patch("hermes_cli.main._run_npm_install_deterministic") as mock_install, \
-         patch("hermes_cli.main.subprocess.run", return_value=launch_ok) as mock_run, \
-         patch("hermes_cli.main._desktop_macos_relaunchable_fixup"), \
+    with patch("robin.main._desktop_build_needed", return_value=False), \
+         patch("robin.main._run_npm_install_deterministic") as mock_install, \
+         patch("robin.main.subprocess.run", return_value=launch_ok) as mock_run, \
+         patch("robin.main._desktop_macos_relaunchable_fixup"), \
          pytest.raises(SystemExit) as exc:
         cli_main.cmd_gui(_ns())
 
@@ -293,12 +293,12 @@ def test_desktop_force_build_overrides_stamp(tmp_path, monkeypatch):
     pack_ok = subprocess.CompletedProcess(["npm", "run", "pack"], 0)
     launch_ok = subprocess.CompletedProcess([], 0)
 
-    with patch("hermes_cli.main.shutil.which", return_value="/usr/bin/npm"), \
-         patch("hermes_cli.main._run_npm_install_deterministic", return_value=install_ok) as mock_install, \
-         patch("hermes_cli.main._desktop_build_needed", return_value=False), \
-         patch("hermes_cli.main._write_desktop_build_stamp") as mock_stamp, \
-         patch("hermes_cli.main._desktop_macos_relaunchable_fixup"), \
-         patch("hermes_cli.main.subprocess.run", side_effect=[pack_ok, launch_ok]) as mock_run, \
+    with patch("robin.main.shutil.which", return_value="/usr/bin/npm"), \
+         patch("robin.main._run_npm_install_deterministic", return_value=install_ok) as mock_install, \
+         patch("robin.main._desktop_build_needed", return_value=False), \
+         patch("robin.main._write_desktop_build_stamp") as mock_stamp, \
+         patch("robin.main._desktop_macos_relaunchable_fixup"), \
+         patch("robin.main.subprocess.run", side_effect=[pack_ok, launch_ok]) as mock_run, \
          pytest.raises(SystemExit) as exc:
         cli_main.cmd_gui(_ns(force_build=True))
 
@@ -479,13 +479,13 @@ def test_gui_retries_pack_once_after_purging_build_cache(tmp_path, monkeypatch):
     pack_ok = subprocess.CompletedProcess(["npm", "run", "pack"], 0)
     launch_ok = subprocess.CompletedProcess([str(packaged_exe)], 0)
 
-    with patch("hermes_cli.main.shutil.which", return_value="/usr/bin/npm"), \
-         patch("hermes_cli.main._run_npm_install_deterministic", return_value=install_ok), \
-         patch("hermes_cli.main._desktop_macos_relaunchable_fixup"), \
-         patch("hermes_cli.main._desktop_linux_sandbox_fixup", return_value=True), \
-         patch("hermes_cli.main._write_desktop_build_stamp"), \
-         patch("hermes_cli.main._purge_electron_build_cache", return_value=[Path("/c/electron.zip")]) as mock_purge, \
-         patch("hermes_cli.main.subprocess.run", side_effect=[pack_fail, pack_ok, launch_ok]) as mock_run, \
+    with patch("robin.main.shutil.which", return_value="/usr/bin/npm"), \
+         patch("robin.main._run_npm_install_deterministic", return_value=install_ok), \
+         patch("robin.main._desktop_macos_relaunchable_fixup"), \
+         patch("robin.main._desktop_linux_sandbox_fixup", return_value=True), \
+         patch("robin.main._write_desktop_build_stamp"), \
+         patch("robin.main._purge_electron_build_cache", return_value=[Path("/c/electron.zip")]) as mock_purge, \
+         patch("robin.main.subprocess.run", side_effect=[pack_fail, pack_ok, launch_ok]) as mock_run, \
          pytest.raises(SystemExit) as exc:
         cli_main.cmd_gui(_ns())
 
@@ -507,11 +507,11 @@ def test_gui_does_not_retry_when_purge_finds_nothing(tmp_path, monkeypatch, caps
     install_ok = subprocess.CompletedProcess(["npm", "ci"], 0)
     pack_fail = subprocess.CompletedProcess(["npm", "run", "pack"], 1)
 
-    with patch("hermes_cli.main.shutil.which", return_value="/usr/bin/npm"), \
-         patch("hermes_cli.main._run_npm_install_deterministic", return_value=install_ok), \
-         patch("hermes_cli.main._desktop_macos_relaunchable_fixup"), \
-         patch("hermes_cli.main._purge_electron_build_cache", return_value=[]) as mock_purge, \
-         patch("hermes_cli.main.subprocess.run", side_effect=[pack_fail]) as mock_run, \
+    with patch("robin.main.shutil.which", return_value="/usr/bin/npm"), \
+         patch("robin.main._run_npm_install_deterministic", return_value=install_ok), \
+         patch("robin.main._desktop_macos_relaunchable_fixup"), \
+         patch("robin.main._purge_electron_build_cache", return_value=[]) as mock_purge, \
+         patch("robin.main.subprocess.run", side_effect=[pack_fail]) as mock_run, \
          pytest.raises(SystemExit) as exc:
         cli_main.cmd_gui(_ns())
 

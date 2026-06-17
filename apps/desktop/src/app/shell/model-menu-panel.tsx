@@ -15,7 +15,7 @@ import {
   DropdownMenuSubTrigger
 } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { HermesGateway } from '@/hermes'
+import type { RobinGateway } from '@/hermes'
 import { getGlobalModelOptions } from '@/hermes'
 import { displayModelName, modelDisplayParts, reasoningEffortLabel } from '@/lib/model-status-label'
 import { cn } from '@/lib/utils'
@@ -39,7 +39,7 @@ import type { ModelOptionProvider, ModelOptionsResponse } from '@/types/hermes'
 import { ModelEditSubmenu, resolveFastControl } from './model-edit-submenu'
 
 interface ModelMenuPanelProps {
-  gateway?: HermesGateway
+  gateway?: RobinGateway
   onSelectModel: (selection: { model: string; persistGlobal: boolean; provider: string }) => Promise<boolean> | void
   requestGateway: <T>(method: string, params?: Record<string, unknown>) => Promise<T>
 }

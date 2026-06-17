@@ -95,7 +95,7 @@ def _setup_logging() -> None:
 
 def _load_env() -> None:
     """Load .env from HERMES_HOME (default ``~/.hermes``)."""
-    from hermes_cli.env_loader import load_hermes_dotenv
+    from robin.env_loader import load_hermes_dotenv
 
     hermes_home = get_hermes_home()
     loaded = load_hermes_dotenv(hermes_home=hermes_home)
@@ -142,20 +142,20 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def _print_version() -> None:
-    from hermes_cli import __version__ as hermes_version
+    from robin import __version__ as hermes_version
 
     print(hermes_version)
 
 
 def _run_check() -> None:
     import acp  # noqa: F401
-    from acp_adapter.server import HermesACPAgent  # noqa: F401
+    from acp_adapter.server import RobinACPAgent  # noqa: F401
 
     print("Robin ACP check OK")
 
 
 def _run_setup() -> None:
-    from hermes_cli.main import main as hermes_main
+    from robin.main import main as hermes_main
 
     old_argv = sys.argv[:]
     try:
@@ -189,7 +189,7 @@ def _run_setup_browser(assume_yes: bool = False) -> int:
 
     Returns 0 on success, 1 on failure.
     """
-    from hermes_cli.dep_ensure import ensure_dependency
+    from robin.dep_ensure import ensure_dependency
 
     try:
         node_ok = ensure_dependency("node", interactive=not assume_yes)
@@ -239,7 +239,7 @@ def main(argv: list[str] | None = None) -> None:
         sys.path.insert(0, project_root)
 
     import acp
-    from .server import HermesACPAgent
+    from .server import RobinACPAgent
 
     # MCP tool discovery from config.yaml — run before asyncio.run() so
     # it's safe to use blocking waits.  (ACP also registers per-session
@@ -252,7 +252,7 @@ def main(argv: list[str] | None = None) -> None:
     except Exception:
         logger.debug("MCP tool discovery failed at ACP startup", exc_info=True)
 
-    agent = HermesACPAgent()
+    agent = RobinACPAgent()
     try:
         asyncio.run(acp.run_agent(agent, use_unstable_protocol=True))
     except KeyboardInterrupt:

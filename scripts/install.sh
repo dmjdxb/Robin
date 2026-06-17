@@ -477,7 +477,7 @@ install_uv() {
 
     # Robin owns its own uv at $HERMES_HOME/bin/uv.  Always install there —
     # no PATH probing, no conda guards, no multi-location resolution chains.
-    # The runtime update path (hermes_cli/managed_uv.py) looks in the same
+    # The runtime update path (robin/managed_uv.py) looks in the same
     # place, so install.sh and `hermes update` stay in sync.
     local _managed_uv="$HERMES_HOME/bin/uv"
 
@@ -1952,9 +1952,9 @@ run_setup_wizard() {
     # Run hermes setup using the venv Python directly (no activation needed).
     # Redirect stdin from /dev/tty so interactive prompts work when piped from curl.
     if [ "$USE_VENV" = true ]; then
-        "$INSTALL_DIR/venv/bin/python" -m hermes_cli.main setup < /dev/tty
+        "$INSTALL_DIR/venv/bin/python" -m robin.main setup < /dev/tty
     else
-        python -m hermes_cli.main setup < /dev/tty
+        python -m robin.main setup < /dev/tty
     fi
 }
 
@@ -2260,7 +2260,7 @@ postinstall_mode() {
         "$HERMES_CMD" setup
     else
         log_warn "hermes command not found on PATH"
-        log_info "Try: python -m hermes_cli.main setup"
+        log_info "Try: python -m robin.main setup"
     fi
 }
 

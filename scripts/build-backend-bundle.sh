@@ -9,7 +9,7 @@
 #   hermes-agent/            -> full Robin source (the agent core + plugins)
 #   hermes-agent/venv/       -> a relocatable standalone CPython with ALL deps
 #                               installed into its site-packages. The desktop
-#                               runs `venv/bin/python -m hermes_cli.main dashboard`.
+#                               runs `venv/bin/python -m robin.main dashboard`.
 #
 # Requires: uv (installed by the workflow). Run from the repo root.
 set -euo pipefail
@@ -42,7 +42,7 @@ tar -xf "$SRC_TAR" -C "$AGENT_DIR"
 rm -f "$SRC_TAR"
 ( cd "$AGENT_DIR" && rm -rf apps web ui-tui website site tests docs .github \
     download paper infographic target release dist build )
-test -f "$AGENT_DIR/hermes_cli/main.py" || { echo "[bundle] ERROR: source copy produced no backend"; exit 1; }
+test -f "$AGENT_DIR/robin/main.py" || { echo "[bundle] ERROR: source copy produced no backend"; exit 1; }
 echo "[bundle] source ready"
 
 # 2) Get a relocatable standalone CPython (python-build-standalone via uv) and
@@ -71,7 +71,7 @@ echo "[bundle] installing dependencies..."
 # The copied standalone CPython carries a PEP 668 "externally managed" marker
 # (it was uv-managed). This is now OUR private interpreter to install into, so
 # drop the marker, then pip install the project + all pinned deps into the
-# bundled site-packages. -m hermes_cli.main also resolves modules from cwd.
+# bundled site-packages. -m robin.main also resolves modules from cwd.
 rm -f "$VENV_DIR"/lib/python*/EXTERNALLY-MANAGED 2>/dev/null || true
 # Install the [all] extra to match the normal install (uv sync --extra all):
 # it bundles every always-needed extra (cli, pty, mcp, vision, web, cron).
@@ -82,7 +82,7 @@ rm -f "$VENV_DIR"/lib/python*/EXTERNALLY-MANAGED 2>/dev/null || true
 
 # 4) Smoke-test: the interpreter must import the agent entry module offline.
 echo "[bundle] smoke test..."
-( cd "$AGENT_DIR" && "$VENV_PY" -c "import hermes_cli.main; print('[bundle] hermes_cli import OK')" )
+( cd "$AGENT_DIR" && "$VENV_PY" -c "import robin.main; print('[bundle] robin import OK')" )
 
 # 5) Mark this as a completed install so the desktop trusts it (the desktop also
 #    writes its own marker, but seed one for belt-and-braces).

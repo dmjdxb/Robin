@@ -1,9 +1,9 @@
-"""Tests for hermes_cli.logs — log viewing and filtering."""
+"""Tests for robin.logs — log viewing and filtering."""
 
 from datetime import datetime, timedelta
 
 
-from hermes_cli.logs import (
+from robin.logs import (
     LOG_FILES,
     _extract_level,
     _extract_logger_name,

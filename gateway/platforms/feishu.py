@@ -3234,7 +3234,7 @@ class FeishuAdapter(BasePlatformAdapter):
             response = await client.get(
                 file_url,
                 headers={
-                    "User-Agent": "Mozilla/5.0 (compatible; HermesAgent/1.0)",
+                    "User-Agent": "Mozilla/5.0 (compatible; RobinAgent/1.0)",
                     "Accept": "*/*",
                 },
             )
@@ -4835,7 +4835,7 @@ class FeishuAdapter(BasePlatformAdapter):
 #
 # Device-code flow: user scans a QR code with Feishu/Lark mobile app and the
 # platform creates a fully configured bot application automatically.
-# Called by `hermes gateway setup` via _setup_feishu() in hermes_cli/gateway.py.
+# Called by `hermes gateway setup` via _setup_feishu() in robin/gateway.py.
 # =============================================================================
 
 

@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 import yaml
 
-from hermes_cli.plugins import PluginManager
+from robin.plugins import PluginManager
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

@@ -31,11 +31,11 @@ const prettyState = (state: string) => state.replace(/_/g, ' ').replace(/^./, c 
 // log lines so they don't dominate the display. Full text preserved on hover.
 const TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}[,.\d]*\s+/
 const RUNTIME_BRACKET_RE = /^\[[^\]]+]\s+/
-// Scrub internal Python logger/module names (hermes_cli.web_server,
+// Scrub internal Python logger/module names (robin.web_server,
 // tui_gateway.ws, …) from any log line shown in the UI so users only ever see
 // "robin" — never the upstream module names.
 const INTERNAL_LOGGER_RE =
-  /\b(hermes_cli|tui_gateway|hermes_constants|hermes_logging|hermes_state|run_agent|acp_adapter|tui_gateway)\b(\.\w+)*/g
+  /\b(robin|tui_gateway|hermes_constants|hermes_logging|hermes_state|run_agent|acp_adapter|tui_gateway)\b(\.\w+)*/g
 const sanitizeLogLine = (raw: string) =>
   raw.replace(INTERNAL_LOGGER_RE, 'robin').replace(/\bhermes\b/gi, 'robin')
 const trimLogLine = (raw: string) =>

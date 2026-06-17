@@ -119,7 +119,7 @@ def _ra():
 
 def _nous_entitlement_message(capability: str) -> str:
     try:
-        from hermes_cli.nous_account import (
+        from robin.nous_account import (
             format_nous_portal_entitlement_message,
             get_nous_portal_account_info,
         )
@@ -203,7 +203,7 @@ def _print_billing_or_entitlement_guidance(
 def _try_refresh_nous_paid_entitlement_credentials(agent) -> bool:
     """Refresh EnergyIR runtime credentials after a fresh paid-entitlement check."""
     try:
-        from hermes_cli.nous_account import get_nous_portal_account_info
+        from robin.nous_account import get_nous_portal_account_info
 
         account_info = get_nous_portal_account_info(force_fresh=True)
         if account_info.paid_service_access is not True:
@@ -291,7 +291,7 @@ def _restore_or_build_system_prompt(agent, system_message, conversation_history)
     # session is created (not on continuation).  Plugins can use this
     # to initialise session-scoped state (e.g. warm a memory cache).
     try:
-        from hermes_cli.plugins import invoke_hook as _invoke_hook
+        from robin.plugins import invoke_hook as _invoke_hook
         _invoke_hook(
             "on_session_start",
             session_id=agent.session_id,
@@ -701,7 +701,7 @@ def run_conversation(
     # All injected context is ephemeral (not persisted to session DB).
     _plugin_user_context = ""
     try:
-        from hermes_cli.plugins import invoke_hook as _invoke_hook
+        from robin.plugins import invoke_hook as _invoke_hook
         _pre_results = _invoke_hook(
             "pre_llm_call",
             session_id=agent.session_id,
@@ -1227,7 +1227,7 @@ def run_conversation(
                     api_kwargs = agent._get_transport().preflight_kwargs(api_kwargs, allow_stream=False)
 
                 try:
-                    from hermes_cli.plugins import (
+                    from robin.plugins import (
                         has_hook,
                         invoke_hook as _invoke_hook,
                     )
@@ -3622,7 +3622,7 @@ def run_conversation(
                     assistant_message.content = str(raw)
 
             try:
-                from hermes_cli.plugins import (
+                from robin.plugins import (
                     has_hook,
                     invoke_hook as _invoke_hook,
                 )
@@ -4544,7 +4544,7 @@ def run_conversation(
         _kanban_task = os.environ.get("HERMES_KANBAN_TASK")
         if _kanban_task:
             try:
-                from hermes_cli import kanban_db as _kb
+                from robin import kanban_db as _kb
                 _conn = _kb.connect()
                 try:
                     _kb._record_task_failure(
@@ -4727,7 +4727,7 @@ def run_conversation(
     # First hook to return a string wins; None/empty return leaves text unchanged.
     if final_response and not interrupted:
         try:
-            from hermes_cli.plugins import invoke_hook as _invoke_hook
+            from robin.plugins import invoke_hook as _invoke_hook
             _transform_results = _invoke_hook(
                 "transform_llm_output",
                 response_text=final_response,
@@ -4749,7 +4749,7 @@ def run_conversation(
     # to an external memory system).
     if final_response and not interrupted:
         try:
-            from hermes_cli.plugins import invoke_hook as _invoke_hook
+            from robin.plugins import invoke_hook as _invoke_hook
             _invoke_hook(
                 "post_llm_call",
                 session_id=agent.session_id,
@@ -4870,7 +4870,7 @@ def run_conversation(
     # Fired at the very end of every run_conversation call.
     # Plugins can use this for cleanup, flushing buffers, etc.
     try:
-        from hermes_cli.plugins import invoke_hook as _invoke_hook
+        from robin.plugins import invoke_hook as _invoke_hook
         _invoke_hook(
             "on_session_end",
             session_id=agent.session_id,

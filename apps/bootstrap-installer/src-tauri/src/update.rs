@@ -6,7 +6,7 @@
 //!   1. wait for the old Hermes desktop process to fully exit (so the venv
 //!      shim is free; otherwise `hermes update` aborts with exit code 2),
 //!   2. run `hermes update --yes --gateway` (Python/repo update; this does NOT
-//!      rebuild apps/desktop by design — see cmd_update in hermes_cli/main.py),
+//!      rebuild apps/desktop by design — see cmd_update in robin/main.py),
 //!   3. run `hermes desktop --build-only` (the rebuild step update skips),
 //!   4. launch the freshly-built desktop (reuses bootstrap::launch logic).
 //!
@@ -35,7 +35,7 @@ use crate::events::{BootstrapEvent, LogStream, StageInfo, StageState};
 
 /// `hermes update` exit code meaning "another hermes process is holding the
 /// venv shim open / dirty precondition" — see _cmd_update_impl in
-/// hermes_cli/main.py (sys.exit(2)). We surface a targeted message for this.
+/// robin/main.py (sys.exit(2)). We surface a targeted message for this.
 const UPDATE_EXIT_CONCURRENT: i32 = 2;
 
 /// How long to wait for the old desktop process to release the venv shim

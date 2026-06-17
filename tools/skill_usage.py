@@ -227,7 +227,7 @@ def _prune_builtins_enabled() -> bool:
     flag — built-ins only archive after a fresh inactivity window.
     """
     try:
-        from hermes_cli.config import load_config
+        from robin.config import load_config
 
         cfg = load_config()
         cur = cfg.get("curator") if isinstance(cfg, dict) else None

@@ -332,13 +332,13 @@ class TestPostSetup:
         monkeypatch.setenv("HOME", str(user_home))
 
         selections = iter([1, 0])  # local_embedded, openai
-        monkeypatch.setattr("hermes_cli.memory_setup._curses_select", lambda *args, **kwargs: next(selections))
+        monkeypatch.setattr("robin.memory_setup._curses_select", lambda *args, **kwargs: next(selections))
         monkeypatch.setattr("shutil.which", lambda name: None)
         monkeypatch.setattr("builtins.input", lambda prompt="": "")
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
         monkeypatch.setattr("getpass.getpass", lambda prompt="": "sk-local-test")
         saved_configs = []
-        monkeypatch.setattr("hermes_cli.config.save_config", lambda cfg: saved_configs.append(cfg.copy()))
+        monkeypatch.setattr("robin.config.save_config", lambda cfg: saved_configs.append(cfg.copy()))
 
         provider = HindsightMemoryProvider()
         provider.post_setup(str(hermes_home), {"memory": {}})
@@ -366,12 +366,12 @@ class TestPostSetup:
         monkeypatch.setenv("HOME", str(user_home))
 
         selections = iter([1, 0])  # local_embedded, openai
-        monkeypatch.setattr("hermes_cli.memory_setup._curses_select", lambda *args, **kwargs: next(selections))
+        monkeypatch.setattr("robin.memory_setup._curses_select", lambda *args, **kwargs: next(selections))
         monkeypatch.setattr("shutil.which", lambda name: None)
         monkeypatch.setattr("builtins.input", lambda prompt="": "")
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
         monkeypatch.setattr("getpass.getpass", lambda prompt="": "sk-local-test")
-        monkeypatch.setattr("hermes_cli.config.save_config", lambda cfg: None)
+        monkeypatch.setattr("robin.config.save_config", lambda cfg: None)
 
         provider = HindsightMemoryProvider()
         provider.save_config({"profile": "coder"}, str(hermes_home))
@@ -389,12 +389,12 @@ class TestPostSetup:
         monkeypatch.setenv("HOME", str(user_home))
 
         selections = iter([1, 0])  # local_embedded, openai
-        monkeypatch.setattr("hermes_cli.memory_setup._curses_select", lambda *args, **kwargs: next(selections))
+        monkeypatch.setattr("robin.memory_setup._curses_select", lambda *args, **kwargs: next(selections))
         monkeypatch.setattr("shutil.which", lambda name: None)
         monkeypatch.setattr("builtins.input", lambda prompt="": "")
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
         monkeypatch.setattr("getpass.getpass", lambda prompt="": "")
-        monkeypatch.setattr("hermes_cli.config.save_config", lambda cfg: None)
+        monkeypatch.setattr("robin.config.save_config", lambda cfg: None)
 
         env_path = hermes_home / ".env"
         env_path.parent.mkdir(parents=True, exist_ok=True)
@@ -434,12 +434,12 @@ class TestPostSetup:
 
         # Simulate pressing Enter at the mode and LLM-provider pickers, which
         # should select their current values, and pressing Enter at text prompts.
-        monkeypatch.setattr("hermes_cli.memory_setup._curses_select", lambda *args, **kwargs: kwargs.get("default", 0))
+        monkeypatch.setattr("robin.memory_setup._curses_select", lambda *args, **kwargs: kwargs.get("default", 0))
         monkeypatch.setattr("shutil.which", lambda name: None)
         monkeypatch.setattr("builtins.input", lambda prompt="": "")
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
         monkeypatch.setattr("getpass.getpass", lambda prompt="": "")
-        monkeypatch.setattr("hermes_cli.config.save_config", lambda cfg: None)
+        monkeypatch.setattr("robin.config.save_config", lambda cfg: None)
 
         provider = HindsightMemoryProvider()
         provider.post_setup(str(hermes_home), {"memory": {}})

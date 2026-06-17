@@ -10,7 +10,7 @@ re-run on every upstream re-sync so the fork stays cheap to maintain
 
 It deliberately does NOT blanket-replace the bare word "Hermes", because that
 also appears in internal identifiers (HERMES_HOME, hermesDesktop, the `hermes`
-venv entry point, hermes_cli module paths) that must keep working. Bare-word
+venv entry point, robin module paths) that must keep working. Bare-word
 user-visible occurrences in the shipped UI are fixed by targeted edits and
 enforced by the CI string gate (scripts/check_brand.py) against the built
 renderer output — the falsification instrument for PRD acceptance gate #7.

@@ -147,7 +147,7 @@ export function isDesktopSlashCommand(command: string): boolean {
     return false
   }
 
-  return DESKTOP_COMMANDS.has(canonical) || !isKnownHermesSlashCommand(normalized)
+  return DESKTOP_COMMANDS.has(canonical) || !isKnownRobinSlashCommand(normalized)
 }
 
 /**
@@ -165,7 +165,7 @@ export function isDesktopSlashExtensionCommand(command: string): boolean {
     return false
   }
 
-  return !isKnownHermesSlashCommand(normalized)
+  return !isKnownRobinSlashCommand(normalized)
 }
 
 export function isDesktopSlashSuggestion(command: string): boolean {
@@ -268,6 +268,6 @@ export function filterDesktopCommandsCatalog(catalog: CommandsCatalogLike): Comm
   }
 }
 
-function isKnownHermesSlashCommand(command: string): boolean {
+function isKnownRobinSlashCommand(command: string): boolean {
   return DESKTOP_COMMANDS.has(command) || DESKTOP_ALIASES.has(command) || BLOCKED_COMMANDS.has(command)
 }
