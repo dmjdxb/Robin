@@ -198,10 +198,10 @@ export function ProvidersSettings({ onViewChange, view }: ProvidersSettingsProps
     return <LoadingState label="Loading providers..." />
   }
 
-  const hasOauth = oauthProviders.length > 0
-  // The sidebar subnav owns the Accounts/API-keys split now; with no OAuth
-  // providers there's nothing for the "Accounts" view to show, so fall to keys.
-  const showApiKeys = view === 'keys' || !hasOauth
+  // White-label: Robin only ever offers the EnergyIR API key. The third-party
+  // OAuth account picker (OpenAI/Anthropic/xAI sign-in) is never shown, even if
+  // something deep-links to the old `accounts` sub-view. Always render keys.
+  const showApiKeys = true
 
   const keyGroups = buildProviderKeyGroups(vars)
 

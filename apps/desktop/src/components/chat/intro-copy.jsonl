@@ -24,7 +24,7 @@
 {"personality":"teacher","headline":"Bring me a question","body":"We'll read the code together, find the root cause, and build a mental model you can reuse next time."}
 {"personality":"teacher","headline":"Let's start with the basics","body":"Name the topic or paste the snippet. Expect explanations, diagrams in prose, and practice prompts."}
 {"personality":"kawaii","headline":"hiii! ready to help! (^_^)","body":"paste a bug or a file path and i'll fix it super gently. tests, diffs, PRs - all with extra care! *sparkle*"}
-{"personality":"kawaii","headline":"hermes-chan is here! <3","body":"tell me what you're making! i love refactors, tiny helpers, and big scary repos alike (>w<)"}
+{"personality":"kawaii","headline":"robin-chan is here! <3","body":"tell me what you're making! i love refactors, tiny helpers, and big scary repos alike (>w<)"}
 {"personality":"kawaii","headline":"let's code together!! :3","body":"drop an error, a goal, or a whole folder. i'll tidy it up with lots of love and a clean commit message!"}
 {"personality":"kawaii","headline":"awaiting your wish~","body":"one task at a time, done neatly! i can run tests, patch files, and make your repo feel cozy again <3"}
 {"personality":"kawaii","headline":"ready and happy! (>.<)","body":"say hi or paste a stack trace! no task too small, no repo too tangled. we'll untangle it together!"}

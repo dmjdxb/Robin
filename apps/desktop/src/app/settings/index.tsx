@@ -5,7 +5,7 @@ import { Tip } from '@/components/ui/tooltip'
 import { getHermesConfigDefaults, getHermesConfigRecord, saveHermesConfig } from '@/hermes'
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
-import { Archive, Globe, Info, KeyRound, Settings2, Sparkles, Wrench, Zap } from '@/lib/icons'
+import { Archive, Globe, Info, KeyRound, Settings2, Wrench, Zap } from '@/lib/icons'
 import { notifyError } from '@/store/notifications'
 
 import { useRouteEnumParam } from '../hooks/use-route-enum-param'
@@ -39,7 +39,9 @@ export function SettingsView({ gateway, onClose, onConfigSaved, onMainModelChang
   const [activeView, setActiveView] = useRouteEnumParam('tab', SETTINGS_VIEWS, 'config:chat' as SettingsViewId)
   // Providers subnav (Accounts vs API keys) lives in its own param so each
   // sub-view is deep-linkable and survives a refresh.
-  const [providerView, setProviderView] = useRouteEnumParam<ProviderView>('pview', PROVIDER_VIEWS, 'accounts')
+  // White-label: Robin only offers the EnergyIR API key. The "Accounts" sub-view
+  // (third-party OAuth sign-in) is removed, so Providers always lands on keys.
+  const [providerView, setProviderView] = useRouteEnumParam<ProviderView>('pview', PROVIDER_VIEWS, 'keys')
   const [keysView, setKeysView] = useRouteEnumParam<KeysView>('kview', KEYS_VIEWS, 'tools')
 
   const openProviderView = (view: ProviderView) => {
@@ -61,7 +63,7 @@ export function SettingsView({ gateway, onClose, onConfigSaved, onMainModelChang
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = 'hermes-config.json'
+      a.download = 'robin-config.json'
       a.click()
       URL.revokeObjectURL(url)
       triggerHaptic('success')
@@ -106,26 +108,8 @@ export function SettingsView({ gateway, onClose, onConfigSaved, onMainModelChang
             active={activeView === 'providers'}
             icon={Zap}
             label="Providers"
-            onClick={() => setActiveView('providers')}
+            onClick={() => openProviderView('keys')}
           />
-          {activeView === 'providers' && (
-            <div className="ml-3.5 flex flex-col gap-0.5 pl-1.5">
-              <OverlayNavItem
-                active={providerView === 'accounts'}
-                icon={Sparkles}
-                label="Accounts"
-                nested
-                onClick={() => openProviderView('accounts')}
-              />
-              <OverlayNavItem
-                active={providerView === 'keys'}
-                icon={KeyRound}
-                label="API keys"
-                nested
-                onClick={() => openProviderView('keys')}
-              />
-            </div>
-          )}
           <OverlayNavItem
             active={activeView === 'gateway'}
             icon={Globe}

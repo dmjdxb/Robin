@@ -72,8 +72,13 @@ export function AboutSettings() {
   let statusTone: 'idle' | 'available' | 'error' = 'idle'
 
   if (!supported) {
-    statusLine = status?.message ?? a.cantUpdate
-    statusTone = 'error'
+    // Packaged Robin has no in-app git self-update (there's no source checkout
+    // on a user's machine). That's a developer detail — never show the raw
+    // "isn't a git checkout" message to office users. Present the normal
+    // "up to date" resting state; new versions are delivered by installing the
+    // latest build from energyir.io/robin (or the background auto-updater).
+    statusLine = a.onLatest
+    statusTone = 'idle'
   } else if (status?.error) {
     statusLine = a.cantReach
     statusTone = 'error'
@@ -131,7 +136,7 @@ export function AboutSettings() {
 
           <div className="mt-3 flex flex-wrap items-center gap-4">
             <Button
-              disabled={checking || applying || !supported}
+              disabled={checking || applying}
               onClick={() => void handleCheck()}
               size="sm"
               variant="textStrong"
@@ -163,11 +168,7 @@ export function AboutSettings() {
           </div>
         </div>
 
-        <ListRow
-          description={a.automaticUpdatesDesc}
-          hint={a.branchCommit(status?.branch ?? 'unknown', status?.currentSha?.slice(0, 7) ?? 'unknown')}
-          title={a.automaticUpdates}
-        />
+        <ListRow description={a.automaticUpdatesDesc} title={a.automaticUpdates} />
       </div>
     </SettingsContent>
   )

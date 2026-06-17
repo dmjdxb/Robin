@@ -95,9 +95,9 @@ const toSessionEntry = (session: SessionRow): SessionEntry => ({
 const NON_CONFIG_SETTINGS: ReadonlyArray<{ icon: IconComponent; keywords?: string[]; label: string; tab: string }> = [
   {
     icon: Zap,
-    keywords: ['accounts', 'sign in', 'oauth', 'login', 'subscription', 'models', 'anthropic', 'openai'],
+    keywords: ['provider', 'energyir', 'api key', 'connect'],
     label: 'Providers',
-    tab: 'providers&pview=accounts'
+    tab: 'providers&pview=keys'
   },
   {
     icon: KeyRound,

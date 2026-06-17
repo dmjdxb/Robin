@@ -3,7 +3,7 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useM
 import { getHermesConfigRecord, type HermesConfigRecord, saveHermesConfig } from '@/hermes'
 
 import { TRANSLATIONS } from './catalog'
-import { DEFAULT_LOCALE, localeConfigValue, normalizeLocale } from './languages'
+import { DEFAULT_LOCALE, localeConfigValue, localeDirection, normalizeLocale } from './languages'
 import { setRuntimeI18nLocale } from './runtime'
 import type { Locale, Translations } from './types'
 
@@ -92,6 +92,12 @@ export function I18nProvider({ children, configClient = defaultConfigClient, ini
   useEffect(() => {
     localeRef.current = locale
     setRuntimeI18nLocale(locale)
+    // Flip the document direction + lang so Arabic (and any future RTL locale)
+    // mirrors layout and screen readers announce the right language.
+    if (typeof document !== 'undefined') {
+      document.documentElement.dir = localeDirection(locale)
+      document.documentElement.lang = locale
+    }
   }, [locale])
 
   useEffect(() => {

@@ -264,7 +264,7 @@ function DefaultProjectDirSetting() {
             )}
           </div>
         }
-        description={dir || `Defaults to ${fallback || '~/hermes-projects'}.`}
+        description={dir || `Defaults to ${fallback || 'your projects folder'}.`}
         title={dir ? dir : 'Not set'}
       />
     </div>

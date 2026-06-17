@@ -3,7 +3,6 @@ import { atom } from 'nanostores'
 import {
   cancelOAuthSession,
   getGlobalModelOptions,
-  getRecommendedDefaultModel,
   listOAuthProviders,
   pollOAuthSession,
   setEnvVar,
@@ -84,6 +83,11 @@ const SKIP_CACHE_KEY = 'hermes-onboarding-skipped-v1'
 const POLL_MS = 2000
 const COPY_FLASH_MS = 1500
 const DEFAULT_ONBOARDING_REASON = 'No inference provider is configured.'
+
+// Robin ships a single, locked default model (the UI has no model picker by
+// design). Onboarding always persists THIS model after a provider connects, so
+// the underlying vendor's "recommended" default (e.g. MiniMax) never leaks in.
+const ROBIN_DEFAULT_MODEL = 'deepseek-ai/DeepSeek-V4-Pro'
 
 function readCachedConfigured(): boolean | null {
   if (typeof window === 'undefined') {
@@ -249,36 +253,13 @@ async function fetchProviderDefaultModel(
   const matched =
     providers.find((p: ModelOptionProvider) => lower.includes(String(p.slug).toLowerCase())) ?? providers[0]
 
-  const models = matched.models ?? []
-
-  if (models.length === 0) {
-    return null
-  }
-
-  // Prefer the backend's recommended default — it mirrors the curation
-  // `robin model` does (for EnergyIR it honors the user's free/paid tier, so a
-  // free user gets a free model rather than a paid default like opus). Fall
-  // back to the first curated model if the endpoint can't resolve one.
-  let defaultModel = String(models[0])
-
-  try {
-    const recommended = await getRecommendedDefaultModel(String(matched.slug))
-
-    if (recommended.model && models.map(String).includes(recommended.model)) {
-      defaultModel = recommended.model
-    } else if (recommended.model) {
-      // Recommended model isn't in the curated options list (e.g. a Portal
-      // free-recommendation the picker list didn't include); trust it anyway.
-      defaultModel = recommended.model
-    }
-  } catch {
-    // Endpoint unavailable — keep models[0]. Non-fatal: the confirm card still
-    // shows and the user can change it.
-  }
-
+  // Robin ships ONE locked default model by design (no model selection in the
+  // UI). We do NOT honor the backend's recommended default here — that returned
+  // whatever the provider curated (e.g. MiniMax), which is wrong for Robin and
+  // also leaks a vendor name. Always pin Robin's default.
   return {
     providerSlug: String(matched.slug),
-    defaultModel
+    defaultModel: ROBIN_DEFAULT_MODEL
   }
 }
 

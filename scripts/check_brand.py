@@ -71,6 +71,7 @@ ALLOW_SUBSTRINGS = (
     "FEATURED",           # FEATURED_ID = 'nous'
     "|hermes)",           # url-protocol skip regex
     "STORAGE_KEY",        # localStorage key constants
+    "TOOLSET_BRAND_PREFIX",  # white-label alias source: maps 'hermes-*' presets -> 'robin-*' for display
 )
 
 # Lowercase-hyphenated tokens are internal identifiers (localStorage keys, CSS

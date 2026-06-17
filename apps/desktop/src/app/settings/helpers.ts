@@ -15,6 +15,21 @@ export const stripToolsetLabel = (label: string): string =>
 export const toolsetDisplayLabel = (toolset: Pick<ToolsetInfo, 'label' | 'name'>): string =>
   stripToolsetLabel(asText(toolset.label || toolset.name))
 
+// White-label alias for toolset PRESET ids. The backend ships built-in presets
+// named "hermes-*" (e.g. hermes-cli, hermes-telegram). Robin must never show
+// "hermes", so the Advanced "Enabled Toolsets" field DISPLAYS them as "robin-*"
+// and STORES the real preset id the backend resolves — a pure display alias
+// with no behavior change. Applied only on the toolsets field, where the only
+// tokens are these presets (there are no genuine "robin-*" toolsets to collide).
+const TOOLSET_BRAND_PREFIX = 'hermes-'
+const TOOLSET_DISPLAY_PREFIX = 'robin-'
+
+export const toolsetTokenToDisplay = (token: string): string =>
+  token.startsWith(TOOLSET_BRAND_PREFIX) ? TOOLSET_DISPLAY_PREFIX + token.slice(TOOLSET_BRAND_PREFIX.length) : token
+
+export const toolsetTokenFromDisplay = (token: string): string =>
+  token.startsWith(TOOLSET_DISPLAY_PREFIX) ? TOOLSET_BRAND_PREFIX + token.slice(TOOLSET_DISPLAY_PREFIX.length) : token
+
 export const toolNames = (t: ToolsetInfo) => (Array.isArray(t.tools) ? t.tools.map(asText).filter(Boolean) : [])
 
 export const withoutKey = <T>(record: Record<string, T>, key: string) => {

@@ -19,7 +19,14 @@ import { notify, notifyError } from '@/store/notifications'
 import type { ConfigFieldSchema, HermesConfigRecord } from '@/types/hermes'
 
 import { CONTROL_TEXT, EMPTY_SELECT_VALUE, FIELD_DESCRIPTIONS, FIELD_LABELS, SECTIONS } from './constants'
-import { enumOptionsFor, getNested, prettyName, setNested } from './helpers'
+import {
+  enumOptionsFor,
+  getNested,
+  prettyName,
+  setNested,
+  toolsetTokenFromDisplay,
+  toolsetTokenToDisplay
+} from './helpers'
 import { ModelSettings } from './model-settings'
 import { EmptyState, ListRow, LoadingState, SettingsContent } from './primitives'
 
@@ -117,6 +124,13 @@ function ConfigField({
   }
 
   if (schema.type === 'list') {
+    // White-label the toolset preset ids: the backend names them "hermes-*",
+    // but Robin must never show "hermes". Display them as "robin-*" and reverse
+    // on save so the stored value stays the real preset the backend resolves.
+    const isToolsets = schemaKey === 'toolsets'
+    const toDisplayToken = (s: string) => (isToolsets ? toolsetTokenToDisplay(s) : s)
+    const fromDisplayToken = (s: string) => (isToolsets ? toolsetTokenFromDisplay(s) : s)
+
     return row(
       <Input
         className={CONTROL_TEXT}
@@ -124,12 +138,12 @@ function ConfigField({
           onChange(
             e.target.value
               .split(',')
-              .map(s => s.trim())
+              .map(s => fromDisplayToken(s.trim()))
               .filter(Boolean)
           )
         }
         placeholder="comma-separated values"
-        value={Array.isArray(value) ? value.join(', ') : String(value ?? '')}
+        value={Array.isArray(value) ? value.map(v => toDisplayToken(String(v))).join(', ') : String(value ?? '')}
       />
     )
   }

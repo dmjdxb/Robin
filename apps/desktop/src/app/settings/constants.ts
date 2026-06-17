@@ -41,7 +41,7 @@ export const PROVIDER_GROUPS: ProviderPrefix[] = [
     prefix: 'NOUS_',
     name: 'EnergyIR',
     description: 'Your EnergyIR API key powers Robin',
-    docsUrl: 'https://energyir.com',
+    docsUrl: 'https://energyir.io/robin',
     priority: 0
   },
   {
@@ -288,8 +288,8 @@ export const FIELD_LABELS: Record<string, string> = {
   'stt.elevenlabs.diarize': 'Speaker Diarization',
   'tts.provider': 'Text-To-Speech Provider',
   'tts.edge.voice': 'Edge Voice',
-  'tts.openai.model': 'OpenAI TTS Model',
-  'tts.openai.voice': 'OpenAI Voice',
+  'tts.openai.model': 'Cloud Voice Model',
+  'tts.openai.voice': 'Cloud Voice',
   'tts.elevenlabs.voice_id': 'ElevenLabs Voice',
   'tts.elevenlabs.model_id': 'ElevenLabs Model',
   'memory.memory_enabled': 'Persistent Memory',
@@ -339,6 +339,13 @@ export const FIELD_DESCRIPTIONS: Record<string, string> = {
   'stt.enabled': 'Enable local or provider-backed speech transcription.',
   'stt.elevenlabs.language_code': 'Optional ISO-639-3 language code. Blank lets ElevenLabs auto-detect.',
   'agent.max_turns': 'Upper bound for tool-calling turns before Robin stops a run.',
+  // De-branded override: the backend schema's help text names third-party
+  // vendors (e.g. "OpenAI/Anthropic"). Robin is white-labeled, so surface a
+  // vendor-neutral description instead.
+  'agent.service_tier': 'Requested API service tier for inference (leave as default unless told otherwise).',
+  'agent.api_max_retries': 'How many times Robin retries a failed inference request before giving up.',
+  'tts.openai.model': 'Voice model used to read responses aloud.',
+  'tts.openai.voice': 'Voice used when reading responses aloud.',
   'updates.non_interactive_local_changes':
     'When Robin updates itself from the app (no terminal prompt), keep local source edits (stash) or throw them away (discard). Terminal updates always ask.'
 }

@@ -2,7 +2,6 @@ import { useStore } from '@nanostores/react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { ModelPickerDialog } from '@/components/model-picker'
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
 import { Input } from '@/components/ui/input'
@@ -38,7 +37,6 @@ import {
   saveOnboardingApiKey,
   setOnboardingCode,
   setOnboardingMode,
-  setOnboardingModel,
   startProviderOAuth,
   submitOnboardingCode
 } from '@/store/onboarding'
@@ -70,7 +68,7 @@ const API_KEY_OPTIONS: ApiKeyOption[] = [
     short: 'Your EnergyIR API key',
     envKey: 'TOGETHER_API_KEY',
     description: 'Connect Robin with your EnergyIR API key to start.',
-    docsUrl: 'https://energyir.com'
+    docsUrl: 'https://energyir.io/robin'
   }
 ]
 
@@ -730,15 +728,9 @@ function ConfirmingModelPanel({
   ctx: OnboardingContext
   flow: Extract<OnboardingFlow, { status: 'confirming_model' }>
 }) {
-  // Local state controls whether the model picker dialog is open.
-  // We reuse the existing ModelPickerDialog component (the same picker
-  // available from the chat shell) rather than building an inline
-  // dropdown — gives us search, multi-provider listing if relevant, and
-  // a familiar UI for users who'll see this picker again later.
-  const [pickerOpen, setPickerOpen] = useState(false)
-
-  // Pull pricing + tier for the just-picked default so the confirm card
-  // shows the same $/Mtok + Free/Pro info the picker and CLI do.
+  // Robin has no model picker by design — the default model is locked, so this
+  // card only confirms the connection. Pricing/tier is still surfaced for the
+  // locked model below.
   const options = useQuery({
     queryKey: ['onboarding-model-options', flow.providerSlug],
     queryFn: () => getGlobalModelOptions()
@@ -781,9 +773,6 @@ function ConfirmingModelPanel({
               </p>
             )}
           </div>
-          <Button disabled={flow.saving} onClick={() => setPickerOpen(true)} size="sm" variant="outline">
-            Change
-          </Button>
         </div>
       </div>
 
@@ -793,26 +782,6 @@ function ConfirmingModelPanel({
           Start chatting
         </Button>
       </div>
-
-      {/*
-        ModelPickerDialog defaults to z-130 on its content, which renders
-        UNDER the onboarding overlay (z-1300) and breaks pointer events.
-        Bump it above with z-[1310] so the picker sits on top of the
-        onboarding panel. The dialog's own dim-backdrop layer stays at
-        its default z-120 — the onboarding overlay is already dimming
-        the rest of the screen, so we don't want a second backdrop.
-      */}
-      <ModelPickerDialog
-        contentClassName="z-[1310]"
-        currentModel={flow.currentModel}
-        currentProvider={flow.providerSlug}
-        onOpenChange={setPickerOpen}
-        onSelect={({ model }) => {
-          void setOnboardingModel(model)
-          setPickerOpen(false)
-        }}
-        open={pickerOpen}
-      />
     </div>
   )
 }
