@@ -5500,24 +5500,13 @@ ipcMain.handle('hermes:updates:branch:set', async (_event, name) => {
 })
 
 // Resolve the canonical Robin version (the one `release.py` bumps in
-// robin/__init__.py + pyproject.toml) so the desktop About panel shows the
-// real Robin version instead of the Electron app's own package.json version,
-// which historically drifted (stuck at 0.0.2). Falls back to app.getVersion()
-// when the source tree can't be read (e.g. a packaged build without the repo).
+// The About panel shows the Robin DESKTOP release version (package.json /
+// app.getVersion()) — the number that matches the installer, the GitHub
+// release tag, and the backend-asset download URL. We deliberately do NOT read
+// robin/__init__.py's __version__ here: that's the Python backend's own version
+// (e.g. 0.16.0) and diverged from the desktop release, which confusingly showed
+// "0.16.0" in About instead of the build the user actually installed.
 function resolveRobinVersion() {
-  try {
-    const root = resolveUpdateRoot()
-    const initPath = path.join(root, 'robin', '__init__.py')
-    if (fileExists(initPath)) {
-      const raw = fs.readFileSync(initPath, 'utf8')
-      const match = raw.match(/__version__\s*=\s*["']([^"']+)["']/)
-      if (match) {
-        return match[1]
-      }
-    }
-  } catch {
-    // Fall through to the Electron app version below.
-  }
   return app.getVersion()
 }
 

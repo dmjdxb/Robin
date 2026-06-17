@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { type Translations, useI18n } from '@/i18n'
-import { CheckCircle2, ExternalLink, Loader2, RefreshCw, Sparkles } from '@/lib/icons'
+import { CheckCircle2, Loader2, RefreshCw, Sparkles } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import {
   $desktopVersion,
@@ -11,13 +11,10 @@ import {
   $updateChecking,
   $updateStatus,
   checkUpdates,
-  openUpdatesWindow,
   refreshDesktopVersion
 } from '@/store/updates'
 
 import { ListRow, SectionHeading, SettingsContent } from './primitives'
-
-const RELEASE_NOTES_URL = 'https://github.com/dmjdxb/Robin/releases'
 
 function relativeTime(ms: number | undefined, a: Translations['settings']['about']) {
   if (!ms) {
@@ -97,15 +94,15 @@ export function AboutSettings() {
   return (
     <SettingsContent>
       <div className="flex flex-col items-center gap-3 pt-6 pb-2 text-center">
-        <span className="flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <Sparkles className="size-8" />
+        <span
+          className="font-['Collapse'] text-4xl font-bold uppercase leading-none tracking-[0.08em] text-primary"
+          aria-label="Robin"
+        >
+          Robin
         </span>
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">{a.heading}</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {version?.appVersion ? a.version(version.appVersion) : a.versionUnavailable}
-          </p>
-        </div>
+        <p className="text-xs text-muted-foreground">
+          {version?.appVersion ? a.version(version.appVersion) : a.versionUnavailable}
+        </p>
       </div>
 
       <div className="mx-auto mt-4 w-full max-w-2xl">
@@ -143,27 +140,6 @@ export function AboutSettings() {
             >
               {checking ? <Loader2 className="size-3 animate-spin" /> : <RefreshCw className="size-3" />}
               {checking ? a.checking : a.checkNow}
-            </Button>
-
-            {behind > 0 && supported && !applying && (
-              <Button onClick={() => openUpdatesWindow()} size="sm">
-                {a.seeWhatsNew}
-              </Button>
-            )}
-
-            <Button asChild className="ml-auto" size="sm" variant="text">
-              <a
-                href={RELEASE_NOTES_URL}
-                onClick={event => {
-                  event.preventDefault()
-                  void window.hermesDesktop?.openExternal?.(RELEASE_NOTES_URL)
-                }}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <ExternalLink className="size-3" />
-                {a.releaseNotes}
-              </a>
             </Button>
           </div>
         </div>
