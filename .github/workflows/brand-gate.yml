@@ -2,11 +2,12 @@ name: Brand gate
 
 # Falsification instrument for the Robin acceptance gate (PRD §18.7):
 # zero user-visible "Hermes"/"Nous" strings in the shipped UI, and the
-# deterministic rebrand is fully applied.
+# deterministic rebrand is fully applied. Also runs a fast TypeScript typecheck
+# (no build/publish) so refactors — e.g. the hermes_cli -> robin /
+# Hermes* -> Robin* rename — are validated in CI without producing a release.
 
 on:
   push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -25,3 +26,16 @@ jobs:
       - name: Retained MIT attribution is present
         run: |
           grep -q "Nous Research" docs/THIRD_PARTY_NOTICES.md && echo "✅ upstream MIT notice retained" || (echo "❌ upstream MIT notice missing from THIRD_PARTY_NOTICES" && exit 1)
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install workspace dependencies (root)
+        run: npm install --no-audit --no-fund
+      - name: TypeScript typecheck (desktop + @hermes/shared)
+        working-directory: apps/desktop
+        run: npm run type-check
