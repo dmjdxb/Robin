@@ -35,6 +35,8 @@ _HERMES_CORE_TOOLS = [
     "terminal", "process",
     # File manipulation
     "read_file", "write_file", "patch", "search_files",
+    # Ask your document — grounded Q&A over PDF/DOCX/PPTX/XLSX
+    "ask_document",
     # Vision + image generation
     "vision_analyze", "image_generate",
     # Skills
@@ -194,7 +196,17 @@ TOOLSETS = {
     
     "file": {
         "description": "File manipulation tools: read, write, patch (with fuzzy matching), and search (content + files)",
-        "tools": ["read_file", "write_file", "patch", "search_files"],
+        "tools": ["read_file", "write_file", "patch", "search_files", "ask_document"],
+        "includes": []
+    },
+
+    "document": {
+        "description": (
+            "Ask your document: grounded Q&A over an office document the user attached "
+            "(PDF, Word, PowerPoint, Excel) with citations. Focused toolset for document "
+            "mode — read the document and answer only from it."
+        ),
+        "tools": ["ask_document", "read_file"],
         "includes": []
     },
     
