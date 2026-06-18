@@ -175,7 +175,12 @@ export function Intro({ personality, seed }: IntroProps) {
           <span aria-hidden="true">{WORDMARK}</span>
         </p>
 
-        <p className="m-0 text-center leading-normal tracking-tight">{copy.body}</p>
+        <p
+          className="m-0 text-center leading-normal tracking-tight"
+          style={{ fontSize: 'calc(1em * var(--chat-font-scale, 1))' }}
+        >
+          {copy.body}
+        </p>
       </div>
     </div>
   )
