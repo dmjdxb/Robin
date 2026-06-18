@@ -649,6 +649,8 @@ export const hi: Translations = {
       'समायोजित करें या जारी रखें'
     ],
     startVoice: 'वॉइस वार्तालाप शुरू करें',
+    documentMode: 'अपने दस्तावेज़ से पूछें',
+    documentModeOn: 'अपने दस्तावेज़ से पूछें — चालू',
     queueMessage: 'संदेश कतारबद्ध करें',
     stop: 'रोकें',
     send: 'भेजें',

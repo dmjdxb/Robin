@@ -32,7 +32,7 @@ import {
   shouldAutoDrainOnSettle,
   updateQueuedPrompt
 } from '@/store/composer-queue'
-import { $gatewayState, $messages } from '@/store/session'
+import { $documentMode, $gatewayState, $messages } from '@/store/session'
 import { $threadScrolledUp } from '@/store/thread-scroll'
 
 import { extractDroppedFiles, HERMES_PATHS_MIME } from '../hooks/use-composer-actions'
@@ -95,6 +95,14 @@ interface QueueEditState {
 }
 
 const cloneAttachments = (attachments: ComposerAttachment[]) => attachments.map(a => ({ ...a }))
+
+// "Ask your document" mode: prepended to the message so Robin focuses on the
+// attached document and answers only from it — instead of wandering into web
+// or other tools ("nothing wasted"). Robust, no gateway protocol change.
+const DOCUMENT_MODE_PREFIX =
+  'Use the attached document to answer. Read it with the "Ask your document" tool, ' +
+  'answer only from its contents, and cite the sources (e.g. [p.3]). ' +
+  "If the answer isn't in the document, say so. Don't search the web or use other tools.\n\n"
 
 export function ChatBar({
   busy,
@@ -1065,7 +1073,9 @@ export function ChatBar({
     } else if (!hasComposerPayload && queuedPrompts.length > 0) {
       void drainNextQueued()
     } else if (draft.trim() || attachments.length > 0) {
-      const submitted = draft
+      // In "Ask your document" mode, prepend the focus instruction so Robin
+      // grounds the answer in the attached document and stays on task.
+      const submitted = $documentMode.get() ? DOCUMENT_MODE_PREFIX + draft : draft
       triggerHaptic('submit')
       clearDraft()
       clearComposerAttachments()

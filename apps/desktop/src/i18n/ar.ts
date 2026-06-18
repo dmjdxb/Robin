@@ -649,6 +649,8 @@ export const ar: Translations = {
       'اضبط أو تابِع'
     ],
     startVoice: 'بدء محادثة صوتية',
+    documentMode: 'اسأل مستندك',
+    documentModeOn: 'اسأل مستندك — مُفعّل',
     queueMessage: 'إضافة الرسالة إلى الطابور',
     stop: 'إيقاف',
     send: 'إرسال',

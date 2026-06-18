@@ -1,10 +1,13 @@
+import { useStore } from '@nanostores/react'
+
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
 import { Tip } from '@/components/ui/tooltip'
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
-import { AudioLines, Layers3, Loader2, Square } from '@/lib/icons'
+import { AudioLines, FileText, Layers3, Loader2, Square } from '@/lib/icons'
 import { cn } from '@/lib/utils'
+import { $documentMode, setDocumentMode } from '@/store/session'
 
 import type { ConversationStatus } from './hooks/use-voice-conversation'
 import type { ChatBarState, VoiceStatus } from './types'
@@ -58,6 +61,7 @@ export function ComposerControls({
 }) {
   const { t } = useI18n()
   const c = t.composer
+  const documentMode = useStore($documentMode)
 
   if (conversation.active) {
     return <ConversationPill {...conversation} disabled={disabled} />
@@ -67,6 +71,22 @@ export function ComposerControls({
 
   return (
     <div className="ml-auto flex shrink-0 items-center gap-(--composer-control-gap)">
+      <Tip label={documentMode ? c.documentModeOn : c.documentMode}>
+        <Button
+          aria-label={c.documentMode}
+          aria-pressed={documentMode}
+          className={cn(GHOST_ICON_BTN, documentMode && 'bg-primary/12 text-primary hover:text-primary')}
+          disabled={disabled}
+          onClick={() => {
+            triggerHaptic('open')
+            setDocumentMode(v => !v)
+          }}
+          size="icon"
+          type="button"
+        >
+          <FileText size={16} />
+        </Button>
+      </Tip>
       <DictationButton disabled={disabled} onToggle={onDictate} state={state.voice} status={voiceStatus} />
       {showVoicePrimary ? (
         <Tip label={c.startVoice}>

@@ -778,6 +778,8 @@ export const zh: Translations = {
       '调整或继续'
     ],
     startVoice: '开始语音对话',
+    documentMode: '询问你的文档',
+    documentModeOn: '询问你的文档 — 已开启',
     queueMessage: '排队消息',
     stop: '停止',
     send: '发送',
