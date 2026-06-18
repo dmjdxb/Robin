@@ -75,7 +75,7 @@ export function ComposerControls({
         <Button
           aria-label={c.documentMode}
           aria-pressed={documentMode}
-          className={cn(GHOST_ICON_BTN, documentMode && 'bg-primary/12 text-primary hover:text-primary')}
+          className={cn(GHOST_ICON_BTN, documentMode && 'bg-primary/15 text-primary hover:text-primary')}
           disabled={disabled}
           onClick={() => {
             triggerHaptic('open')
@@ -83,6 +83,7 @@ export function ComposerControls({
           }}
           size="icon"
           type="button"
+          variant="ghost"
         >
           <FileText size={16} />
         </Button>

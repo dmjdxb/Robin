@@ -161,7 +161,10 @@ export const hi: Translations = {
       technical: 'टेक्निकल',
       technicalDesc: 'कच्चे टूल आर्ग्स/परिणाम और निम्न-स्तरीय विवरण शामिल करें।',
       themeTitle: 'थीम',
-      themeDesc: 'केवल डेस्कटॉप पैलेट। चयनित मोड इसके ऊपर लागू होता है।'
+      themeDesc: 'केवल डेस्कटॉप पैलेट। चयनित मोड इसके ऊपर लागू होता है।',
+      textSize: 'टेक्स्ट का आकार',
+      textSizeDesc: 'चैट टेक्स्ट को बड़ा या छोटा करें।',
+      textSizeReset: 'रीसेट करें'
     },
     fieldLabels: FIELD_LABELS,
     fieldDescriptions: FIELD_DESCRIPTIONS,

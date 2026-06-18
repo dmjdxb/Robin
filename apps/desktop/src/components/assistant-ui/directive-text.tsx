@@ -105,6 +105,16 @@ const DirectiveIcon: FC<{ type: string }> = ({ type }) => (
 export const DIRECTIVE_CHIP_CLASS =
   'mx-0.5 inline-flex max-w-56 items-center gap-1 rounded px-1.5 py-0.5 align-middle text-[0.86em] font-normal leading-none bg-[color-mix(in_srgb,currentColor_8%,transparent)] text-muted-foreground'
 
+// "Ask your document" mode prepends this instruction so Robin grounds its answer
+// in the attached document. It is STILL SENT to the backend (so the agent obeys
+// it) but stripped from the displayed user bubble — the same display/transmit
+// split as @file: chips, so the user never sees the machine instruction. The
+// composer imports this constant so the prepended and stripped strings match.
+export const DOCUMENT_MODE_PREFIX =
+  'Use the attached document to answer. Read it with the "Ask your document" tool, ' +
+  'answer only from its contents, and cite the sources (e.g. [p.3]). ' +
+  "If the answer isn't in the document, say so. Don't search the web or use other tools.\n\n"
+
 /**
  * Parses our composer's `@type:value` references into directive segments
  * so they render as inline chips in user messages instead of raw text.
@@ -286,7 +296,11 @@ function shortLabel(type: RobinRefType, id: string): string {
  * inline chips. Embedded MEDIA images render below as a thumbnail row.
  */
 export function DirectiveContent({ text }: { text: string }) {
-  const { cleanedText, images } = useMemo(() => extractEmbeddedImages(text ?? ''), [text])
+  // Hide the "Ask your document" mode instruction from the user's bubble — it's
+  // a machine directive that's still sent to the backend, not user-authored text.
+  const raw = text ?? ''
+  const display = raw.startsWith(DOCUMENT_MODE_PREFIX) ? raw.slice(DOCUMENT_MODE_PREFIX.length) : raw
+  const { cleanedText, images } = useMemo(() => extractEmbeddedImages(display), [display])
   const segments = useMemo(() => hermesDirectiveFormatter.parse(cleanedText), [cleanedText])
 
   return (

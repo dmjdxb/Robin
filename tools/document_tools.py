@@ -118,35 +118,61 @@ def _ensure_xlsx() -> bool:
 # Per-format extraction. Each returns (chunks, meta) where chunks is an ordered
 # list of {"anchor": str, "text": str} and meta describes the document.
 # ─────────────────────────────────────────────────────────────────────────────
-def _extract_pdf(path: Path) -> tuple[list[dict], dict]:
+def _pdf_chunks_pdfplumber(path: Path) -> list[dict]:
+    """Text + tables via pdfplumber (pdfminer engine — robust on real PDFs)."""
+    out: list[dict] = []
+    with pdfplumber.open(str(path)) as pdf:
+        for i, page in enumerate(pdf.pages, start=1):
+            try:
+                text = (page.extract_text() or "").strip()
+            except Exception:
+                text = ""
+            try:
+                tables = page.extract_tables() or []
+                md = "\n\n".join(_rows_to_md(t) for t in tables if t)
+                if md.strip():
+                    text = (text + "\n\n" + md).strip()
+            except Exception:
+                pass
+            out.append({"anchor": f"[p.{i}]", "text": text})
+    return out
+
+
+def _pdf_chunks_pypdf(path: Path) -> list[dict]:
+    """Text via pypdf (fast fallback)."""
+    out: list[dict] = []
     reader = pypdf.PdfReader(str(path))
-    pages = reader.pages
-    chunks: list[dict] = []
-    for i, page in enumerate(pages, start=1):
+    for i, page in enumerate(reader.pages, start=1):
         try:
             text = (page.extract_text() or "").strip()
         except Exception:
             text = ""
-        chunks.append({"anchor": f"[p.{i}]", "text": text})
+        out.append({"anchor": f"[p.{i}]", "text": text})
+    return out
 
-    # Best-effort table augmentation: legal/marketing PDFs lean on tables, which
-    # pypdf flattens. Append markdown tables (if any) under each page anchor.
+
+def _extract_pdf(path: Path) -> tuple[list[dict], dict]:
+    # Try BOTH engines and keep whichever recovered more text. pdfminer
+    # (pdfplumber) reads many PDFs that pypdf returns empty for, and vice
+    # versa — only after both come up dry do we treat the PDF as scanned.
+    candidates: list[list[dict]] = []
     if pdfplumber is not None:
         try:
-            with pdfplumber.open(str(path)) as pdf:
-                for i, page in enumerate(pdf.pages, start=1):
-                    if i > len(chunks):
-                        break
-                    tables = page.extract_tables() or []
-                    md = "\n\n".join(_rows_to_md(t) for t in tables if t)
-                    if md.strip():
-                        chunks[i - 1]["text"] = (chunks[i - 1]["text"] + "\n\n" + md).strip()
+            candidates.append(_pdf_chunks_pdfplumber(path))
         except Exception:
-            logger.debug("pdfplumber table pass failed; using pypdf text only", exc_info=True)
+            logger.debug("pdfplumber extraction failed", exc_info=True)
+    try:
+        candidates.append(_pdf_chunks_pypdf(path))
+    except Exception:
+        logger.debug("pypdf extraction failed", exc_info=True)
 
+    if not candidates:
+        return [{"anchor": "[p.1]", "text": ""}], {"type": "PDF", "unit": "pages", "count": 1, "scanned": True}
+
+    chunks = max(candidates, key=lambda cs: sum(len(c["text"]) for c in cs))
     text_chars = sum(len(c["text"]) for c in chunks)
-    meta = {"type": "PDF", "unit": "pages", "count": len(pages),
-            "scanned": (len(pages) > 0 and text_chars < 40 * len(pages))}
+    meta = {"type": "PDF", "unit": "pages", "count": len(chunks),
+            "scanned": (len(chunks) > 0 and text_chars < 40 * len(chunks))}
     return chunks, meta
 
 
