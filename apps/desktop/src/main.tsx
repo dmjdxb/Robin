@@ -11,6 +11,8 @@ import { HapticsProvider } from './components/haptics-provider'
 import { I18nProvider } from './i18n'
 import { installClipboardShim } from './lib/clipboard'
 import { queryClient } from './lib/query-client'
+// Side-effect import: applies the saved chat text size to <html> on launch.
+import './store/appearance'
 import { ThemeProvider } from './themes/context'
 
 installClipboardShim()

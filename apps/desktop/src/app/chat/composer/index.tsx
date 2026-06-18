@@ -13,7 +13,7 @@ import {
   useState
 } from 'react'
 
-import { hermesDirectiveFormatter } from '@/components/assistant-ui/directive-text'
+import { DOCUMENT_MODE_PREFIX, hermesDirectiveFormatter } from '@/components/assistant-ui/directive-text'
 import { Button } from '@/components/ui/button'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { useResizeObserver } from '@/hooks/use-resize-observer'
@@ -95,14 +95,6 @@ interface QueueEditState {
 }
 
 const cloneAttachments = (attachments: ComposerAttachment[]) => attachments.map(a => ({ ...a }))
-
-// "Ask your document" mode: prepended to the message so Robin focuses on the
-// attached document and answers only from it — instead of wandering into web
-// or other tools ("nothing wasted"). Robust, no gateway protocol change.
-const DOCUMENT_MODE_PREFIX =
-  'Use the attached document to answer. Read it with the "Ask your document" tool, ' +
-  'answer only from its contents, and cite the sources (e.g. [p.3]). ' +
-  "If the answer isn't in the document, say so. Don't search the web or use other tools.\n\n"
 
 export function ChatBar({
   busy,

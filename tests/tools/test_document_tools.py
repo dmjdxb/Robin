@@ -199,6 +199,32 @@ def test_pdf_extraction(tmp_path):
     assert "DIFC" in out
 
 
+def test_pdf_uses_better_engine_not_scanned(tmp_path, monkeypatch):
+    # The real bug: pypdf returned empty on a normal PDF, so we wrongly called
+    # it "scanned". Now we keep whichever engine recovered more text and only
+    # flag scanned when BOTH come up dry.
+    para = "This page contains a full paragraph of real, selectable contract text that pdfminer recovered cleanly."
+    good = [{"anchor": f"[p.{i}]", "text": para} for i in range(1, 4)]
+    empty = [{"anchor": f"[p.{i}]", "text": ""} for i in range(1, 4)]
+    monkeypatch.setattr(dt, "_pdf_chunks_pdfplumber", lambda p: good)
+    monkeypatch.setattr(dt, "_pdf_chunks_pypdf", lambda p: empty)
+    # pdfplumber handle must be non-None for the plumber branch to run
+    monkeypatch.setattr(dt, "pdfplumber", object())
+
+    chunks, meta = dt._extract_pdf(tmp_path / "x.pdf")
+    assert meta["scanned"] is False
+    assert "selectable contract text" in chunks[0]["text"]
+
+
+def test_pdf_both_empty_is_scanned(tmp_path, monkeypatch):
+    empty = [{"anchor": f"[p.{i}]", "text": ""} for i in range(1, 6)]
+    monkeypatch.setattr(dt, "_pdf_chunks_pdfplumber", lambda p: empty)
+    monkeypatch.setattr(dt, "_pdf_chunks_pypdf", lambda p: empty)
+    monkeypatch.setattr(dt, "pdfplumber", object())
+    _, meta = dt._extract_pdf(tmp_path / "x.pdf")
+    assert meta["scanned"] is True
+
+
 def test_oversized_pdf_returns_outline(tmp_path, monkeypatch):
     # Drive the OUTLINE path deterministically without a giant real PDF:
     # monkeypatch the extractor to return many large chunks.

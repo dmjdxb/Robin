@@ -4,6 +4,14 @@ import { type Locale, LOCALE_META, useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
 import { Check, Palette } from '@/lib/icons'
 import { cn } from '@/lib/utils'
+import {
+  $chatFontScale,
+  FONT_SCALE_STEP,
+  MAX_FONT_SCALE,
+  MIN_FONT_SCALE,
+  resetChatFontScale,
+  setChatFontScale
+} from '@/store/appearance'
 import { notifyError } from '@/store/notifications'
 import { $toolViewMode, setToolViewMode } from '@/store/tool-view'
 import { useTheme } from '@/themes/context'
@@ -56,6 +64,7 @@ export function AppearanceSettings() {
   const { t, isSavingLocale, locale, setLocale } = useI18n()
   const { themeName, mode, availableThemes, setTheme, setMode } = useTheme()
   const toolViewMode = useStore($toolViewMode)
+  const chatFontScale = useStore($chatFontScale)
   const activeTheme = availableThemes.find(theme => theme.name === themeName)
   const a = t.settings.appearance
   const locales = Object.keys(LOCALE_META) as Locale[]
@@ -171,6 +180,50 @@ export function AppearanceSettings() {
                 </button>
               )
             })}
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-(--ui-stroke-tertiary) bg-(--ui-chat-bubble-background) p-3 shadow-sm">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium">{a.textSize}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{a.textSizeDesc}</div>
+            </div>
+            <Pill>{Math.round(chatFontScale * 100)}%</Pill>
+          </div>
+          <div className="flex items-center gap-4">
+            <div
+              aria-hidden
+              className="grid size-12 shrink-0 place-items-center rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-bg-quinary)"
+            >
+              <span className="font-medium leading-none" style={{ fontSize: `calc(0.9rem * ${chatFontScale})` }}>
+                Aa
+              </span>
+            </div>
+            <div className="flex flex-1 items-center gap-3">
+              <span className="shrink-0 text-xs text-muted-foreground">A</span>
+              <input
+                aria-label={a.textSize}
+                className="h-1.5 flex-1 cursor-pointer accent-primary"
+                max={MAX_FONT_SCALE}
+                min={MIN_FONT_SCALE}
+                onChange={event => setChatFontScale(Number.parseFloat(event.target.value))}
+                step={FONT_SCALE_STEP}
+                type="range"
+                value={chatFontScale}
+              />
+              <span className="shrink-0 text-base text-muted-foreground">A</span>
+              <button
+                className="ml-1 shrink-0 text-xs text-muted-foreground underline-offset-2 transition hover:text-foreground hover:underline"
+                onClick={() => {
+                  triggerHaptic('crisp')
+                  resetChatFontScale()
+                }}
+                type="button"
+              >
+                {a.textSizeReset}
+              </button>
+            </div>
           </div>
         </section>
 

@@ -147,6 +147,9 @@ export interface Translations {
       technicalDesc: string
       themeTitle: string
       themeDesc: string
+      textSize: string
+      textSizeDesc: string
+      textSizeReset: string
     }
     fieldLabels: Record<string, string>
     fieldDescriptions: Record<string, string>

@@ -154,7 +154,10 @@ export const zh: Translations = {
       technical: '技术',
       technicalDesc: '包含原始工具参数/结果及底层细节。',
       themeTitle: '主题',
-      themeDesc: '仅桌面端调色板。所选模式叠加其上。'
+      themeDesc: '仅桌面端调色板。所选模式叠加其上。',
+      textSize: '文字大小',
+      textSizeDesc: '让聊天文字更大或更小。',
+      textSizeReset: '重置'
     },
     fieldLabels: {
       model: '默认模型',

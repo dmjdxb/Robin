@@ -161,7 +161,10 @@ export const ar: Translations = {
       technical: 'تقني',
       technicalDesc: 'يتضمّن وسائط/نتائج الأدوات الأولية والتفاصيل منخفضة المستوى.',
       themeTitle: 'النسق',
-      themeDesc: 'لوحات ألوان سطح المكتب فقط. يُطبَّق الوضع المحدد فوقها.'
+      themeDesc: 'لوحات ألوان سطح المكتب فقط. يُطبَّق الوضع المحدد فوقها.',
+      textSize: 'حجم النص',
+      textSizeDesc: 'اجعل نص المحادثة أكبر أو أصغر.',
+      textSizeReset: 'إعادة تعيين'
     },
     fieldLabels: FIELD_LABELS,
     fieldDescriptions: FIELD_DESCRIPTIONS,
