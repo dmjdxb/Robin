@@ -114,7 +114,7 @@ export function useEnvCredentials(): UseEnvCredentials {
       clearLocalState(key)
       notify({ kind: 'success', title: 'Saved', message: `${credentialToastLabel(key)} saved.` })
     } catch (err) {
-      notifyError(err, `Failed to save ${key}`)
+      notifyError(err, `Failed to save ${credentialToastLabel(key)}`)
     } finally {
       setSaving(null)
     }
@@ -140,7 +140,7 @@ export function useEnvCredentials(): UseEnvCredentials {
 
       return { ok: true }
     } catch (err) {
-      notifyError(err, `Failed to save ${key}`)
+      notifyError(err, `Failed to save ${credentialToastLabel(key)}`)
 
       return { message: err instanceof Error ? err.message : 'Could not save credential.', ok: false }
     } finally {
@@ -159,9 +159,9 @@ export function useEnvCredentials(): UseEnvCredentials {
       await deleteEnvVar(key)
       patchVar(key, { is_set: false, redacted_value: null })
       clearLocalState(key)
-      notify({ kind: 'success', title: 'Credential removed', message: `${key} removed.` })
+      notify({ kind: 'success', title: 'Credential removed', message: `${credentialToastLabel(key)} removed.` })
     } catch (err) {
-      notifyError(err, `Failed to remove ${key}`)
+      notifyError(err, `Failed to remove ${credentialToastLabel(key)}`)
     } finally {
       setSaving(null)
     }
@@ -178,7 +178,7 @@ export function useEnvCredentials(): UseEnvCredentials {
       const result = await revealEnvVar(key)
       setRevealed(c => ({ ...c, [key]: result.value }))
     } catch (err) {
-      notifyError(err, `Failed to reveal ${key}`)
+      notifyError(err, `Failed to reveal ${credentialToastLabel(key)}`)
     }
   }
 
