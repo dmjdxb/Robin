@@ -547,6 +547,8 @@ export interface Translations {
     newSessionPlaceholders: readonly string[]
     followUpPlaceholders: readonly string[]
     startVoice: string
+    documentMode: string
+    documentModeOn: string
     queueMessage: string
     stop: string
     send: string

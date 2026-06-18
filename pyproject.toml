@@ -145,6 +145,20 @@ honcho = ["honcho-ai==2.0.1"]
 # Declared here so packagers (Nix, Homebrew) ship it with [all] and so
 # `pip install hermes-agent[vision]` / the lazy-install path can resolve it.
 vision = ["Pillow==12.2.0"]
+# "Ask your document" — office-document extraction for the ask_document tool.
+# LAZY-ONLY by policy: python-docx / python-pptx pull `lxml`, exactly the kind of
+# transitive whose platform-wheel gaps must not break every fresh install (see
+# the [all] policy note + the python-olm/matrix incident). Kept out of [all];
+# installs per-format at first use via tools/lazy_deps.py (document.*). Declared
+# here for explicit `pip install hermes-agent[document]` and packagers. Pin in
+# lockstep with uv.lock and tools/lazy_deps.py.
+document = [
+  "pypdf==5.1.0",
+  "pdfplumber==0.11.4",
+  "python-docx==1.1.2",
+  "python-pptx==1.0.2",
+  "openpyxl==3.1.5",
+]
 # CVE-2026-48710 (BadHost): Starlette is pulled transitively by mcp's
 # sse-starlette / HTTP-SSE stack (and by fastapi in the `web` extra). Before
 # 1.0.1, a malformed Host header makes `request.url.path` desync from the path

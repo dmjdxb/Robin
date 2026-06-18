@@ -180,6 +180,14 @@ LAZY_DEPS: dict[str, tuple[str, ...]] = {
     # image can brick a session on Anthropic's non-retryable 400. Keep in sync
     # with pyproject [vision].
     "tool.vision": ("Pillow==12.2.0",),
+
+    # ─── "Ask your document" — office-document extraction (ask_document) ──────
+    # Per-format so a Word user never pulls the PDF stack. Keep pins in lockstep
+    # with the `document` extra in pyproject.toml.
+    "document.pdf": ("pypdf==5.1.0", "pdfplumber==0.11.4"),
+    "document.docx": ("python-docx==1.1.2",),
+    "document.pptx": ("python-pptx==1.0.2",),
+    "document.xlsx": ("openpyxl==3.1.5",),
 }
 
 

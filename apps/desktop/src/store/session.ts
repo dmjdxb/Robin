@@ -114,6 +114,11 @@ export const $availablePersonalities = atom<string[]>([])
 export const $introSeed = atom(0)
 export const $contextSuggestions = atom<ContextSuggestion[]>([])
 export const $modelPickerOpen = atom(false)
+// "Ask your document" mode. A plain client-side toggle: when on, the composer
+// prepends a focus instruction to the submitted message so Robin reads the
+// attached document and answers only from it (with citations) instead of
+// wandering into other tools — "nothing wasted". No backend/session state.
+export const $documentMode = atom(false)
 
 export const setConnection = (next: Updater<RobinConnection | null>) => updateAtom($connection, next)
 export const setGatewayState = (next: Updater<string>) => updateAtom($gatewayState, next)
@@ -135,6 +140,7 @@ export const setCurrentReasoningEffort = (next: Updater<string>) => updateAtom($
 export const setCurrentServiceTier = (next: Updater<string>) => updateAtom($currentServiceTier, next)
 export const setCurrentFastMode = (next: Updater<boolean>) => updateAtom($currentFastMode, next)
 export const setYoloActive = (next: Updater<boolean>) => updateAtom($yoloActive, next)
+export const setDocumentMode = (next: Updater<boolean>) => updateAtom($documentMode, next)
 
 export const setCurrentCwd = (next: Updater<string>) => {
   updateAtom($currentCwd, next)

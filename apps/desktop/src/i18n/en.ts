@@ -649,6 +649,8 @@ export const en: Translations = {
       'Adjust or continue'
     ],
     startVoice: 'Start voice conversation',
+    documentMode: 'Ask your document',
+    documentModeOn: 'Ask your document — on',
     queueMessage: 'Queue message',
     stop: 'Stop',
     send: 'Send',
