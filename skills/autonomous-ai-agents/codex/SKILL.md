@@ -33,7 +33,7 @@ Requires the codex CLI and a git repository.
 - Use `pty=true` in terminal calls — Codex is an interactive terminal app
 
 For Robin itself, `model.provider: openai-codex` uses Robin-managed Codex
-OAuth from `~/.hermes/auth.json` after `hermes auth add openai-codex`. For the
+OAuth from `~/.robin/auth.json` after `robin auth add openai-codex`. For the
 standalone Codex CLI, a valid CLI OAuth session may live under
 `~/.codex/auth.json`; do not treat a missing `OPENAI_API_KEY` alone as proof
 that Codex auth is missing.

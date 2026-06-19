@@ -50,7 +50,7 @@ kanban_complete(
 
 **Coding task that needs human review (review-required):**
 
-For most code-changing tasks, the work isn't truly *done* until a human reviewer has eyes on it. Block instead of complete, with `reason` prefixed `review-required: ` so the dashboard surfaces the row as needing review. Drop the structured metadata (changed files, test counts, diff/PR url) into a comment first, since `kanban_block` only carries the human-readable reason — comments are the durable annotation channel. Reviewer either approves and runs `hermes kanban unblock <id>` (which re-spawns you with the comment thread for any follow-ups) or asks for changes via another comment.
+For most code-changing tasks, the work isn't truly *done* until a human reviewer has eyes on it. Block instead of complete, with `reason` prefixed `review-required: ` so the dashboard surfaces the row as needing review. Drop the structured metadata (changed files, test counts, diff/PR url) into a comment first, since `kanban_block` only carries the human-readable reason — comments are the durable annotation channel. Reviewer either approves and runs `robin kanban unblock <id>` (which re-spawns you with the comment thread for any follow-ups) or asks for changes via another comment.
 
 ```python
 import json
@@ -160,7 +160,7 @@ If you open the task and `kanban_show` returns `runs: [...]` with one or more cl
 
 ## Notification routing
 
-You can configure the gateway to receive cross-profile Kanban task notifications by adding `notification_sources` to `~/.hermes/config.yaml`.
+You can configure the gateway to receive cross-profile Kanban task notifications by adding `notification_sources` to `~/.robin/config.yaml`.
 - `notification_sources: ['*']` accepts subscriptions from all profiles.
 - `notification_sources: ['default', 'zilor-ppt']` or `"default,zilor-ppt"` restricts subscriptions to specified profiles.
 - Omitting the key keeps the default behavior (profile isolation).
@@ -179,15 +179,15 @@ You can configure the gateway to receive cross-profile Kanban task notifications
 
 **Workspace may have stale artifacts.** Especially `dir:` and `worktree` workspaces can have files from previous runs. Read the comment thread — it usually explains why you're running again and what state the workspace is in.
 
-**Don't rely on the CLI when the guidance is available.** The `kanban_*` tools work across all terminal backends (Docker, Modal, SSH). `hermes kanban <verb>` from your terminal tool will fail in containerized backends because the CLI isn't installed there. When in doubt, use the tool.
+**Don't rely on the CLI when the guidance is available.** The `kanban_*` tools work across all terminal backends (Docker, Modal, SSH). `robin kanban <verb>` from your terminal tool will fail in containerized backends because the CLI isn't installed there. When in doubt, use the tool.
 
 ## CLI fallback (for scripting)
 
 Every tool has a CLI equivalent for human operators and scripts:
-- `kanban_show` ↔ `hermes kanban show <id> --json`
-- `kanban_complete` ↔ `hermes kanban complete <id> --summary "..." --metadata '{...}'`
-- `kanban_block` ↔ `hermes kanban block <id> "reason"`
-- `kanban_create` ↔ `hermes kanban create "title" --assignee <profile> [--parent <id>]`
+- `kanban_show` ↔ `robin kanban show <id> --json`
+- `kanban_complete` ↔ `robin kanban complete <id> --summary "..." --metadata '{...}'`
+- `kanban_block` ↔ `robin kanban block <id> "reason"`
+- `kanban_create` ↔ `robin kanban create "title" --assignee <profile> [--parent <id>]`
 - etc.
 
 Use the tools from inside an agent; the CLI exists for the human at the terminal.
