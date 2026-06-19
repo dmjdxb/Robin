@@ -19,10 +19,21 @@ capability check strips the ``<vendor>/`` prefix before matching.
 
 from __future__ import annotations
 
+import os
 from typing import Any
+from urllib.parse import urlparse
 
 from providers import register_provider
 from providers.base import ProviderProfile
+
+# Robin's managed-inference endpoint = the EnergyIR gateway (api.energyir.io). Customers authenticate with
+# their eir-robin- key (stored in TOGETHER_API_KEY); the gateway proxies to DeepSeek V4 Pro via the hidden
+# platform key, preserving full agentic fidelity (tools, history, streaming). Customers never see Together.
+# Dev override: set ENERGYIR_BASE_URL (e.g. https://api.together.xyz/v1) to talk to Together directly with
+# a Together key — useful for development without an eir-robin- key.
+_DEFAULT_BASE_URL = "https://api.energyir.io/v1"
+_BASE_URL = (os.environ.get("ENERGYIR_BASE_URL", "").strip() or _DEFAULT_BASE_URL).rstrip("/")
+_HOSTNAME = urlparse(_BASE_URL).hostname or "api.energyir.io"
 
 
 def _bare_model(model: str | None) -> str:
@@ -90,10 +101,10 @@ together = TogetherProfile(
     env_vars=("TOGETHER_API_KEY",),
     display_name="EnergyIR",
     description="EnergyIR — managed inference for Robin",
-    signup_url="https://energyir.com",
-    base_url="https://api.together.xyz/v1",
-    models_url="https://api.together.xyz/v1/models",
-    hostname="api.together.xyz",
+    signup_url="https://energyir.io",
+    base_url=_BASE_URL,
+    models_url=f"{_BASE_URL}/models",
+    hostname=_HOSTNAME,
     supports_vision=True,
     # Curated agentic, tool-calling models shown in the picker when live fetch
     # fails. DeepSeek V4 Pro is Robin's configured default; Flash is the
