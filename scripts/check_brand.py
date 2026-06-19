@@ -122,19 +122,89 @@ def scan() -> list[tuple[Path, int, str]]:
     return leaks
 
 
+# ── Skills + agent-prompt surface ──────────────────────────────────────────
+# The UI scan above never covered the SHIPPED SKILL MARKDOWN or the agent system
+# prompt — which is exactly how the `hermes-agent` skill leaked the `hermes` CLI,
+# dead robin.energyir.com URLs, and ~/.hermes paths into "what can Robin do?".
+# These surfaces are rendered to users at runtime, so they get their own gate.
+#
+# We scan for the leak classes that actually recur here, NOT a blanket "hermes":
+#   - a `hermes <subcommand|flag>` CLI invocation (the real leak — `robin` is the
+#     brand command; `hermes` is only the retained internal alias),
+#   - the dead `robin.energyir.com` domain (the old rebrand script introduced it),
+#   - `~/.hermes` paths (the real home is ~/.robin),
+#   - capitalized display words `Hermes` / `Nous`.
+# Internal identifiers (HERMES_HOME, the hermes-agent source dir, hermes_state.py,
+# hermes-gateway, lowercase provider ids `nous`/`together`) are NOT matched by
+# these patterns, so they don't need an allowlist.
+SKILL_PROMPT_TARGETS = [
+    ("skills", ".md"),
+    ("agent/prompt_builder.py", None),
+    ("agent/system_prompt.py", None),
+    ("agent/background_review.py", None),
+]
+
+_HERMES_SUBCMDS = (
+    "chat|config|setup|tools|skills|gateway|cron|auth|model|doctor|sessions|mcp|"
+    "update|webhook|profile|memory|insights|status|plugins|curator|kanban|"
+    "completion|acp|claw|uninstall|pairing|honcho|--?[a-z]"
+)
+SKILL_LEAK_PATTERNS = (
+    (re.compile(rf"\bhermes\s+(?:{_HERMES_SUBCMDS})\b"), "`hermes` CLI command (use `robin`)"),
+    (re.compile(r"robin\.energyir\.com"), "dead robin.energyir.com domain (use energyir.io)"),
+    (re.compile(r"~/\.hermes\b"), "~/.hermes path (the home is ~/.robin)"),
+    (re.compile(r"\bHermes\b"), "capitalized 'Hermes' display word"),
+    (re.compile(r"\bNous\b"), "capitalized 'Nous' display word"),
+)
+# Legitimate upstream references kept verbatim (provider names, retained MIT
+# attribution). A line containing one of these is exempt.
+SKILL_ALLOW = (
+    "LICENSE", "NOTICE", "License", "Teknium", "NousResearch", "Nous Research",
+)
+
+
+def scan_skills_and_prompts() -> list[tuple[Path, int, str]]:
+    leaks: list[tuple[Path, int, str]] = []
+    for rel, ext in SKILL_PROMPT_TARGETS:
+        base = REPO / rel
+        files = []
+        if base.is_file():
+            files = [base]
+        elif base.is_dir():
+            files = [f for f in base.rglob(f"*{ext}") if f.is_file()]
+        for f in files:
+            try:
+                for i, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+                    if any(tok in line for tok in SKILL_ALLOW):
+                        continue
+                    for rx, why in SKILL_LEAK_PATTERNS:
+                        if rx.search(line):
+                            leaks.append((f.relative_to(REPO), i, f"[{why}] {line.strip()[:130]}"))
+                            break
+            except (UnicodeDecodeError, OSError):
+                continue
+    return leaks
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dist", action="store_true", help="(reserved) also scan built dist/ output")
     ap.parse_args()
 
     leaks = scan()
-    if not leaks:
-        print("✅ brand gate: no user-visible 'Hermes'/'Nous' leaks in shipped UI.")
+    skill_leaks = scan_skills_and_prompts()
+    if not leaks and not skill_leaks:
+        print("✅ brand gate: no user-visible 'Hermes'/'Nous' leaks in shipped UI, skills, or prompts.")
         return 0
 
-    print(f"❌ brand gate: {len(leaks)} user-visible brand leak(s) found:\n")
-    for path, line_no, text in leaks:
-        print(f"  {path}:{line_no}: {text}")
+    if leaks:
+        print(f"❌ brand gate (UI): {len(leaks)} user-visible brand leak(s):\n")
+        for path, line_no, text in leaks:
+            print(f"  {path}:{line_no}: {text}")
+    if skill_leaks:
+        print(f"\n❌ brand gate (skills/prompts): {len(skill_leaks)} leak(s):\n")
+        for path, line_no, text in skill_leaks:
+            print(f"  {path}:{line_no}: {text}")
     print("\nFix these (or add a precise allow-substring if it is a genuine "
           "internal identifier / required attribution).")
     return 1
