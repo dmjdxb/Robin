@@ -286,7 +286,15 @@ def get_catalog(*, force_refresh: bool = False) -> dict[str, Any]:
         _catalog_cache_source_mtime = disk_mtime
         return disk_data
 
-    return {}
+    # Total failure (no fetch, no prior cache). Negative-cache an empty-but-valid manifest so we don't
+    # re-run the fetch — and re-eat the catalog URL's DNS-timeout — on every call within the TTL. Callers
+    # treat empty providers as "use the in-repo default" (Robin's model is fixed), so behaviour is
+    # unchanged; this only removes the per-request network latency when the catalog host is unreachable.
+    empty: dict[str, Any] = {"version": SUPPORTED_SCHEMA_VERSION, "providers": {}}
+    _write_disk_cache(empty)
+    _catalog_cache = empty
+    _catalog_cache_source_mtime = time.time()
+    return empty
 
 
 def _fetch_provider_override(provider: str) -> dict[str, Any] | None:
