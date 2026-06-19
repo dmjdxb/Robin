@@ -44,7 +44,10 @@ model:
 
   # API configuration. The user's EnergyIR API key is read from TOGETHER_API_KEY
   # (set at onboarding); the endpoint is the EnergyIR inference endpoint.
-  base_url: "https://api.together.xyz/v1"
+  # NOTE: this MUST be the EnergyIR gateway, NOT api.together.xyz — an eir-robin-
+  # key is rejected (401) by Together directly. The gateway authenticates the
+  # key, meters it, and proxies to the model with the hidden platform key.
+  base_url: "https://api.energyir.io/v1"
 
   # Azure Foundry keyless auth example:
   # provider: "azure-foundry"

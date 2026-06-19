@@ -1227,7 +1227,133 @@ async function resolveHealedBranch(updateRoot, branch) {
   return 'main'
 }
 
+// ── Packaged self-update via electron-updater ──────────────────────────────
+// A downloaded Robin (.app/.exe — IS_PACKAGED) has no git checkout, so the
+// git-based self-update below can't apply. Those installs update through
+// electron-updater against the signed+notarized GitHub release feed
+// (latest-mac.yml etc., baked into app-update.yml by electron-builder). Dev /
+// source / CLI runs (!IS_PACKAGED) keep the git path. Lazily required so dev
+// and the unit tests never need the dependency.
+let _autoUpdaterSingleton = null
+function getAutoUpdater() {
+  if (_autoUpdaterSingleton) return _autoUpdaterSingleton
+  const { autoUpdater } = require('electron-updater')
+  // We drive download + install explicitly from the UI's "Update now" button.
+  autoUpdater.autoDownload = false
+  autoUpdater.autoInstallOnAppQuit = false
+  autoUpdater.logger = {
+    info: m => rememberLog('[updater] ' + m),
+    warn: m => rememberLog('[updater] ' + m),
+    error: m => rememberLog('[updater] ' + m),
+    debug: () => {}
+  }
+  // Stream electron-updater lifecycle onto the existing progress channel so the
+  // updates overlay (fetch -> restart) renders without renderer changes.
+  autoUpdater.on('download-progress', p => {
+    const pct = Math.round((p && p.percent) || 0)
+    emitUpdateProgress({ stage: 'fetch', message: `Downloading update… ${pct}%`, percent: pct })
+  })
+  autoUpdater.on('update-downloaded', () => {
+    emitUpdateProgress({ stage: 'restart', message: 'Update ready — restarting Robin…', percent: 100 })
+  })
+  autoUpdater.on('error', err => {
+    emitUpdateProgress({
+      stage: 'error',
+      message: (err && err.message) || String(err),
+      error: 'update-error',
+      percent: null
+    })
+  })
+  _autoUpdaterSingleton = autoUpdater
+  return autoUpdater
+}
+
+// Numeric semver-ish compare (a > b). Tolerates missing components; ignores any
+// pre-release suffix (release builds only).
+function isVersionNewer(a, b) {
+  const parse = v =>
+    String(v || '')
+      .split('-')[0]
+      .split('.')
+      .map(n => Number.parseInt(n, 10) || 0)
+  const pa = parse(a)
+  const pb = parse(b)
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const x = pa[i] || 0
+    const y = pb[i] || 0
+    if (x !== y) return x > y
+  }
+  return false
+}
+
+async function checkUpdatesViaAutoUpdater() {
+  const current = app.getVersion()
+  try {
+    const au = getAutoUpdater()
+    const result = await au.checkForUpdates()
+    const latest = result && result.updateInfo && result.updateInfo.version
+    const available = !!latest && isVersionNewer(latest, current)
+    return {
+      supported: true,
+      // The overlay/About key off behind>0 && targetSha to show "update ready".
+      behind: available ? 1 : 0,
+      currentSha: current,
+      targetSha: available ? latest : current,
+      commits: available
+        ? [
+            {
+              sha: String(latest),
+              summary: `Robin ${latest} is available`,
+              author: 'EnergyIR',
+              at: Date.parse((result.updateInfo && result.updateInfo.releaseDate) || '') || Date.now()
+            }
+          ]
+        : [],
+      fetchedAt: Date.now()
+    }
+  } catch (err) {
+    return {
+      supported: true,
+      error: 'check-failed',
+      message: (err && err.message) || String(err),
+      fetchedAt: Date.now()
+    }
+  }
+}
+
+async function applyUpdatesViaAutoUpdater() {
+  const au = getAutoUpdater()
+  emitUpdateProgress({ stage: 'prepare', message: 'Checking for the latest version…', percent: null })
+  const result = await au.checkForUpdates()
+  const latest = result && result.updateInfo && result.updateInfo.version
+  if (!latest || !isVersionNewer(latest, app.getVersion())) {
+    emitUpdateProgress({ stage: 'idle', message: 'Already on the latest version.', percent: null })
+    return { ok: true, message: 'Already on the latest version.' }
+  }
+  emitUpdateProgress({ stage: 'fetch', message: 'Downloading update…', percent: 0 })
+  await au.downloadUpdate()
+  // 'update-downloaded' already emitted the 'restart' stage; give the overlay a
+  // beat to render it, then quit + swap in the new build.
+  setTimeout(() => {
+    try {
+      au.quitAndInstall()
+    } catch (e) {
+      emitUpdateProgress({
+        stage: 'error',
+        message: (e && e.message) || String(e),
+        error: 'install-failed',
+        percent: null
+      })
+    }
+  }, 1200)
+  return { ok: true, handedOff: true }
+}
+
 async function checkUpdates() {
+  // Downloaded builds self-update via electron-updater, not git.
+  if (IS_PACKAGED) {
+    return checkUpdatesViaAutoUpdater()
+  }
   const updateRoot = resolveUpdateRoot()
   let { branch } = readDesktopUpdateConfig()
   const gitDir = path.join(updateRoot, '.git')
@@ -1435,6 +1561,12 @@ async function applyUpdates(opts = {}) {
   updateInFlight = true
 
   try {
+    // Downloaded builds apply updates via electron-updater (download the signed
+    // build from the release feed, then quitAndInstall). The git/updater-binary
+    // path below is only for dev/source/CLI installs.
+    if (IS_PACKAGED) {
+      return await applyUpdatesViaAutoUpdater()
+    }
     const updater = resolveUpdaterBinary()
     if (!updater && !IS_WINDOWS) {
       // macOS/Linux drag-install: no staged Tauri hermes-setup. Unlike Windows

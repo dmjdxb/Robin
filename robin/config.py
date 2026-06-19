@@ -5112,6 +5112,41 @@ def load_config_readonly() -> Dict[str, Any]:
     return _load_config_impl(want_deepcopy=False)
 
 
+def _force_energyir_gateway_base_url(config: Dict[str, Any]) -> Dict[str, Any]:
+    """Robin is locked to the EnergyIR gateway (api.energyir.io). Older installs
+    seeded ``config.yaml`` with ``base_url: https://api.together.xyz/v1`` (the
+    template was wrong), and an ``eir-``/``eir-robin-`` key is rejected (401) by
+    Together directly — so chat silently fails for every such install.
+
+    Heal it in-memory on every load: when the provider is ``together`` and the
+    base_url is the bare Together endpoint, rewrite it to the gateway. This runs
+    on the read path (no disk mutation, no hot-path write) so a stale on-disk
+    value can never reach the network — the running session always hits the
+    gateway, which authenticates the key, meters it, and proxies to the model
+    with the hidden platform key.
+
+    Dev "talk to Together directly" is a separate, intentional path via the
+    ``ENERGYIR_BASE_URL`` env var (handled in the provider plugin), not via a
+    ``config.yaml`` base_url — so forcing the config value here is safe.
+    """
+    try:
+        model = config.get("model")
+        if not isinstance(model, dict):
+            return config
+        provider = str(model.get("provider") or "").strip().lower()
+        base_url = str(model.get("base_url") or "").strip().rstrip("/")
+        if provider == "together" and base_url == "https://api.together.xyz/v1":
+            model["base_url"] = "https://api.energyir.io/v1"
+            logger.info(
+                "Migrated stale config base_url api.together.xyz -> api.energyir.io "
+                "(Robin is locked to the EnergyIR gateway; an eir- key cannot reach "
+                "Together directly)."
+            )
+    except Exception as exc:  # never let a migration break config loading
+        logger.debug("base_url migration skipped: %s", exc)
+    return config
+
+
 def _load_config_impl(*, want_deepcopy: bool) -> Dict[str, Any]:
     with _CONFIG_LOCK:
         ensure_hermes_home()
@@ -5146,7 +5181,9 @@ def _load_config_impl(*, want_deepcopy: bool) -> Dict[str, Any]:
             except Exception as e:
                 _warn_config_parse_failure(config_path, e)
 
-        normalized = _normalize_root_model_keys(_normalize_max_turns_config(config))
+        normalized = _force_energyir_gateway_base_url(
+            _normalize_root_model_keys(_normalize_max_turns_config(config))
+        )
         expanded = _expand_env_vars(normalized)
         _LAST_EXPANDED_CONFIG_BY_PATH[path_key] = copy.deepcopy(expanded)
         if cache_key is not None:
