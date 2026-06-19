@@ -1236,7 +1236,7 @@ DEFAULT_CONFIG = {
         },
         "web_extract": {
             "provider": "auto",
-            "model": "",
+            "model": "openai/gpt-oss-120b",
             "base_url": "",
             "api_key": "",
             "timeout": 360,        # seconds (6min) — per-attempt LLM summarization timeout; increase for slow local models
@@ -1256,7 +1256,7 @@ DEFAULT_CONFIG = {
         # values in user config.yaml files are harmless leftovers and ignored.
         "skills_hub": {
             "provider": "auto",
-            "model": "",
+            "model": "openai/gpt-oss-120b",
             "base_url": "",
             "api_key": "",
             "timeout": 30,
@@ -1272,7 +1272,7 @@ DEFAULT_CONFIG = {
         },
         "mcp": {
             "provider": "auto",
-            "model": "",
+            "model": "openai/gpt-oss-120b",
             "base_url": "",
             "api_key": "",
             "timeout": 30,
@@ -1280,7 +1280,7 @@ DEFAULT_CONFIG = {
         },
         "title_generation": {
             "provider": "auto",
-            "model": "",
+            "model": "openai/gpt-oss-120b",
             "base_url": "",
             "api_key": "",
             "timeout": 30,
@@ -1293,7 +1293,7 @@ DEFAULT_CONFIG = {
         # model is overkill for short spec expansion.
         "triage_specifier": {
             "provider": "auto",
-            "model": "",
+            "model": "openai/gpt-oss-120b",
             "base_url": "",
             "api_key": "",
             "timeout": 120,
@@ -1306,7 +1306,7 @@ DEFAULT_CONFIG = {
         # uses more tokens than the specifier so allow more headroom.
         "kanban_decomposer": {
             "provider": "auto",
-            "model": "",
+            "model": "openai/gpt-oss-120b",
             "base_url": "",
             "api_key": "",
             "timeout": 180,
@@ -1318,7 +1318,7 @@ DEFAULT_CONFIG = {
         # auto-generate button. Short, cheap call.
         "profile_describer": {
             "provider": "auto",
-            "model": "",
+            "model": "openai/gpt-oss-120b",
             "base_url": "",
             "api_key": "",
             "timeout": 60,
