@@ -250,7 +250,11 @@ export async function applyUpdates(opts: DesktopUpdateApplyOptions = {}): Promis
 function ingestProgress(payload: DesktopUpdateProgress): void {
   const current = $updateApply.get()
   const log = [...current.log, { stage: payload.stage, message: payload.message, at: payload.at }].slice(-50)
-  const terminal = payload.stage === 'error' || payload.stage === 'restart' || payload.stage === 'manual'
+  const terminal =
+    payload.stage === 'error' ||
+    payload.stage === 'restart' ||
+    payload.stage === 'manual' ||
+    payload.stage === 'downloaded'
 
   $updateApply.set({
     applying: !terminal,

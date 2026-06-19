@@ -29,6 +29,7 @@ const STAGE_LABELS: Record<DesktopUpdateStage, string> = {
   pydeps: 'Finishing up…',
   restart: 'Restarting Robin…',
   manual: 'Update from your terminal',
+  downloaded: 'Update downloaded',
   error: 'Update paused'
 }
 
@@ -50,14 +51,16 @@ export function UpdatesOverlay() {
 
   const behind = status?.behind ?? 0
 
-  const phase: 'idle' | 'applying' | 'manual' | 'error' =
+  const phase: 'idle' | 'applying' | 'manual' | 'downloaded' | 'error' =
     apply.stage === 'manual'
       ? 'manual'
-      : apply.applying || apply.stage === 'restart'
-        ? 'applying'
-        : apply.stage === 'error'
-          ? 'error'
-          : 'idle'
+      : apply.stage === 'downloaded'
+        ? 'downloaded'
+        : apply.applying || apply.stage === 'restart'
+          ? 'applying'
+          : apply.stage === 'error'
+            ? 'error'
+            : 'idle'
 
   const handleClose = (next: boolean) => {
     if (phase === 'applying') {
@@ -66,7 +69,13 @@ export function UpdatesOverlay() {
 
     setUpdateOverlayOpen(next)
 
-    if (!next && (apply.stage === 'error' || apply.stage === 'restart' || apply.stage === 'manual')) {
+    if (
+      !next &&
+      (apply.stage === 'error' ||
+        apply.stage === 'restart' ||
+        apply.stage === 'manual' ||
+        apply.stage === 'downloaded')
+    ) {
       resetUpdateApplyState()
     }
   }
@@ -85,6 +94,10 @@ export function UpdatesOverlay() {
 
         {phase === 'manual' && (
           <ManualView command={apply.command ?? 'robin update'} onDone={() => handleClose(false)} />
+        )}
+
+        {phase === 'downloaded' && (
+          <DownloadedView version={apply.message} onDone={() => handleClose(false)} />
         )}
 
         {phase === 'error' && (
@@ -294,6 +307,36 @@ function ManualView({ command, onDone }: { command: string; onDone: () => void }
       </Button>
     </div>
   )
+}
+
+function DownloadedView({ version, onDone }: { version: string; onDone: () => void }) {
+  const v = version && /^\d/.test(version) ? `Robin ${version}` : "The new version of Robin";
+  return (
+    <div className="grid gap-5 px-6 pb-6 pt-7 pr-8">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <CheckCircle2 className="size-7" />
+        </span>
+
+        <DialogTitle className="text-center text-xl">Downloaded — one quick step</DialogTitle>
+        <DialogDescription className="text-center text-sm">
+          {v} was downloaded to your Downloads folder and the installer is opening now.
+        </DialogDescription>
+      </div>
+
+      <div className="rounded-xl border border-border/70 bg-muted/20 px-4 py-3 text-sm text-foreground">
+        <p className="font-medium">To finish:</p>
+        <ol className="mt-1.5 grid gap-1 text-xs text-muted-foreground">
+          <li>1. In the window that opened, drag <span className="font-medium text-foreground">Robin</span> onto <span className="font-medium text-foreground">Applications</span> (replace the old one).</li>
+          <li>2. Quit Robin, then reopen it from Applications.</li>
+        </ol>
+      </div>
+
+      <Button className="font-semibold" onClick={onDone} size="lg">
+        Got it
+      </Button>
+    </div>
+  );
 }
 
 function ApplyingView({ apply }: { apply: UpdateApplyState }) {

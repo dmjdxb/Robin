@@ -1227,52 +1227,24 @@ async function resolveHealedBranch(updateRoot, branch) {
   return 'main'
 }
 
-// ── Packaged self-update via electron-updater ──────────────────────────────
-// A downloaded Robin (.app/.exe — IS_PACKAGED) has no git checkout, so the
-// git-based self-update below can't apply. Those installs update through
-// electron-updater against the signed+notarized GitHub release feed
-// (latest-mac.yml etc., baked into app-update.yml by electron-builder). Dev /
-// source / CLI runs (!IS_PACKAGED) keep the git path. Lazily required so dev
-// and the unit tests never need the dependency.
-let _autoUpdaterSingleton = null
-function getAutoUpdater() {
-  if (_autoUpdaterSingleton) return _autoUpdaterSingleton
-  const { autoUpdater } = require('electron-updater')
-  // We drive download + install explicitly from the UI's "Update now" button.
-  autoUpdater.autoDownload = false
-  autoUpdater.autoInstallOnAppQuit = false
-  autoUpdater.logger = {
-    info: m => rememberLog('[updater] ' + m),
-    warn: m => rememberLog('[updater] ' + m),
-    error: m => rememberLog('[updater] ' + m),
-    debug: () => {}
-  }
-  // Stream electron-updater lifecycle onto the existing progress channel so the
-  // updates overlay (fetch -> restart) renders without renderer changes.
-  autoUpdater.on('download-progress', p => {
-    const pct = Math.round((p && p.percent) || 0)
-    emitUpdateProgress({ stage: 'fetch', message: `Downloading update… ${pct}%`, percent: pct })
-  })
-  autoUpdater.on('update-downloaded', () => {
-    emitUpdateProgress({ stage: 'restart', message: 'Update ready — restarting Robin…', percent: 100 })
-  })
-  autoUpdater.on('error', err => {
-    emitUpdateProgress({
-      stage: 'error',
-      message: (err && err.message) || String(err),
-      error: 'update-error',
-      percent: null
-    })
-  })
-  _autoUpdaterSingleton = autoUpdater
-  return autoUpdater
-}
+// ── Packaged self-update (built-in https; NO npm modules) ──────────────────
+// CRITICAL: this app ships NO node_modules in the asar (the renderer is
+// Vite-bundled into dist/, native deps are staged separately), so the MAIN
+// process can only require Node/Electron built-ins — `require('electron-
+// updater')` would throw "Cannot find module". We therefore drive updates for
+// downloaded builds (IS_PACKAGED) with the built-in https client against the
+// public GitHub releases API: check the latest tag, and on apply download the
+// signed dmg/exe and open it for the user to drop into Applications (a drag-
+// install can't atomically replace the running .app, so this is the safe,
+// reliable apply). Dev / source / CLI runs (!IS_PACKAGED) keep the git path.
+const GH_REPO = 'dmjdxb/Robin'
 
-// Numeric semver-ish compare (a > b). Tolerates missing components; ignores any
-// pre-release suffix (release builds only).
+// Numeric semver-ish compare (a > b). Strips a leading "v" and any pre-release
+// suffix; tolerates missing components (release builds only).
 function isVersionNewer(a, b) {
   const parse = v =>
     String(v || '')
+      .replace(/^v/, '')
       .split('-')[0]
       .split('.')
       .map(n => Number.parseInt(n, 10) || 0)
@@ -1286,12 +1258,87 @@ function isVersionNewer(a, b) {
   return false
 }
 
-async function checkUpdatesViaAutoUpdater() {
+// GET JSON over https with redirect-follow + a User-Agent (GitHub requires one).
+function httpsGetJson(url, redirectsLeft = 5) {
+  return new Promise((resolve, reject) => {
+    https
+      .get(url, { headers: { 'User-Agent': 'Robin-Updater', Accept: 'application/vnd.github+json' } }, res => {
+        const { statusCode, headers } = res
+        if (statusCode >= 300 && statusCode < 400 && headers.location && redirectsLeft > 0) {
+          res.resume()
+          resolve(httpsGetJson(headers.location, redirectsLeft - 1))
+          return
+        }
+        if (statusCode !== 200) {
+          res.resume()
+          reject(new Error(`GitHub returned HTTP ${statusCode}`))
+          return
+        }
+        let body = ''
+        res.setEncoding('utf8')
+        res.on('data', d => (body += d))
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(body))
+          } catch (e) {
+            reject(e)
+          }
+        })
+      })
+      .on('error', reject)
+  })
+}
+
+// Download a URL to a file, reporting integer percent (when Content-Length is
+// known). Follows redirects (GitHub asset URLs 302 to a CDN).
+function httpsDownload(url, dest, onPercent, redirectsLeft = 5) {
+  return new Promise((resolve, reject) => {
+    https
+      .get(url, { headers: { 'User-Agent': 'Robin-Updater' } }, res => {
+        const { statusCode, headers } = res
+        if (statusCode >= 300 && statusCode < 400 && headers.location && redirectsLeft > 0) {
+          res.resume()
+          resolve(httpsDownload(headers.location, dest, onPercent, redirectsLeft - 1))
+          return
+        }
+        if (statusCode !== 200) {
+          res.resume()
+          reject(new Error(`download failed: HTTP ${statusCode}`))
+          return
+        }
+        const total = Number.parseInt(headers['content-length'] || '0', 10)
+        let received = 0
+        let lastPct = -1
+        const out = fs.createWriteStream(dest)
+        res.on('data', chunk => {
+          received += chunk.length
+          if (total > 0 && typeof onPercent === 'function') {
+            const pct = Math.floor((received / total) * 100)
+            if (pct !== lastPct) {
+              lastPct = pct
+              onPercent(pct)
+            }
+          }
+        })
+        res.pipe(out)
+        out.on('finish', () => out.close(() => resolve(dest)))
+        out.on('error', reject)
+      })
+      .on('error', reject)
+  })
+}
+
+function latestReleaseAssetForPlatform(rel) {
+  const assets = (rel && rel.assets) || []
+  const find = re => assets.find(a => re.test(a.name))
+  return IS_WINDOWS ? find(/win.*\.exe$/i) || find(/\.exe$/i) : find(/mac.*\.dmg$/i)
+}
+
+async function checkUpdatesViaGitHub() {
   const current = app.getVersion()
   try {
-    const au = getAutoUpdater()
-    const result = await au.checkForUpdates()
-    const latest = result && result.updateInfo && result.updateInfo.version
+    const rel = await httpsGetJson(`https://api.github.com/repos/${GH_REPO}/releases/latest`)
+    const latest = String(rel.tag_name || '').replace(/^v/, '')
     const available = !!latest && isVersionNewer(latest, current)
     return {
       supported: true,
@@ -1302,10 +1349,10 @@ async function checkUpdatesViaAutoUpdater() {
       commits: available
         ? [
             {
-              sha: String(latest),
+              sha: latest,
               summary: `Robin ${latest} is available`,
               author: 'EnergyIR',
-              at: Date.parse((result.updateInfo && result.updateInfo.releaseDate) || '') || Date.now()
+              at: Date.parse(rel.published_at || '') || Date.now()
             }
           ]
         : [],
@@ -1321,38 +1368,54 @@ async function checkUpdatesViaAutoUpdater() {
   }
 }
 
-async function applyUpdatesViaAutoUpdater() {
-  const au = getAutoUpdater()
+async function applyUpdatesViaGitHub() {
   emitUpdateProgress({ stage: 'prepare', message: 'Checking for the latest version…', percent: null })
-  const result = await au.checkForUpdates()
-  const latest = result && result.updateInfo && result.updateInfo.version
+  const rel = await httpsGetJson(`https://api.github.com/repos/${GH_REPO}/releases/latest`)
+  const latest = String(rel.tag_name || '').replace(/^v/, '')
   if (!latest || !isVersionNewer(latest, app.getVersion())) {
     emitUpdateProgress({ stage: 'idle', message: 'Already on the latest version.', percent: null })
     return { ok: true, message: 'Already on the latest version.' }
   }
-  emitUpdateProgress({ stage: 'fetch', message: 'Downloading update…', percent: 0 })
-  await au.downloadUpdate()
-  // 'update-downloaded' already emitted the 'restart' stage; give the overlay a
-  // beat to render it, then quit + swap in the new build.
-  setTimeout(() => {
+  const asset = latestReleaseAssetForPlatform(rel)
+  if (!asset || !asset.browser_download_url) {
+    emitUpdateProgress({ stage: 'error', message: 'No installer found for this platform.', error: 'no-asset', percent: null })
+    return { ok: false, error: 'no-asset', message: 'No installer asset in the latest release.' }
+  }
+  emitUpdateProgress({ stage: 'fetch', message: `Downloading Robin ${latest}…`, percent: 0 })
+  const dest = path.join(app.getPath('downloads'), asset.name)
+  try {
+    await httpsDownload(asset.browser_download_url, dest, pct =>
+      emitUpdateProgress({ stage: 'fetch', message: `Downloading Robin ${latest}…`, percent: pct })
+    )
+  } catch (err) {
+    emitUpdateProgress({
+      stage: 'error',
+      message: (err && err.message) || String(err),
+      error: 'download-failed',
+      percent: null
+    })
+    return { ok: false, error: 'download-failed', message: (err && err.message) || String(err) }
+  }
+  // Open the installer (mounts the dmg / launches the exe) so the user drops the
+  // new Robin into Applications. A drag-install can't replace the running app in
+  // place, so this is the safe apply on a signed build.
+  try {
+    await shell.openPath(dest)
+  } catch {
     try {
-      au.quitAndInstall()
-    } catch (e) {
-      emitUpdateProgress({
-        stage: 'error',
-        message: (e && e.message) || String(e),
-        error: 'install-failed',
-        percent: null
-      })
+      shell.showItemInFolder(dest)
+    } catch {
+      void 0
     }
-  }, 1200)
-  return { ok: true, handedOff: true }
+  }
+  emitUpdateProgress({ stage: 'downloaded', message: latest, percent: 100 })
+  return { ok: true, downloaded: true, path: dest, version: latest }
 }
 
 async function checkUpdates() {
-  // Downloaded builds self-update via electron-updater, not git.
+  // Downloaded builds check via the GitHub releases API (built-in https), not git.
   if (IS_PACKAGED) {
-    return checkUpdatesViaAutoUpdater()
+    return checkUpdatesViaGitHub()
   }
   const updateRoot = resolveUpdateRoot()
   let { branch } = readDesktopUpdateConfig()
@@ -1561,11 +1624,11 @@ async function applyUpdates(opts = {}) {
   updateInFlight = true
 
   try {
-    // Downloaded builds apply updates via electron-updater (download the signed
-    // build from the release feed, then quitAndInstall). The git/updater-binary
-    // path below is only for dev/source/CLI installs.
+    // Downloaded builds apply updates via the GitHub releases API (built-in
+    // https): download the signed installer and open it for a drag-install. The
+    // git/updater-binary path below is only for dev/source/CLI installs.
     if (IS_PACKAGED) {
-      return await applyUpdatesViaAutoUpdater()
+      return await applyUpdatesViaGitHub()
     }
     const updater = resolveUpdaterBinary()
     if (!updater && !IS_WINDOWS) {
