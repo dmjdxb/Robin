@@ -10278,13 +10278,24 @@ def _cmd_update_impl(args, gateway_mode: bool):
         else:
             from robin.config import detect_install_method
             method = detect_install_method(PROJECT_ROOT)
+            if method == "bundled":
+                # Zero-tooling desktop install (no git, no compiler). The
+                # Python backend is shipped as a release asset and re-extracted
+                # by the desktop shell whenever the app version changes, so
+                # there is no in-place `hermes update` path here — and trying
+                # to git-pull a bundle has no remote to pull from.
+                print("✓ Robin's backend updates automatically with the desktop app.")
+                print("  There is nothing to update from the command line on this install.")
+                print("  To get the latest Robin:")
+                print("    • use the in-app updater (the desktop app checks for updates), or")
+                print("    • download the latest version from https://energyir.io/robin")
+                print("  The matching backend re-installs itself the next time Robin launches.")
+                return
             if method == "pip":
                 _cmd_update_pip(args)
                 return
-            print("✗ Not a git repository. Please reinstall:")
-            print(
-                "  curl -fsSL https://robin.energyir.com/install.sh | bash"
-            )
+            print("✗ Not a git repository. Please reinstall Robin from:")
+            print("  https://energyir.io/robin")
             sys.exit(1)
 
     # On Windows, git can fail with "unable to write loose object file: Invalid argument"

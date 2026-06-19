@@ -1883,6 +1883,17 @@ async function installBundledBackend() {
       } catch {
         void 0
       }
+      // Stamp the install method so the Python backend's `hermes update`
+      // (robin/config.py detect_install_method) recognises this as a bundled,
+      // zero-tooling install -- no .git, no pip -- and prints the "updates with
+      // the app" guidance instead of failing with "Not a git repository". The
+      // stamp lives in HERMES_HOME (user state), so it survives backend
+      // re-extraction (which only replaces ACTIVE_HERMES_ROOT).
+      try {
+        writeFileAtomic(path.join(HERMES_HOME, '.install_method'), 'bundled\n', 'utf8')
+      } catch {
+        void 0
+      }
       rememberLog('[bundle] prebuilt backend ready at ' + ACTIVE_HERMES_ROOT)
       return true
     }
@@ -2054,6 +2065,44 @@ function resolveRobinBackend(dashboardArgs) {
   //    to spawning hermes. Updates flow through the in-app update path
   //    (applyUpdates -> git pull) or `hermes update` from the CLI.
   if (isBootstrapComplete()) {
+    // EXCEPTION -- a BUNDLED backend (zero-tooling install: no git, no
+    // compiler) is pinned to the desktop version that extracted it
+    // (marker.source === 'bundled', marker.desktopVersion). It has NO update
+    // path of its own: `hermes update` needs git, which a bundle install lacks.
+    // So after a desktop self-update the on-disk backend is STALE -- old agent
+    // code (e.g. the pre-cutover api.together.xyz base_url) running under the
+    // new shell -- until re-extracted from the bundle shipped with THIS app
+    // version. isBootstrapComplete() intentionally ignores the version (git/CLI
+    // users move HEAD legitimately), so we detect the bundled-and-stale case
+    // HERE and route to the bootstrap-needed sentinel. ensureRuntime() then
+    // calls installBundledBackend(), whose upToDate guard re-extracts the
+    // current bundle (code only -- user state in HERMES_HOME is untouched).
+    const marker = readBootstrapMarker()
+    const bundledAndStale =
+      IS_PACKAGED &&
+      marker &&
+      marker.source === 'bundled' &&
+      marker.desktopVersion !== app.getVersion()
+    if (bundledAndStale) {
+      rememberLog(
+        `[bundle] backend was provisioned for desktop ${marker.desktopVersion}; ` +
+          `current app is ${app.getVersion()} -- re-provisioning bundled backend`
+      )
+      return {
+        kind: 'bootstrap-needed',
+        label: 'Robin backend update required (desktop version changed)',
+        command: null,
+        args: dashboardArgs,
+        bootstrap: true,
+        env: {},
+        shell: false,
+        // Hints for the bootstrap runner / UI layer (mirror step 6):
+        activeRoot: ACTIVE_HERMES_ROOT,
+        installStamp: INSTALL_STAMP,
+        isPackaged: IS_PACKAGED,
+        platform: process.platform
+      }
+    }
     return createActiveBackend(dashboardArgs)
   }
 
