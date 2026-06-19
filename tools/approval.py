@@ -1170,11 +1170,14 @@ def _await_gateway_decision(session_key: str, notify_cb, approval_data: dict,
         _drop_entry()
         return {"resolved": False, "choice": None, "notify_failed": True}
 
-    # Block until the user responds or timeout (default 5 min). Poll in short
+    # Block until the user responds or timeout (default 120s). Poll in short
     # slices so we can fire activity heartbeats every ~10s to the agent's
     # inactivity tracker — otherwise the gateway watchdog kills the agent
     # while the user is still responding. Mirrors _wait_for_process() cadence.
-    timeout = _get_approval_config().get("gateway_timeout", 300)
+    # Lowered from 300s: a 5-minute freeze on an unanswered approval is a bad
+    # desktop experience and, if the prompt isn't seen, just stalls the agent.
+    # Override via approvals.gateway_timeout for longer human-in-the-loop waits.
+    timeout = _get_approval_config().get("gateway_timeout", 120)
     try:
         timeout = int(timeout)
     except (ValueError, TypeError):

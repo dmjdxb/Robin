@@ -328,15 +328,18 @@ browser:
 # preferable to spending the full iteration budget.
 tool_loop_guardrails:
   warnings_enabled: true
-  hard_stop_enabled: false
+  # ON by default: a repeating tool failure re-sends the full context to the
+  # model on every retry (real money each time). Halt the loop instead of just
+  # warning — this is the backstop against one stuck task burning the budget.
+  hard_stop_enabled: true
   warn_after:
     exact_failure: 2
     same_tool_failure: 3
     idempotent_no_progress: 2
   hard_stop_after:
-    exact_failure: 5
-    same_tool_failure: 8
-    idempotent_no_progress: 5
+    exact_failure: 4
+    same_tool_failure: 5
+    idempotent_no_progress: 4
 
 # =============================================================================
 # Context Compression (Auto-shrinks long conversations)

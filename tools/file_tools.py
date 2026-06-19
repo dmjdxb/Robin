@@ -1483,6 +1483,22 @@ def _handle_read_file(args, **kw):
 def _handle_write_file(args, **kw):
     tid = kw.get("task_id") or "default"
     if not args.get("path") or not isinstance(args.get("path"), str):
+        # Truncation signature: a large 'content' arrived but 'path' did not. The
+        # huge inline content overran the tool-call argument budget and the JSON
+        # was cut off before 'path' was emitted. Retrying the SAME giant call just
+        # truncates again (this is the loop that burns money). Steer to a recovery
+        # strategy instead of the generic "re-emit" message.
+        _c = args.get("content")
+        if isinstance(_c, str) and len(_c) > 2000:
+            return tool_error(
+                "write_file: 'path' is missing but a large 'content' was present — your "
+                "tool call was almost certainly TRUNCATED because the inline content is "
+                "too big to fit in one tool call. Do NOT retry the same call unchanged. "
+                "Instead either (1) create the file with a SHORT write_file (put 'path' "
+                "first), then add the rest with append/patch in smaller pieces, or "
+                "(2) generate the file with execute_code — build the content in the "
+                "script and write it to disk there rather than inlining it as an argument."
+            )
         return tool_error(
             "write_file: missing required field 'path'. Re-emit the tool call with "
             "both 'path' and 'content' set."

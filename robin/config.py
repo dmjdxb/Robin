@@ -1108,16 +1108,21 @@ DEFAULT_CONFIG = {
     # hard stops are opt-in so interactive CLI/TUI sessions keep flowing.
     "tool_loop_guardrails": {
         "warnings_enabled": True,
-        "hard_stop_enabled": False,
+        # Hard stop ON by default: a repeating tool failure (e.g. a malformed
+        # write_file retried over and over) re-sends the full context to the
+        # model on every attempt — real money per retry. Warnings alone don't
+        # halt it. Stopping the loop is the "never burn a month's budget on one
+        # stuck task" backstop.
+        "hard_stop_enabled": True,
         "warn_after": {
             "exact_failure": 2,
             "same_tool_failure": 3,
             "idempotent_no_progress": 2,
         },
         "hard_stop_after": {
-            "exact_failure": 5,
-            "same_tool_failure": 8,
-            "idempotent_no_progress": 5,
+            "exact_failure": 4,
+            "same_tool_failure": 5,
+            "idempotent_no_progress": 4,
         },
     },
 
@@ -1672,12 +1677,14 @@ DEFAULT_CONFIG = {
         # extras" without silently stripping MCP tools the parent already has.
         # Set to false for strict intersection.
         "inherit_mcp_toolsets": True,
-        "max_iterations": 50,  # per-subagent iteration cap (each subagent gets its own budget,
-                               # independent of the parent's max_iterations)
-        "child_timeout_seconds": 600,  # wall-clock timeout for each child agent (floor 30s,
-                                       # no ceiling). High-reasoning models on large tasks
-                                       # (e.g. gpt-5.5 xhigh, opus-4.6) need generous budgets;
-                                       # raise if children time out before producing output.
+        "max_iterations": 30,  # per-subagent iteration cap (each subagent gets its own budget,
+                               # independent of the parent's max_iterations). Lowered from 50:
+                               # a stuck child re-sends full context every iteration (real money),
+                               # and a child that needs >30 turns should be split, not run wild.
+        "child_timeout_seconds": 300,  # wall-clock timeout for each child agent (floor 30s).
+                                       # Lowered from 600: a child that times out produces NOTHING
+                                       # yet bills every call it made first — bound the blast radius.
+                                       # Raise deliberately for genuinely long reasoning tasks.
         "reasoning_effort": "",  # reasoning effort for subagents: "xhigh", "high", "medium",
                                  # "low", "minimal", "none" (empty = inherit parent's level)
         "max_concurrent_children": 3,  # max parallel children per batch; floor of 1 enforced, no ceiling
