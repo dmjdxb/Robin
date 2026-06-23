@@ -1894,6 +1894,36 @@ def generate_changelog(commits, tag_name, semver, repo_url="https://github.com/d
 
 
 def main():
+    # ── GUARD: this CLI is inherited Hermes-fork tooling and must NOT be used ──
+    # Robin releases are cut MANUALLY and never went through this script. Its
+    # CalVer tag scheme (get_last_tag scans "v20*") doesn't recognize Robin's
+    # "v1.2.x" series, and update_version_files() sets apps/desktop/package.json
+    # to the *Python* semver — which would DOWNGRADE the user-facing desktop
+    # version (e.g. 1.2.8 -> 0.16.x) and break the electron-updater feed.
+    #
+    # The module stays importable only for resolve_author(), used by
+    # scripts/contributor_audit.py. Running it as a CLI is a footgun, so abort
+    # unless the operator explicitly opts in via ROBIN_ALLOW_DEPRECATED_RELEASE=1.
+    #
+    # To cut a Robin release (manual process — see any "release: vX.Y.Z" commit):
+    #   1. Bump apps/desktop/package.json "version" (desktop semver, 1.2.x)
+    #   2. Bump pyproject.toml + robin/__init__.py (core semver, 0.16.x)
+    #   3. git commit -m "release: vX.Y.Z — <summary> ... Bump: desktop A->B, core C->D."
+    #   4. git tag vX.Y.Z && git push origin main --tags  (CI publishes on the tag)
+    import os
+    if os.environ.get("ROBIN_ALLOW_DEPRECATED_RELEASE") != "1":
+        print(
+            "scripts/release.py is deprecated and disabled for cutting releases.\n"
+            "Robin is released MANUALLY (this script's CalVer/version logic would\n"
+            "downgrade the desktop version and break auto-update). See the docstring\n"
+            "in main() for the manual steps. The module is retained only for\n"
+            "resolve_author() used by scripts/contributor_audit.py.\n"
+            "If you really know what you're doing, re-run with "
+            "ROBIN_ALLOW_DEPRECATED_RELEASE=1.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+
     parser = argparse.ArgumentParser(description="Robin Release Tool")
     parser.add_argument("--bump", choices=["major", "minor", "patch"],
                         help="Which semver component to bump")
