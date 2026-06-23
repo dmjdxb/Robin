@@ -119,6 +119,11 @@ export const $modelPickerOpen = atom(false)
 // attached document and answers only from it (with citations) instead of
 // wandering into other tools — "nothing wasted". No backend/session state.
 export const $documentMode = atom(false)
+// Effort tier override for the current conversation: a tier id the user picked
+// from the composer's effort selector, or null = "use the backend default".
+// Sent on prompt.submit; the gateway maps it to the primary chat model and
+// remembers it per session. Reset to null on session switch (per-conversation).
+export const $effort = atom<string | null>(null)
 
 export const setConnection = (next: Updater<RobinConnection | null>) => updateAtom($connection, next)
 export const setGatewayState = (next: Updater<string>) => updateAtom($gatewayState, next)
@@ -141,6 +146,7 @@ export const setCurrentServiceTier = (next: Updater<string>) => updateAtom($curr
 export const setCurrentFastMode = (next: Updater<boolean>) => updateAtom($currentFastMode, next)
 export const setYoloActive = (next: Updater<boolean>) => updateAtom($yoloActive, next)
 export const setDocumentMode = (next: Updater<boolean>) => updateAtom($documentMode, next)
+export const setEffort = (next: Updater<string | null>) => updateAtom($effort, next)
 
 export const setCurrentCwd = (next: Updater<string>) => {
   updateAtom($currentCwd, next)

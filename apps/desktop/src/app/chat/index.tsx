@@ -7,7 +7,7 @@ import {
 import { useStore } from '@nanostores/react'
 import { useQuery } from '@tanstack/react-query'
 import type * as React from 'react'
-import { Suspense, useCallback, useMemo, useRef } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { Thread } from '@/components/assistant-ui/thread'
@@ -31,6 +31,7 @@ import {
   $currentCwd,
   $currentModel,
   $currentProvider,
+  $effort,
   $freshDraftReady,
   $gatewayState,
   $introPersonality,
@@ -38,7 +39,8 @@ import {
   $messages,
   $selectedStoredSessionId,
   $sessions,
-  sessionPinId
+  sessionPinId,
+  setEffort
 } from '@/store/session'
 import type { ModelOptionsResponse } from '@/types/hermes'
 
@@ -223,14 +225,29 @@ export function ChatView({
     [currentModel, currentProvider, modelOptionsQuery.data]
   )
 
-  const chatBarState = useMemo<ChatBarState>(
-    () => ({
+  // Effort tier is per-conversation: clear any user override when the active
+  // session changes so each conversation starts from its backend default.
+  const effortOverride = useStore($effort)
+  useEffect(() => {
+    setEffort(null)
+  }, [activeSessionId])
+
+  const chatBarState = useMemo<ChatBarState>(() => {
+    const effortTiers = modelOptionsQuery.data?.effort_tiers ?? []
+    const effortCurrent = effortOverride ?? modelOptionsQuery.data?.effort_current ?? effortTiers[0]?.id ?? ''
+
+    return {
       model: {
         model: currentModel,
         provider: currentProvider,
         canSwitch: gatewayOpen,
         loading: !gatewayOpen || (!currentModel && !currentProvider),
         quickModels
+      },
+      effort: {
+        current: effortCurrent,
+        tiers: effortTiers,
+        canSwitch: gatewayOpen && effortTiers.length > 0
       },
       tools: {
         enabled: true,
@@ -241,9 +258,8 @@ export function ChatView({
         enabled: true,
         active: false
       }
-    }),
-    [contextSuggestions, currentModel, currentProvider, gatewayOpen, quickModels]
-  )
+    }
+  }, [contextSuggestions, currentModel, currentProvider, effortOverride, gatewayOpen, modelOptionsQuery.data, quickModels])
 
   const runtimeMessageRepository = useMemo(() => {
     const items: { message: ThreadMessage; parentId: string | null }[] = []

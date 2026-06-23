@@ -33,6 +33,7 @@ import { requestDesktopOnboarding } from '@/store/onboarding'
 import { $activeGatewayProfile, $newChatProfile, ensureGatewayProfile, normalizeProfileKey } from '@/store/profile'
 import {
   $busy,
+  $effort,
   $messages,
   $yoloActive,
   setAwaitingResponse,
@@ -43,6 +44,14 @@ import {
 } from '@/store/session'
 
 import type { ClientSessionState, ImageAttachResponse, SessionTitleResponse, SlashExecResponse } from '../../types'
+
+/** prompt.submit payload fragment for the selected effort tier. Omitted when no
+ * override is set so the gateway applies the session's default. */
+function effortParam(): { effort?: string } {
+  const effort = $effort.get()
+
+  return effort ? { effort } : {}
+}
 
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -334,7 +343,7 @@ export function usePromptActions({
         await syncImageAttachmentsForSubmit(sessionId, attachments, {
           updateComposerAttachments: usingComposerAttachments
         })
-        await requestGateway('prompt.submit', { session_id: sessionId, text })
+        await requestGateway('prompt.submit', { session_id: sessionId, text, ...effortParam() })
 
         if (usingComposerAttachments) {
           clearComposerAttachments()
@@ -531,6 +540,7 @@ export function usePromptActions({
               session_id: sessionId,
               title: arg
             })
+
             const finalTitle = (result?.title || arg).trim()
             const queued = result?.pending === true
 
@@ -809,7 +819,8 @@ export function usePromptActions({
         await requestGateway('prompt.submit', {
           session_id: activeSessionId,
           text: userText,
-          truncate_before_user_ordinal: truncateBeforeUserOrdinal
+          truncate_before_user_ordinal: truncateBeforeUserOrdinal,
+          ...effortParam()
         })
       } catch (err) {
         updateSessionState(activeSessionId, state => ({
@@ -865,7 +876,8 @@ export function usePromptActions({
         requestGateway('prompt.submit', {
           session_id: sessionId,
           text,
-          ...(truncateOrdinal !== undefined && { truncate_before_user_ordinal: truncateOrdinal })
+          ...(truncateOrdinal !== undefined && { truncate_before_user_ordinal: truncateOrdinal }),
+          ...effortParam()
         })
 
       const isStaleTargetError = (err: unknown) =>

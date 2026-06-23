@@ -2066,9 +2066,19 @@ def get_model_options():
     try:
         from robin.inventory import build_models_payload, load_picker_context
 
-        return build_models_payload(
+        payload = build_models_payload(
             load_picker_context(), max_models=50, pricing=True, capabilities=True
         )
+        # Effort ladder for the composer selector on the no-session screen. Keep
+        # the shape identical to the model.options JSON-RPC so the UI shares types.
+        try:
+            from robin.models import get_effort_tiers, get_default_effort
+            if isinstance(payload, dict):
+                payload["effort_tiers"] = get_effort_tiers()
+                payload["effort_current"] = get_default_effort()
+        except Exception:
+            pass
+        return payload
     except Exception:
         _log.exception("GET /api/model/options failed")
         raise HTTPException(status_code=500, detail="Failed to list model options")

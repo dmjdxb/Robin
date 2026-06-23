@@ -1193,6 +1193,91 @@ def get_default_model_for_provider(provider: str) -> str:
     return models[0] if models else ""
 
 
+# ---------------------------------------------------------------------------
+# Effort ladder — maps a user-facing effort tier (shown in the chat composer's
+# effort selector) to a concrete PRIMARY chat model. Auxiliary/tool-call tasks
+# (auxiliary.*) are independent and unaffected. The source of truth is the
+# ``effort_tiers`` block in config (DEFAULT_CONFIG); this constant is the
+# network-free fallback used when that block is absent or malformed.
+# ---------------------------------------------------------------------------
+EFFORT_TIERS_FALLBACK: list[dict[str, Any]] = [
+    {"id": "quick", "label": "Quick", "model": "openai/gpt-oss-120b",
+     "provider": "auto", "blurb": "Fast, low cost — everyday questions", "cost_hint": 1},
+    {"id": "balanced", "label": "Balanced", "model": "deepseek/deepseek-v4-flash",
+     "provider": "auto", "blurb": "Great for docs & writing", "cost_hint": 2},
+    {"id": "max", "label": "Max effort", "model": "deepseek/deepseek-v4-pro",
+     "provider": "auto", "blurb": "Deep reasoning — uses your limits faster", "cost_hint": 3},
+]
+_DEFAULT_EFFORT_FALLBACK = "balanced"
+
+
+def _effort_config() -> dict[str, Any]:
+    """Return the ``effort_tiers`` config block, or ``{}`` on any failure.
+
+    Lazy-imports ``load_config`` to avoid a circular import at module load
+    (config.py references model helpers).
+    """
+    try:
+        from robin.config import load_config
+        block = (load_config() or {}).get("effort_tiers")
+        return block if isinstance(block, dict) else {}
+    except Exception:
+        return {}
+
+
+def get_effort_tiers() -> list[dict[str, Any]]:
+    """Return the ordered effort tiers (cheapest first).
+
+    Reads ``effort_tiers.tiers`` from config; falls back to
+    ``EFFORT_TIERS_FALLBACK`` when the block is missing or not a non-empty list
+    of dicts each carrying at least an ``id`` and ``model``.
+    """
+    tiers = _effort_config().get("tiers")
+    if isinstance(tiers, list):
+        valid = [
+            t for t in tiers
+            if isinstance(t, dict) and t.get("id") and t.get("model")
+        ]
+        if valid:
+            return valid
+    return list(EFFORT_TIERS_FALLBACK)
+
+
+def get_default_effort() -> str:
+    """Return the default tier id for new conversations.
+
+    Honors ``effort_tiers.default`` when it names an existing tier; otherwise
+    falls back to ``"balanced"`` if present, else the first (cheapest) tier.
+    """
+    tiers = get_effort_tiers()
+    ids = [t["id"] for t in tiers]
+    configured = _effort_config().get("default")
+    if isinstance(configured, str) and configured in ids:
+        return configured
+    if _DEFAULT_EFFORT_FALLBACK in ids:
+        return _DEFAULT_EFFORT_FALLBACK
+    return ids[0] if ids else _DEFAULT_EFFORT_FALLBACK
+
+
+def get_effort_tier(effort_id: Optional[str]) -> dict[str, Any]:
+    """Return the tier dict for ``effort_id``, or the default tier if unknown."""
+    tiers = get_effort_tiers()
+    by_id = {t["id"]: t for t in tiers}
+    if effort_id and effort_id in by_id:
+        return by_id[effort_id]
+    return by_id.get(get_default_effort(), tiers[0])
+
+
+def effort_to_model(effort_id: Optional[str]) -> tuple[str, str]:
+    """Resolve an effort tier id to ``(model, provider)``.
+
+    Unknown/None ids resolve to the default tier. ``provider`` defaults to
+    ``"auto"`` so the existing runtime resolver picks the active endpoint.
+    """
+    tier = get_effort_tier(effort_id)
+    return tier.get("model", ""), tier.get("provider", "auto") or "auto"
+
+
 def _openrouter_model_is_free(pricing: Any) -> bool:
     """Return True when both prompt and completion pricing are zero."""
     if not isinstance(pricing, dict):

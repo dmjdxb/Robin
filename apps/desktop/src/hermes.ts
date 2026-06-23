@@ -60,6 +60,7 @@ export type {
   CronJobCreatePayload,
   CronJobSchedule,
   CronJobUpdates,
+  EffortTier,
   ElevenLabsVoice,
   ElevenLabsVoicesResponse,
   EnvVarInfo,

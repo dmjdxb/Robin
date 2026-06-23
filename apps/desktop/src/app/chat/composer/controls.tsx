@@ -9,6 +9,7 @@ import { AudioLines, FileText, Layers3, Loader2, Square } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { $documentMode, setDocumentMode } from '@/store/session'
 
+import { EffortSelector } from './effort-selector'
 import type { ConversationStatus } from './hooks/use-voice-conversation'
 import type { ChatBarState, VoiceStatus } from './types'
 
@@ -88,6 +89,7 @@ export function ComposerControls({
           <FileText size={16} />
         </Button>
       </Tip>
+      <EffortSelector disabled={disabled} state={state.effort} />
       <DictationButton disabled={disabled} onToggle={onDictate} state={state.voice} status={voiceStatus} />
       {showVoicePrimary ? (
         <Tip label={c.startVoice}>

@@ -1,4 +1,4 @@
-import type { RobinGateway } from '@/hermes'
+import type { EffortTier, RobinGateway } from '@/hermes'
 import type { ComposerAttachment } from '@/store/composer'
 
 import type { DroppedFile } from '../hooks/use-composer-actions'
@@ -22,6 +22,14 @@ export interface ChatBarState {
     canSwitch: boolean
     loading?: boolean
     quickModels?: QuickModelOption[]
+  }
+  effort: {
+    /** Currently selected tier id (user override, else backend default). */
+    current: string
+    /** Ordered cheapest-first; empty when the provider has no tiers. */
+    tiers: EffortTier[]
+    /** Whether the selector should be interactive. */
+    canSwitch: boolean
   }
   tools: { enabled: boolean; label: string; suggestions?: ContextSuggestion[] }
   voice: { enabled: boolean; active: boolean }

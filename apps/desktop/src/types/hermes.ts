@@ -230,10 +230,25 @@ export interface ModelCapabilities {
   reasoning: boolean
 }
 
+/** One rung of the composer effort ladder. The selected tier sets the primary
+ * chat model only; auxiliary/tool-call tasks are unaffected. */
+export interface EffortTier {
+  id: string
+  label: string
+  model: string
+  provider?: string
+  blurb?: string
+  cost_hint?: number
+}
+
 export interface ModelOptionsResponse {
   model?: string
   provider?: string
   providers?: ModelOptionProvider[]
+  /** Ordered cheapest-first; present when the active provider supports tiers. */
+  effort_tiers?: EffortTier[]
+  /** The currently selected/default tier id. */
+  effort_current?: string
 }
 
 export interface PaginatedSessions {

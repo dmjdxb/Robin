@@ -1338,7 +1338,45 @@ DEFAULT_CONFIG = {
             "extra_body": {},
         },
     },
-    
+
+    # Primary-model effort ladder shown in the chat composer's effort selector.
+    # Each tier maps a user-facing effort level to a concrete primary model on
+    # the active provider (slugs are OpenRouter-style, matching the nous/EnergyIR
+    # catalog and the auxiliary.* blocks above). The selected tier sets the
+    # PRIMARY chat model only — auxiliary/tool-call tasks (auxiliary.*) are NOT
+    # affected and stay on their own cheap models. EnergyIR can retune tiers via
+    # config without a binary ship; an absent/partial block falls back to
+    # robin.models.EFFORT_TIERS_FALLBACK.
+    "effort_tiers": {
+        "default": "balanced",          # tier id for new conversations
+        "tiers": [
+            {
+                "id": "quick",
+                "label": "Quick",
+                "model": "openai/gpt-oss-120b",
+                "provider": "auto",
+                "blurb": "Fast, low cost — everyday questions",
+                "cost_hint": 1,         # relative cost weight (1=cheapest) for UI
+            },
+            {
+                "id": "balanced",
+                "label": "Balanced",
+                "model": "deepseek/deepseek-v4-flash",
+                "provider": "auto",
+                "blurb": "Great for docs & writing",
+                "cost_hint": 2,
+            },
+            {
+                "id": "max",
+                "label": "Max effort",
+                "model": "deepseek/deepseek-v4-pro",
+                "provider": "auto",
+                "blurb": "Deep reasoning — uses your limits faster",
+                "cost_hint": 3,
+            },
+        ],
+    },
+
     "display": {
         "compact": False,
         "personality": "",

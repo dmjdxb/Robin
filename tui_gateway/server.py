@@ -2507,6 +2507,45 @@ def _reset_session_agent(sid: str, session: dict) -> dict:
     return info
 
 
+def _apply_effort_to_agent(session: dict) -> None:
+    """Align a live agent's PRIMARY model with the session's effort tier.
+
+    No-op when: no agent yet, no effort selected, the agent isn't on the nous
+    endpoint (tier slugs are nous-specific), or the model already matches. When
+    the tier model differs, performs a same-endpoint swap via
+    ``agent.switch_model`` — reusing the agent's already-resolved base_url /
+    api_key / api_mode (all tiers share one endpoint), preserving conversation
+    state. Auxiliary/tool-call tasks are unaffected. Failures are swallowed so a
+    bad swap never drops the user's turn (the turn proceeds on the old model).
+    """
+    agent = session.get("agent")
+    effort = session.get("effort")
+    if agent is None or not effort:
+        return
+    if (getattr(agent, "provider", "") or "").strip().lower() != "nous":
+        return
+    try:
+        from robin.models import effort_to_model
+        target_model, _ = effort_to_model(effort)
+    except Exception:
+        return
+    if not target_model or target_model == getattr(agent, "model", None):
+        return
+    try:
+        agent.switch_model(
+            target_model,
+            getattr(agent, "provider", "") or "",
+            api_key=getattr(agent, "api_key", ""),
+            base_url=getattr(agent, "base_url", ""),
+            api_mode=getattr(agent, "api_mode", ""),
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        print(
+            f"[tui_gateway] effort switch to {target_model!r} failed: {exc}",
+            file=sys.stderr,
+        )
+
+
 def _make_agent(sid: str, key: str, session_id: str | None = None, session_db=None):
     from run_agent import AIAgent
     from robin.runtime_provider import resolve_runtime_provider
@@ -2546,6 +2585,11 @@ def _make_agent(sid: str, key: str, session_id: str | None = None, session_db=No
         requested=requested_provider,
         target_model=model or None,
     )
+    # Note: the effort-tier primary-model selection is applied right after the
+    # agent is ready, in _apply_effort_to_agent (called from prompt.submit before
+    # the first turn). Keeping it out of _make_agent avoids changing this
+    # widely-mocked builder's signature and covers both first-build and mid-chat
+    # switches through one code path.
     return AIAgent(
         model=model,
         max_iterations=_cfg_max_turns(cfg, 90),
@@ -4226,6 +4270,7 @@ def _(rid, params: dict) -> dict:
 def _(rid, params: dict) -> dict:
     sid, text = params.get("session_id", ""), params.get("text", "")
     truncate_user_ordinal = params.get("truncate_before_user_ordinal")
+    effort = params.get("effort")
     session, err = _sess_nowait(params, rid)
     if err:
         return err
@@ -4234,6 +4279,19 @@ def _(rid, params: dict) -> dict:
     # or fallback moved the session transport to stdio.
     if (t := current_transport()) is not None:
         session["transport"] = t
+    # Per-conversation effort tier (sticky; may change mid-chat). An explicit
+    # value from the composer wins; otherwise the first message seeds the
+    # configured default so new chats start on the cheaper tier. Resolved to a
+    # primary model at agent build (_make_agent) or via a live switch
+    # (_apply_effort_to_agent) below — auxiliary/tool-call tasks are unaffected.
+    if isinstance(effort, str) and effort.strip():
+        session["effort"] = effort.strip()
+    elif "effort" not in session:
+        try:
+            from robin.models import get_default_effort
+            session["effort"] = get_default_effort()
+        except Exception:
+            session["effort"] = None
     with session["history_lock"]:
         if session.get("running"):
             return _err(rid, 4009, "session busy")
@@ -4278,6 +4336,10 @@ def _(rid, params: dict) -> dict:
                 session["running"] = False
                 _clear_inflight_turn(session)
             return
+        # Apply the selected effort tier to the (now-ready) agent. No-op on the
+        # first build (already constructed with the tier model); performs a live
+        # same-endpoint model swap when the user changed effort mid-conversation.
+        _apply_effort_to_agent(session)
         _run_prompt_submit(rid, sid, session, text)
 
     threading.Thread(target=run_after_agent_ready, daemon=True).start()
@@ -7094,6 +7156,17 @@ def _(rid, params: dict) -> dict:
             capabilities=True,
             max_models=50,
         )
+        # Effort ladder for the composer's effort selector. The selected tier
+        # sets the primary chat model only; model rows above are unaffected.
+        try:
+            from robin.models import get_effort_tiers, get_default_effort
+            if isinstance(payload, dict):
+                payload["effort_tiers"] = get_effort_tiers()
+                payload["effort_current"] = (
+                    (session.get("effort") if session else None) or get_default_effort()
+                )
+        except Exception:
+            pass
         return _ok(rid, payload)
     except Exception as e:
         return _err(rid, 5033, str(e))

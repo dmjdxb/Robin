@@ -552,6 +552,9 @@ export interface Translations {
     startVoice: string
     documentMode: string
     documentModeOn: string
+    effortLabel: string
+    effortTitle: string
+    effortHint: string
     queueMessage: string
     stop: string
     send: string
