@@ -1205,11 +1205,9 @@ export function ChatBar({
         autoCorrect="off"
         className={cn(
           'min-h-(--composer-input-min-height) max-h-(--composer-input-max-height) overflow-y-auto whitespace-pre-wrap break-words [overflow-wrap:anywhere] bg-transparent pb-1 pr-1 pt-1 leading-normal text-foreground outline-none disabled:cursor-not-allowed',
-          // Match the conversation text size so the composer input scales with
-          // Appearance → Text size (--chat-font-scale); the empty:before
-          // placeholder inherits this. Without it the input stays small while
-          // message text scales up.
-          'text-[length:var(--conversation-text-font-size)]',
+          // Font-size scaling with Appearance → Text size is handled by the
+          // unlayered [data-slot='composer-rich-input'] rule in styles.css
+          // (a Tailwind utility here would be overridden by it).
           'empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/60',
           '**:data-ref-text:cursor-default',
           stacked && 'pl-3',

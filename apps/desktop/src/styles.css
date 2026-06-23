@@ -956,7 +956,10 @@ canvas {
 
 [data-slot='composer-rich-input'] {
   color: var(--ui-text-primary);
-  font-size: 0.8125rem;
+  /* Scale with Appearance → Text size (--chat-font-scale), matching message
+     text. This unlayered rule otherwise pins the input to a fixed size and
+     overrides Tailwind utilities, so the scaling must live here. */
+  font-size: var(--conversation-text-font-size);
 }
 
 [data-slot='composer-rich-input']:empty::before {
