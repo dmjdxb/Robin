@@ -295,10 +295,13 @@
     --composer-ring-strength: 1;
     --composer-surface-pad-x: 0.5rem;
     --composer-surface-pad-y: 0.3125rem;
-    --composer-input-min-height: 3.25rem;
-    --composer-input-max-height: 9.375rem;
+    /* Composer input sizes scale with the Appearance → Text size slider
+       (--chat-font-scale) so the resting box grows with the (now scaled) text
+       instead of clipping it. Single resting line; auto-grows to max. */
+    --composer-input-min-height: calc(1.625rem * var(--chat-font-scale, 1));
+    --composer-input-max-height: calc(9.375rem * var(--chat-font-scale, 1));
     --composer-input-inline-min-width: 8rem;
-    --composer-fallback-height: 4.375rem;
+    --composer-fallback-height: calc(2.75rem * var(--chat-font-scale, 1));
     --composer-measured-height: calc(0.5rem + var(--composer-shell-pad-block-end) + var(--composer-fallback-height));
     --composer-surface-measured-height: var(--composer-fallback-height);
     --thread-viewport-height: max(

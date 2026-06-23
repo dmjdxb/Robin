@@ -77,11 +77,11 @@ import { VoiceActivity, VoicePlaybackActivity } from './voice-activity'
 
 const COMPOSER_STACK_BREAKPOINT_PX = 320
 
-// The resting input is two lines tall (--composer-input-min-height 3.25rem +
-// 0.5rem vertical padding ≈ 60px). We only switch to the stacked layout once
-// the text grows past that doubled resting height (i.e. a third line), so the
-// taller single-row composer doesn't collapse to stacked at rest.
-const COMPOSER_INLINE_MAX_PX = 70
+// One editor line ≈ 28px at scale 1 (--composer-input-min-height 1.625rem +
+// 0.5rem padding); a second line clears ~36px → switch to the stacked layout.
+// This base is multiplied by the live --chat-font-scale at measure time, since
+// both the font and the min-height scale with Appearance → Text size.
+const COMPOSER_SINGLE_LINE_MAX_PX = 36
 
 const COMPOSER_FADE_BACKGROUND =
   'linear-gradient(to bottom, transparent, color-mix(in srgb, var(--dt-background) 10%, transparent))'
@@ -354,15 +354,18 @@ export function ChatBar({
       }
     }
 
-    // Expand once the input grows past its doubled resting height (~60px for
-    // the two-line min-height + padding); a third line clears ~70px. The
+    // Expand once the input has actually wrapped past a single line. The
     // observer only fires on real size changes, so this reads scrollHeight at
-    // most once per wrap (not per keystroke). We only ever expand here —
+    // most once per wrap (not per keystroke). The single-line threshold is
+    // scaled by --chat-font-scale so a larger Appearance text size doesn't
+    // false-trip the wrap detection at rest. We only ever expand here —
     // collapse is handled by the emptied-draft effect to avoid oscillating
     // across the wrap boundary as the input switches widths.
     const editor = editorRef.current
+    const chatFontScale =
+      Number.parseFloat(getComputedStyle(root).getPropertyValue('--chat-font-scale')) || 1
 
-    if (editor && editor.scrollHeight > COMPOSER_INLINE_MAX_PX) {
+    if (editor && editor.scrollHeight > COMPOSER_SINGLE_LINE_MAX_PX * chatFontScale) {
       setExpanded(true)
     }
 
@@ -1202,6 +1205,11 @@ export function ChatBar({
         autoCorrect="off"
         className={cn(
           'min-h-(--composer-input-min-height) max-h-(--composer-input-max-height) overflow-y-auto whitespace-pre-wrap break-words [overflow-wrap:anywhere] bg-transparent pb-1 pr-1 pt-1 leading-normal text-foreground outline-none disabled:cursor-not-allowed',
+          // Match the conversation text size so the composer input scales with
+          // Appearance → Text size (--chat-font-scale); the empty:before
+          // placeholder inherits this. Without it the input stays small while
+          // message text scales up.
+          'text-[length:var(--conversation-text-font-size)]',
           'empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/60',
           '**:data-ref-text:cursor-default',
           stacked && 'pl-3',
