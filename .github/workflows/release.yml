@@ -141,6 +141,46 @@ jobs:
             echo "release not ready, retrying ($i)..."; sleep 10
           done
 
+      # GUARD (download-link stability): publish version-LESS alias copies of
+      # each installer so external links — e.g. the EnergyIR site's "Download"
+      # button — can use a STABLE URL that never 404s when a new release becomes
+      # `latest`:
+      #   https://github.com/dmjdxb/Robin/releases/latest/download/Robin-mac-arm64.dmg
+      # Every release republishes these fixed names pointing at that version's
+      # installer. This is what prevents the "button redirects to the tag page
+      # instead of downloading" regression when a version is promoted.
+      # (The website button must point at these stable names — versioned
+      #  Robin-<version>-... links remain version-pinned and will break on bump.)
+      - name: Upload version-less alias installers
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: apps/desktop/release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          case "${{ matrix.platform }}" in
+            mac)   pairs=( "Robin-*-mac-arm64.dmg:Robin-mac-arm64.dmg"
+                           "Robin-*-mac-arm64.zip:Robin-mac-arm64.zip" ) ;;
+            win)   pairs=( "Robin-*-win-x64.exe:Robin-win-x64.exe"
+                           "Robin-*-win-x64.msi:Robin-win-x64.msi" ) ;;
+            linux) pairs=( "Robin-*-linux-x86_64.AppImage:Robin-linux-x86_64.AppImage"
+                           "Robin-*-linux-amd64.deb:Robin-linux-amd64.deb"
+                           "Robin-*-linux-x86_64.rpm:Robin-linux-x86_64.rpm" ) ;;
+            *)     pairs=() ;;
+          esac
+          for p in "${pairs[@]}"; do
+            glob="${p%%:*}"; stable="${p##*:}"
+            src="$(find . -type f -name "$glob" 2>/dev/null | head -1)"
+            if [ -z "$src" ]; then echo "no match for $glob (skip)"; continue; fi
+            cp "$src" "$stable"
+            for i in 1 2 3 4 5; do
+              if gh release upload "${{ github.ref_name }}" "$stable" --clobber --repo dmjdxb/Robin; then
+                echo "uploaded alias $stable (<- $src)"; break
+              fi
+              echo "release not ready, retrying ($i)..."; sleep 10
+            done
+          done
+
       - name: Publish SHA-256 checksums
         if: always()
         working-directory: apps/desktop
