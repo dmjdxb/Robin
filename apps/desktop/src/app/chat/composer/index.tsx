@@ -77,10 +77,11 @@ import { VoiceActivity, VoicePlaybackActivity } from './voice-activity'
 
 const COMPOSER_STACK_BREAKPOINT_PX = 320
 
-// A single editor line is ~28px (--composer-input-min-height 1.625rem + 0.5rem
-// vertical padding). Anything taller means the text wrapped to a second line,
-// which is when the composer should expand to the stacked layout.
-const COMPOSER_SINGLE_LINE_MAX_PX = 36
+// The resting input is two lines tall (--composer-input-min-height 3.25rem +
+// 0.5rem vertical padding ≈ 60px). We only switch to the stacked layout once
+// the text grows past that doubled resting height (i.e. a third line), so the
+// taller single-row composer doesn't collapse to stacked at rest.
+const COMPOSER_INLINE_MAX_PX = 70
 
 const COMPOSER_FADE_BACKGROUND =
   'linear-gradient(to bottom, transparent, color-mix(in srgb, var(--dt-background) 10%, transparent))'
@@ -353,15 +354,15 @@ export function ChatBar({
       }
     }
 
-    // Expand once the input has actually wrapped past a single line. The
+    // Expand once the input grows past its doubled resting height (~60px for
+    // the two-line min-height + padding); a third line clears ~70px. The
     // observer only fires on real size changes, so this reads scrollHeight at
-    // most once per wrap (not per keystroke). One line ≈ 28px (1.625rem
-    // min-height + padding); a second line clears ~36px. We only ever expand
-    // here — collapse is handled by the emptied-draft effect to avoid
-    // oscillating across the wrap boundary as the input switches widths.
+    // most once per wrap (not per keystroke). We only ever expand here —
+    // collapse is handled by the emptied-draft effect to avoid oscillating
+    // across the wrap boundary as the input switches widths.
     const editor = editorRef.current
 
-    if (editor && editor.scrollHeight > COMPOSER_SINGLE_LINE_MAX_PX) {
+    if (editor && editor.scrollHeight > COMPOSER_INLINE_MAX_PX) {
       setExpanded(true)
     }
 
