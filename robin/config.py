@@ -1325,13 +1325,16 @@ DEFAULT_CONFIG = {
             "extra_body": {},
         },
         # Curator — skill-usage review fork. Timeout is generous because the
-        # review pass can take several minutes on reasoning models (umbrella
-        # building over hundreds of candidate skills). "auto" = use main chat
-        # model; override via `hermes model` → auxiliary → Curator to route
-        # to a cheaper aux model (e.g. openrouter google/gemini-3-flash-preview).
+        # review pass can take several minutes (umbrella building over hundreds
+        # of candidate skills). Defaults to the cheap aux model (gpt-oss-120b)
+        # like the other safe-text aux tasks — the review is non-destructive
+        # (archive-only, pinned-exempt), so the cheap model is a safe fit and
+        # avoids running this periodic background loop on the flagship. Set to
+        # "" to fall back to the main chat model; override via
+        # `hermes model` → auxiliary → Curator.
         "curator": {
             "provider": "auto",
-            "model": "",
+            "model": "openai/gpt-oss-120b",
             "base_url": "",
             "api_key": "",
             "timeout": 600,
@@ -1701,8 +1704,14 @@ DEFAULT_CONFIG = {
     # Uses the same runtime provider resolution as CLI/gateway startup, so all
     # configured providers (OpenRouter, EnergyIR, Z.ai, Kimi, etc.) are supported.
     "delegation": {
-        "model": "",       # e.g. "google/gemini-3-flash-preview" (empty = inherit parent model)
-        "provider": "",    # e.g. "openrouter" (empty = inherit parent provider + credentials)
+        # Cheap-but-capable default so parallel subagents don't inherit a Max
+        # parent's flagship (deepseek-v4-pro), which multiplies cost across
+        # max_concurrent_children. Balanced (flash) keeps subagents capable
+        # enough for real multi-step tool work — avoid the cheapest tier here,
+        # since underpowered subagents can loop/retry and cost MORE. Set to ""
+        # to inherit the parent model instead.
+        "model": "deepseek/deepseek-v4-flash",
+        "provider": "",    # empty = inherit parent provider + credentials (same endpoint as the swapped-in model)
         "base_url": "",    # direct OpenAI-compatible endpoint for subagents
         "api_key": "",     # API key for delegation.base_url (falls back to OPENAI_API_KEY)
         "api_mode": "",    # wire protocol for delegation.base_url: "chat_completions",

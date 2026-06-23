@@ -995,7 +995,9 @@ def test_curator_slot_is_canonical_aux_task():
         "curator missing from DEFAULT_CONFIG['auxiliary']"
     slot = DEFAULT_CONFIG["auxiliary"]["curator"]
     assert slot["provider"] == "auto"
-    assert slot["model"] == ""
+    # Defaults to the cheap aux model so the periodic, non-destructive skill
+    # review runs off the flagship (set "" to fall back to the main chat model).
+    assert slot["model"] == "openai/gpt-oss-120b"
     assert slot["timeout"] > 0, "curator timeout should be set (reviews run long)"
 
     # 2. robin/main.py _AUX_TASKS — CLI picker
