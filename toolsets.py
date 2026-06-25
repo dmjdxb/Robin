@@ -74,6 +74,37 @@ _HERMES_CORE_TOOLS = [
     "computer_use",
 ]
 
+# Progressive-tool-disclosure never-defer set (used ONLY by tools/tool_search.py).
+#
+# This is intentionally a *small subset* of _HERMES_CORE_TOOLS, NOT the whole
+# list. Historically tool_search treated every _HERMES_CORE_TOOLS entry as
+# "core / never defer" — but since the hermes-cli toolset *is* _HERMES_CORE_TOOLS,
+# that made every enabled tool non-deferrable and tool_search a guaranteed no-op
+# (nothing was ever deferred, so the ~10k-token tool block was re-sent verbatim
+# every turn). Decoupling the two lets the everyday essentials below stay loaded
+# upfront while heavier, occasionally-used tools (delegate_task, session_search,
+# skill_*, ask_document, vision, tts, send_message, browser_*, kanban_*, ha_*,
+# cronjob, …) collapse behind tool_search/tool_describe/tool_call and surface on
+# demand. Availability is unchanged — deferred tools are still callable; the model
+# just discovers them via a search round-trip instead of paying for their full
+# schema every turn.
+#
+# Keep this list to genuinely turn-by-turn essentials: anything the model reaches
+# for constantly belongs here (a discovery round-trip for a hot tool is a net
+# loss); anything used occasionally should defer.
+_TOOL_SEARCH_NEVER_DEFER = [
+    # File manipulation — the agent touches these constantly
+    "read_file", "write_file", "patch", "search_files",
+    # Shell + long-running processes
+    "terminal", "process",
+    # Code/science execution
+    "execute_code",
+    # Memory, planning, and conversational control (all cheap + frequent)
+    "memory", "todo", "clarify",
+    # Web search is the common research entrypoint (web_extract defers)
+    "web_search",
+]
+
 # Webhook events may originate from untrusted third-party content (for example,
 # public PR titles/comments). Keep the default webhook toolset intentionally
 # constrained to avoid local file/system execution by prompt injection.
