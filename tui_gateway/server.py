@@ -2522,7 +2522,11 @@ def _apply_effort_to_agent(session: dict) -> None:
     effort = session.get("effort")
     if agent is None or not effort:
         return
-    if (getattr(agent, "provider", "") or "").strip().lower() != "nous":
+    # Effort-tier model swaps are valid for any provider whose tiers all share
+    # one endpoint. Robin runs on the EnergyIR gateway via the "together"
+    # provider (DeepInfra upstream serves all three tier models — gpt-oss-20b,
+    # V4-Flash, V4-Pro); "nous" is the legacy id kept for back-compat.
+    if (getattr(agent, "provider", "") or "").strip().lower() not in ("nous", "together"):
         return
     try:
         from robin.models import effort_to_model

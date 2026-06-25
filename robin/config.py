@@ -1356,7 +1356,7 @@ DEFAULT_CONFIG = {
             {
                 "id": "quick",
                 "label": "Quick",
-                "model": "openai/gpt-oss-120b",
+                "model": "openai/gpt-oss-20b",
                 "provider": "auto",
                 "blurb": "Fast, low cost — everyday questions",
                 "cost_hint": 1,         # relative cost weight (1=cheapest) for UI
@@ -1364,7 +1364,7 @@ DEFAULT_CONFIG = {
             {
                 "id": "balanced",
                 "label": "Balanced",
-                "model": "deepseek/deepseek-v4-flash",
+                "model": "deepseek-ai/DeepSeek-V4-Flash",
                 "provider": "auto",
                 "blurb": "Great for docs & writing",
                 "cost_hint": 2,
@@ -1372,7 +1372,7 @@ DEFAULT_CONFIG = {
             {
                 "id": "max",
                 "label": "Max effort",
-                "model": "deepseek/deepseek-v4-pro",
+                "model": "deepseek-ai/DeepSeek-V4-Pro",
                 "provider": "auto",
                 "blurb": "Deep reasoning — uses your limits faster",
                 "cost_hint": 3,

@@ -1201,11 +1201,11 @@ def get_default_model_for_provider(provider: str) -> str:
 # network-free fallback used when that block is absent or malformed.
 # ---------------------------------------------------------------------------
 EFFORT_TIERS_FALLBACK: list[dict[str, Any]] = [
-    {"id": "quick", "label": "Quick", "model": "openai/gpt-oss-120b",
+    {"id": "quick", "label": "Quick", "model": "openai/gpt-oss-20b",
      "provider": "auto", "blurb": "Fast, low cost — everyday questions", "cost_hint": 1},
-    {"id": "balanced", "label": "Balanced", "model": "deepseek/deepseek-v4-flash",
+    {"id": "balanced", "label": "Balanced", "model": "deepseek-ai/DeepSeek-V4-Flash",
      "provider": "auto", "blurb": "Great for docs & writing", "cost_hint": 2},
-    {"id": "max", "label": "Max effort", "model": "deepseek/deepseek-v4-pro",
+    {"id": "max", "label": "Max effort", "model": "deepseek-ai/DeepSeek-V4-Pro",
      "provider": "auto", "blurb": "Deep reasoning — uses your limits faster", "cost_hint": 3},
 ]
 _DEFAULT_EFFORT_FALLBACK = "balanced"

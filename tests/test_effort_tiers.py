@@ -31,9 +31,9 @@ class TestEffortTiers:
 
     def test_effort_to_model_each_tier(self):
         from robin.models import effort_to_model
-        assert effort_to_model("quick") == ("openai/gpt-oss-120b", "auto")
-        assert effort_to_model("balanced") == ("deepseek/deepseek-v4-flash", "auto")
-        assert effort_to_model("max") == ("deepseek/deepseek-v4-pro", "auto")
+        assert effort_to_model("quick") == ("openai/gpt-oss-20b", "auto")
+        assert effort_to_model("balanced") == ("deepseek-ai/DeepSeek-V4-Flash", "auto")
+        assert effort_to_model("max") == ("deepseek-ai/DeepSeek-V4-Pro", "auto")
 
     def test_unknown_effort_falls_back_to_default(self):
         from robin.models import effort_to_model, get_default_effort, get_effort_tier
@@ -50,11 +50,12 @@ class TestEffortTiers:
         from robin.models import get_effort_tier
         assert get_effort_tier("balanced")["cost_hint"] < get_effort_tier("max")["cost_hint"]
 
-    def test_aux_invariant_quick_matches_aux_model(self):
-        """Quick tier reuses the same cheap model the aux tasks already use,
-        confirming it is a served slug in the nous catalog."""
+    def test_quick_tier_is_cheap_floor(self):
+        """Quick tier is the cheapest served slug on the DeepInfra upstream
+        (gpt-oss-20b) — the low-cost floor for everyday questions. (Intentionally
+        cheaper than the 120b aux model; the two are no longer coupled.)"""
         from robin.models import effort_to_model
-        assert effort_to_model("quick")[0] == "openai/gpt-oss-120b"
+        assert effort_to_model("quick")[0] == "openai/gpt-oss-20b"
 
 
 class TestEffortTiersConfigOverride:
