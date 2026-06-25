@@ -127,3 +127,6 @@ RELEASE_v*.md
 # Bundled backend build artifacts (generated in CI)
 apps/desktop/backend.tar.gz
 .backend-bundle/
+
+# graphify knowledge-graph output (regenerable; contains machine-specific paths)
+graphify-out/
