@@ -27,7 +27,9 @@ The `nous`/EnergyIR endpoint uses **OpenRouter-style slugs** (`vendor/model`), c
 
 Cost order holds (Quick ≪ Flash < Pro). Exact per-token prices are EnergyIR's (their proxy, not Together's public list); the slugs are catalog-confirmed so no live `/v1/models` check is required to ship. Tier slugs live in config and are trivially retunable.
 
-**Invariant:** the effort tier sets the **primary/chat model only**. The `auxiliary.*` tasks (web_extract, mcp, title_generation, skills_hub, triage_specifier, kanban_decomposer, profile_describer) remain pinned to `openai/gpt-oss-120b` and are NOT affected — that routing already exists (`robin/config.py:1227-1340`) and is independent of the primary model.
+**Invariant:** the effort tier sets the **primary/chat model only**. The `auxiliary.*` tasks (web_extract, mcp, title_generation, skills_hub, triage_specifier, kanban_decomposer, profile_describer, compression, approval, curator) are routed independently (`robin/config.py:1227-1340`) and are NOT affected by the effort tier.
+
+> **Update 2026-06-28 (shipped):** those auxiliary tasks — plus the delegate/Heavy sub-agent workers — now run on `deepseek-ai/DeepSeek-V4-Flash` (was `openai/gpt-oss-120b`; the delegation id was also malformed as `deepseek/deepseek-v4-flash` → reverted to V4-Pro). Reason: the gateway's passthrough downgrade only lands if the requested model is in the signed recipe's `aux_models` allow-list. Robin's recipe was updated to permit V4-Flash (kept the gpt-oss models so existing installs don't regress), so background work and Heavy workers now bill at V4-Flash (~13× cheaper) instead of the flagship. Vision stays on the main model.
 
 ---
 
