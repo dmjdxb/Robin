@@ -1227,7 +1227,7 @@ DEFAULT_CONFIG = {
     "auxiliary": {
         "vision": {
             "provider": "auto",    # auto | openrouter | nous | codex | custom
-            "model": "",           # e.g. "google/gemini-2.5-flash", "gpt-4o"
+            "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",  # vision-language model (image input) via DeepInfra; 235B variant available
             "base_url": "",        # direct OpenAI-compatible endpoint (takes precedence over provider)
             "api_key": "",         # API key for base_url (falls back to OPENAI_API_KEY)
             "timeout": 120,        # seconds — LLM API call timeout; vision payloads need generous timeout
