@@ -1236,7 +1236,7 @@ DEFAULT_CONFIG = {
         },
         "web_extract": {
             "provider": "auto",
-            "model": "openai/gpt-oss-120b",
+            "model": "deepseek-ai/DeepSeek-V4-Flash",
             "base_url": "",
             "api_key": "",
             "timeout": 360,        # seconds (6min) — per-attempt LLM summarization timeout; increase for slow local models
@@ -1244,7 +1244,7 @@ DEFAULT_CONFIG = {
         },
         "compression": {
             "provider": "auto",
-            "model": "",
+            "model": "deepseek-ai/DeepSeek-V4-Flash",
             "base_url": "",
             "api_key": "",
             "timeout": 120,        # seconds — compression summarises large contexts; increase for local models
@@ -1256,7 +1256,7 @@ DEFAULT_CONFIG = {
         # values in user config.yaml files are harmless leftovers and ignored.
         "skills_hub": {
             "provider": "auto",
-            "model": "openai/gpt-oss-120b",
+            "model": "deepseek-ai/DeepSeek-V4-Flash",
             "base_url": "",
             "api_key": "",
             "timeout": 30,
@@ -1264,7 +1264,7 @@ DEFAULT_CONFIG = {
         },
         "approval": {
             "provider": "auto",
-            "model": "",           # fast/cheap model recommended (e.g. gemini-flash, haiku)
+            "model": "deepseek-ai/DeepSeek-V4-Flash",           # fast/cheap model recommended (e.g. gemini-flash, haiku)
             "base_url": "",
             "api_key": "",
             "timeout": 30,
@@ -1272,7 +1272,7 @@ DEFAULT_CONFIG = {
         },
         "mcp": {
             "provider": "auto",
-            "model": "openai/gpt-oss-120b",
+            "model": "deepseek-ai/DeepSeek-V4-Flash",
             "base_url": "",
             "api_key": "",
             "timeout": 30,
@@ -1280,7 +1280,7 @@ DEFAULT_CONFIG = {
         },
         "title_generation": {
             "provider": "auto",
-            "model": "openai/gpt-oss-120b",
+            "model": "deepseek-ai/DeepSeek-V4-Flash",
             "base_url": "",
             "api_key": "",
             "timeout": 30,
@@ -1293,7 +1293,7 @@ DEFAULT_CONFIG = {
         # model is overkill for short spec expansion.
         "triage_specifier": {
             "provider": "auto",
-            "model": "openai/gpt-oss-120b",
+            "model": "deepseek-ai/DeepSeek-V4-Flash",
             "base_url": "",
             "api_key": "",
             "timeout": 120,
@@ -1306,7 +1306,7 @@ DEFAULT_CONFIG = {
         # uses more tokens than the specifier so allow more headroom.
         "kanban_decomposer": {
             "provider": "auto",
-            "model": "openai/gpt-oss-120b",
+            "model": "deepseek-ai/DeepSeek-V4-Flash",
             "base_url": "",
             "api_key": "",
             "timeout": 180,
@@ -1318,7 +1318,7 @@ DEFAULT_CONFIG = {
         # auto-generate button. Short, cheap call.
         "profile_describer": {
             "provider": "auto",
-            "model": "openai/gpt-oss-120b",
+            "model": "deepseek-ai/DeepSeek-V4-Flash",
             "base_url": "",
             "api_key": "",
             "timeout": 60,
@@ -1334,7 +1334,7 @@ DEFAULT_CONFIG = {
         # `hermes model` → auxiliary → Curator.
         "curator": {
             "provider": "auto",
-            "model": "openai/gpt-oss-120b",
+            "model": "deepseek-ai/DeepSeek-V4-Flash",
             "base_url": "",
             "api_key": "",
             "timeout": 600,
@@ -1710,7 +1710,7 @@ DEFAULT_CONFIG = {
         # enough for real multi-step tool work — avoid the cheapest tier here,
         # since underpowered subagents can loop/retry and cost MORE. Set to ""
         # to inherit the parent model instead.
-        "model": "deepseek/deepseek-v4-flash",
+        "model": "deepseek-ai/DeepSeek-V4-Flash",
         "provider": "",    # empty = inherit parent provider + credentials (same endpoint as the swapped-in model)
         "base_url": "",    # direct OpenAI-compatible endpoint for subagents
         "api_key": "",     # API key for delegation.base_url (falls back to OPENAI_API_KEY)
