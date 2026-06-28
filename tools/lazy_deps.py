@@ -188,6 +188,11 @@ LAZY_DEPS: dict[str, tuple[str, ...]] = {
     "document.docx": ("python-docx==1.1.2",),
     "document.pptx": ("python-pptx==1.0.2",),
     "document.xlsx": ("openpyxl==3.1.5",),
+    # Office-mode rendering — rasterise a document to per-page images for the
+    # vision QA gate. PyMuPDF is self-contained (~25MB, no system libs), so it
+    # ships zero-setup; LibreOffice (for PPTX/DOCX -> PDF) is provisioned
+    # separately (robin/runtime_libreoffice.py). Installed on first office use.
+    "document.render": ("PyMuPDF==1.26.3",),
 }
 
 
