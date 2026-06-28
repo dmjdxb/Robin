@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 Document = Pt = Inches = RGBColor = None
@@ -92,6 +93,145 @@ def _as_list(v: Any) -> list[str]:
     if isinstance(v, str):
         return [v]
     return [str(x) for x in v]
+
+
+# ── markdown → doc spec (deterministic; the fast path for "make a docx from this .md") ──
+import re as _re
+
+_EMPHASIS = [
+    (_re.compile(r"!\[[^\]]*\]\([^)]*\)"), ""),          # drop image markdown (handled separately)
+    (_re.compile(r"\[([^\]]+)\]\([^)]*\)"), r"\1"),       # [text](url) -> text
+    (_re.compile(r"`([^`]*)`"), r"\1"),                    # `code` -> code
+    (_re.compile(r"\*\*([^*]+)\*\*"), r"\1"),              # **bold** -> bold
+    (_re.compile(r"\*([^*]+)\*"), r"\1"),                  # *italic* -> italic
+    (_re.compile(r"__([^_]+)__"), r"\1"),
+    (_re.compile(r"~~([^~]+)~~"), r"\1"),
+]
+
+
+def _strip_inline(s: str) -> str:
+    out = s.strip()
+    for pat, repl in _EMPHASIS:
+        out = pat.sub(repl, out)
+    return out.strip()
+
+
+_IMG_RE = _re.compile(r"!\[(?P<alt>[^\]]*)\]\((?P<src>[^)\s]+)(?:\s+\"[^\"]*\")?\)")
+
+
+def markdown_to_spec(md: str, *, theme: str = "light", title: str | None = None) -> dict:
+    """Parse markdown into a doc spec (title + ordered blocks) the builder consumes.
+
+    Deterministic and dependency-free — no model reasoning needed to lay out a
+    document from a markdown source. Supports: # headings, paragraphs, -/*/+ and
+    numbered lists, GFM tables, ![alt](path) images, fenced code (as paragraphs),
+    and blockquotes. Inline emphasis/links are flattened to clean text.
+    """
+    lines = md.replace("\r\n", "\n").split("\n")
+    # strip YAML frontmatter
+    if lines and lines[0].strip() == "---":
+        for i in range(1, len(lines)):
+            if lines[i].strip() == "---":
+                lines = lines[i + 1 :]
+                break
+    blocks: list[dict] = []
+    para: list[str] = []
+    bullets: list[str] = []
+    doc_title = title
+
+    def flush_para():
+        nonlocal para
+        if para:
+            text = _strip_inline(" ".join(p.strip() for p in para).strip())
+            if text:
+                blocks.append({"type": "paragraph", "text": text})
+            para = []
+
+    def flush_bullets():
+        nonlocal bullets
+        if bullets:
+            blocks.append({"type": "bullets", "items": bullets})
+            bullets = []
+
+    i = 0
+    n = len(lines)
+    while i < n:
+        raw = lines[i]
+        line = raw.strip()
+        # fenced code block → collect verbatim as a paragraph
+        if line.startswith("```"):
+            flush_para(); flush_bullets()
+            code: list[str] = []
+            i += 1
+            while i < n and not lines[i].strip().startswith("```"):
+                code.append(lines[i]); i += 1
+            i += 1
+            if code:
+                blocks.append({"type": "paragraph", "text": "\n".join(code)})
+            continue
+        # standalone image
+        m = _IMG_RE.match(line)
+        if m:
+            flush_para(); flush_bullets()
+            blocks.append({"type": "image", "path": m.group("src"), "caption": _strip_inline(m.group("alt"))})
+            i += 1
+            continue
+        # GFM table: a header row followed by a |---|---| divider
+        if line.startswith("|") and i + 1 < n and _re.match(r"^\s*\|?[\s:\-|]+\|?\s*$", lines[i + 1]) and "-" in lines[i + 1]:
+            flush_para(); flush_bullets()
+            def _cells(r: str) -> list[str]:
+                return [_strip_inline(c) for c in r.strip().strip("|").split("|")]
+            headers = _cells(line)
+            rows = []
+            i += 2
+            while i < n and lines[i].strip().startswith("|"):
+                rows.append(_cells(lines[i])); i += 1
+            blocks.append({"type": "table", "headers": headers, "rows": rows})
+            continue
+        # headings
+        hm = _re.match(r"^(#{1,6})\s+(.*)$", line)
+        if hm:
+            flush_para(); flush_bullets()
+            level = len(hm.group(1))
+            text = _strip_inline(hm.group(2))
+            if level == 1 and doc_title is None:
+                doc_title = text
+            else:
+                blocks.append({"type": "heading", "text": text, "level": 1 if level <= 2 else 2})
+            i += 1
+            continue
+        # list items
+        lm = _re.match(r"^\s*(?:[-*+]|\d+[.)])\s+(.*)$", raw)
+        if lm:
+            flush_para()
+            bullets.append(_strip_inline(lm.group(1)))
+            i += 1
+            continue
+        # blockquote → paragraph
+        if line.startswith(">"):
+            flush_bullets()
+            para.append(_strip_inline(line.lstrip(">").strip()))
+            i += 1
+            continue
+        # blank line → paragraph/bullets break
+        if not line:
+            flush_para(); flush_bullets()
+            i += 1
+            continue
+        # horizontal rule → ignore (avoid stray pagebreaks/blank pages)
+        if _re.match(r"^([-*_])\1{2,}$", line):
+            flush_para(); flush_bullets()
+            i += 1
+            continue
+        # default: paragraph text
+        flush_bullets()
+        para.append(line)
+        i += 1
+    flush_para(); flush_bullets()
+    spec: dict = {"theme": theme, "blocks": blocks}
+    if doc_title:
+        spec["title"] = doc_title
+    return spec
 
 
 def build_doc(spec: dict, out_path: str) -> dict:
@@ -186,56 +326,84 @@ def build_doc(spec: dict, out_path: str) -> dict:
 BUILD_DOCUMENT_SCHEMA = {
     "name": "build_document",
     "description": (
-        "Build a polished .docx from a CONTENT spec using designed templates that own all "
-        "layout/styles/margins — never hand-write python-docx. You supply "
-        "{title, subtitle?, theme: 'light'|'dark', blocks:[...]}; block types: heading "
-        "{text, level:1|2}, paragraph {text}, bullets {items:[...]}, table {headers:[...], "
-        "rows:[[...]]}, image {path, caption?, width_in?}, pagebreak. Embed illustrations with "
-        "image blocks. After building, ALWAYS run render_check and fix flagged pages before delivering."
+        "Build a polished .docx using designed templates that own all layout/styles/margins — "
+        "never hand-write python-docx. FAST PATH: pass `markdown_path` (or `markdown` text) to "
+        "convert an existing markdown source straight into a clean document in one call — no need "
+        "to write a spec. Or pass a CONTENT `spec`: {title, subtitle?, theme:'light'|'dark', "
+        "blocks:[...]}; block types: heading {text, level:1|2}, paragraph {text}, bullets {items}, "
+        "table {headers, rows}, image {path, caption?, width_in?}, pagebreak. Embed illustrations "
+        "with image blocks. Set verify=true to auto-run the render_check vision gate and get a "
+        "pass/fail verdict back. Provide exactly one of markdown_path | markdown | spec."
     ),
     "parameters": {
         "type": "object",
         "properties": {
-            "spec": {
-                "type": "object",
-                "description": "The document content spec (see description for the schema).",
-            },
+            "markdown_path": {"type": "string", "description": "Path to a .md/.txt source to convert (fast path)."},
+            "markdown": {"type": "string", "description": "Markdown text to convert (fast path)."},
+            "spec": {"type": "object", "description": "A content spec (see description) for full control."},
             "out_path": {"type": "string", "description": "Absolute output path ending in .docx"},
+            "theme": {"type": "string", "description": "'light' (default) or 'dark' — used with markdown input."},
+            "verify": {"type": "boolean", "description": "If true, auto-run render_check and include the verdict."},
         },
-        "required": ["spec", "out_path"],
+        "required": ["out_path"],
     },
 }
 
 
-async def _build_document_handler(args: dict, **_kw) -> str:
+def _spec_from_args(args: dict) -> dict | str:
+    """Resolve a doc spec from markdown_path | markdown | spec. Returns spec dict or error str."""
+    theme = str(args.get("theme") or "light")
+    md_path = str(args.get("markdown_path") or "").strip()
+    md_text = args.get("markdown")
     spec = args.get("spec")
-    out_path = str(args.get("out_path") or "").strip()
+    if md_path:
+        try:
+            md_text = Path(os.path.expanduser(md_path)).read_text(encoding="utf-8")
+        except Exception as e:  # noqa: BLE001
+            return f"could not read markdown_path: {e}"
+    if isinstance(md_text, str) and md_text.strip():
+        return markdown_to_spec(md_text, theme=theme)
     if isinstance(spec, str):
         try:
             spec = json.loads(spec)
         except Exception:
-            return json.dumps({"error": "spec must be a JSON object"})
-    if not isinstance(spec, dict):
-        return json.dumps({"error": "spec must be an object with title/blocks"})
+            return "spec must be a JSON object"
+    if isinstance(spec, dict):
+        spec.setdefault("theme", theme)
+        return spec
+    return "provide one of markdown_path, markdown, or spec"
+
+
+async def _build_document_handler(args: dict, **_kw) -> str:
+    out_path = str(args.get("out_path") or "").strip()
     if not out_path.lower().endswith(".docx"):
         return json.dumps({"error": "out_path must end in .docx"})
+    spec = _spec_from_args(args)
+    if isinstance(spec, str):
+        return json.dumps({"error": spec})
     try:
         res = build_doc(spec, out_path)
     except Exception as e:  # noqa: BLE001
         return json.dumps({"error": f"build_document failed: {e}"})
+    if args.get("verify"):
+        try:
+            from tools.document_qa import check_document
+            res["render_check"] = await check_document(out_path)
+        except Exception as e:  # noqa: BLE001
+            res["render_check"] = {"error": f"verify failed: {e}"}
     return json.dumps(res)
 
 
-try:  # best-effort registration (kept importable in tests)
-    from tools.registry import registry
+# Top-level registration so discover_builtin_tools() (which only detects a top-level
+# registry.register call) actually picks this up — a try/except-wrapped call is invisible
+# to discovery, which is why the office tools were never registered/callable before.
+from tools.registry import registry  # noqa: E402
 
-    registry.register(
-        name="build_document",
-        toolset="office",
-        schema=BUILD_DOCUMENT_SCHEMA,
-        handler=_build_document_handler,
-        check_fn=lambda: True,  # python-docx lazy-installs on first use
-        emoji="📄",
-    )
-except Exception:  # pragma: no cover
-    pass
+registry.register(
+    name="build_document",
+    toolset="office",
+    schema=BUILD_DOCUMENT_SCHEMA,
+    handler=_build_document_handler,
+    check_fn=lambda: True,  # python-docx lazy-installs on first use
+    emoji="📄",
+)

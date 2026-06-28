@@ -144,16 +144,15 @@ async def _handler(args: dict, **_kw) -> str:
     return json.dumps(res)
 
 
-try:  # registration is best-effort so the module stays importable in tests
-    from tools.registry import registry
+# Top-level registration so discover_builtin_tools() picks this up — a try/except-wrapped
+# call is invisible to discovery, so render_check was never actually registered/callable.
+from tools.registry import registry  # noqa: E402
 
-    registry.register(
-        name="render_check",
-        toolset="office",
-        schema=RENDER_CHECK_SCHEMA,
-        handler=_handler,
-        check_fn=_check_fn,
-        emoji="🔎",
-    )
-except Exception:  # pragma: no cover
-    pass
+registry.register(
+    name="render_check",
+    toolset="office",
+    schema=RENDER_CHECK_SCHEMA,
+    handler=_handler,
+    check_fn=_check_fn,
+    emoji="🔎",
+)

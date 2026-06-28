@@ -1732,8 +1732,11 @@ DEFAULT_CONFIG = {
                                        # Lowered from 600: a child that times out produces NOTHING
                                        # yet bills every call it made first — bound the blast radius.
                                        # Raise deliberately for genuinely long reasoning tasks.
-        "reasoning_effort": "",  # reasoning effort for subagents: "xhigh", "high", "medium",
-                                 # "low", "minimal", "none" (empty = inherit parent's level)
+        "reasoning_effort": "low",  # subagents draft sections / do mechanical work — keep them
+                                 # cheap+fast. Empty "" would INHERIT a Max-effort parent's deep
+                                 # reasoning, multiplied across max_concurrent_children (the
+                                 # "cheap parallel workers" promise was silently broken). Values:
+                                 # "xhigh","high","medium","low","minimal","none" ("" = inherit).
         "max_concurrent_children": 6,  # max parallel children per batch; floor of 1 enforced, no ceiling (6 powers the office-mode "team of writers" fan-out)
         # Orchestrator role controls (see tools/delegate_tool.py:_get_max_spawn_depth
         # and _get_orchestrator_enabled).  Floored at 1, no upper ceiling —
