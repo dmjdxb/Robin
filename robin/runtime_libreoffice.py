@@ -16,6 +16,7 @@ a clear, actionable error otherwise.
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import os
 import platform
@@ -76,8 +77,35 @@ _MANIFEST: dict[tuple[str, str], dict] = {
 }
 
 
+# A remote manifest (published alongside the bundles in CI) lets us point the
+# provisioner at new bundle URLs/versions WITHOUT a Robin code change. It is merged
+# OVER the embedded _MANIFEST; a 404/offline fetch falls back to embedded.
+_DEFAULT_MANIFEST_URL = (
+    "https://github.com/dmjdxb/Robin/releases/download/libreoffice-runtime/manifest.json"
+)
+_manifest_cache: Optional[dict] = None
+
+
+def _load_remote_manifest() -> dict:
+    url = os.environ.get("ROBIN_LIBREOFFICE_MANIFEST_URL", _DEFAULT_MANIFEST_URL)
+    try:
+        with urllib.request.urlopen(url, timeout=15) as r:  # noqa: S310
+            data = json.loads(r.read().decode("utf-8"))
+    except Exception:  # noqa: BLE001 — offline / not yet published → use embedded
+        return {}
+    out: dict = {}
+    for key, val in (data or {}).items():
+        parts = str(key).split("|")  # "Darwin|arm64"
+        if len(parts) == 2 and isinstance(val, dict):
+            out[(parts[0], parts[1])] = val
+    return out
+
+
 def _manifest_entry() -> Optional[dict]:
-    return _MANIFEST.get((platform.system(), platform.machine()))
+    global _manifest_cache
+    if _manifest_cache is None:
+        _manifest_cache = {**_MANIFEST, **_load_remote_manifest()}
+    return _manifest_cache.get((platform.system(), platform.machine()))
 
 
 def _download(url: str, dest: Path, progress: Optional[ProgressFn]) -> None:

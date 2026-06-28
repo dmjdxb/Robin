@@ -56,6 +56,23 @@ def test_ensure_returns_existing_without_download(monkeypatch):
     assert rlo.ensure_libreoffice() == "/fake/soffice"
 
 
-def test_manifest_entry_is_dict_or_none():
+def test_manifest_entry_is_dict_or_none(monkeypatch):
+    monkeypatch.setattr(rlo, "_load_remote_manifest", lambda: {})  # don't hit the network
+    rlo._manifest_cache = None
     e = rlo._manifest_entry()
+    rlo._manifest_cache = None
     assert e is None or isinstance(e, dict)
+
+
+def test_remote_manifest_merges_over_embedded(monkeypatch):
+    import platform
+
+    key = (platform.system(), platform.machine())
+    fake = {key: {"url": "https://x/bundle.tgz", "sha256": "abc", "archive": "tar.gz"}}
+    monkeypatch.setattr(rlo, "_load_remote_manifest", lambda: fake)
+    rlo._manifest_cache = None
+    try:
+        e = rlo._manifest_entry()
+        assert e and e["url"] == "https://x/bundle.tgz"
+    finally:
+        rlo._manifest_cache = None  # leave clean for other tests
