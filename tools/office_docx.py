@@ -19,6 +19,8 @@ Doc spec (JSON):
 """
 from __future__ import annotations
 
+import json
+import os
 from dataclasses import dataclass
 from typing import Any
 
@@ -145,6 +147,27 @@ def build_doc(spec: dict, out_path: str) -> dict:
                     cells = t.add_row().cells
                     for c, val in zip(cells, _as_list(r)):
                         c.text = str(val)
+        elif bt == "image":
+            # Embed an illustration/picture file, centered, sized to the page
+            # content width (the template owns sizing — the model never sets
+            # raw EMU). An optional italic caption sits beneath it.
+            img_path = str(b.get("path", "")).strip()
+            if not img_path or not os.path.exists(img_path):
+                warnings.append(f"block {i}: image not found: {img_path!r}")
+            else:
+                try:
+                    from docx.enum.text import WD_ALIGN_PARAGRAPH
+                    w = max(1.0, min(6.5, float(b.get("width_in", 6.0))))  # clamp to usable width
+                    doc.add_picture(img_path, width=Inches(w))
+                    doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    cap = str(b.get("caption", "")).strip()
+                    if cap:
+                        p = doc.add_paragraph(cap)
+                        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                        for run in p.runs:
+                            run.italic = True
+                except Exception as e:  # noqa: BLE001 — never crash the whole doc on one image
+                    warnings.append(f"block {i}: image embed failed: {e}")
         elif bt == "pagebreak":
             doc.add_page_break()
         else:
@@ -153,3 +176,66 @@ def build_doc(spec: dict, out_path: str) -> dict:
 
     doc.save(out_path)
     return {"path": out_path, "blocks": len(blocks), "warnings": warnings}
+
+
+# ── in-process tool: build_document ────────────────────────────────────────────
+# Registered as a TOOL (not a terminal script) so it runs in the Robin backend
+# where python-docx auto-installs via lazy_deps. A terminal `python build_docx.py`
+# runs the user's system Python, which has neither the `tools` package nor
+# python-docx — the v1.2.17 install failure (ModuleNotFoundError: No module 'docx').
+BUILD_DOCUMENT_SCHEMA = {
+    "name": "build_document",
+    "description": (
+        "Build a polished .docx from a CONTENT spec using designed templates that own all "
+        "layout/styles/margins — never hand-write python-docx. You supply "
+        "{title, subtitle?, theme: 'light'|'dark', blocks:[...]}; block types: heading "
+        "{text, level:1|2}, paragraph {text}, bullets {items:[...]}, table {headers:[...], "
+        "rows:[[...]]}, image {path, caption?, width_in?}, pagebreak. Embed illustrations with "
+        "image blocks. After building, ALWAYS run render_check and fix flagged pages before delivering."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "spec": {
+                "type": "object",
+                "description": "The document content spec (see description for the schema).",
+            },
+            "out_path": {"type": "string", "description": "Absolute output path ending in .docx"},
+        },
+        "required": ["spec", "out_path"],
+    },
+}
+
+
+async def _build_document_handler(args: dict, **_kw) -> str:
+    spec = args.get("spec")
+    out_path = str(args.get("out_path") or "").strip()
+    if isinstance(spec, str):
+        try:
+            spec = json.loads(spec)
+        except Exception:
+            return json.dumps({"error": "spec must be a JSON object"})
+    if not isinstance(spec, dict):
+        return json.dumps({"error": "spec must be an object with title/blocks"})
+    if not out_path.lower().endswith(".docx"):
+        return json.dumps({"error": "out_path must end in .docx"})
+    try:
+        res = build_doc(spec, out_path)
+    except Exception as e:  # noqa: BLE001
+        return json.dumps({"error": f"build_document failed: {e}"})
+    return json.dumps(res)
+
+
+try:  # best-effort registration (kept importable in tests)
+    from tools.registry import registry
+
+    registry.register(
+        name="build_document",
+        toolset="office",
+        schema=BUILD_DOCUMENT_SCHEMA,
+        handler=_build_document_handler,
+        check_fn=lambda: True,  # python-docx lazy-installs on first use
+        emoji="📄",
+    )
+except Exception:  # pragma: no cover
+    pass

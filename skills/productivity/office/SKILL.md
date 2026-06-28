@@ -74,13 +74,15 @@ Keep bullets short
 (<= 5 per slide, one line each) — the template autofits, but brevity reads better.
 
 ### 4. Build (you)
-Run the builder (resolve the path against this skill's directory):
+Call the **`build_presentation`** tool with your deck spec — NOT a terminal script
+and NOT `import pptx` (a terminal Python lacks python-pptx and the office modules;
+the tool runs in-process where they auto-install):
 
 ```
-python scripts/build_pptx.py deck.json out.pptx
+build_presentation(spec={...deck spec...}, out_path="/abs/path/out.pptx")
 ```
 
-It prints `{"path": ..., "slides": N, "warnings": [...]}`. Fix any warnings.
+It returns `{"path": ..., "slides": N, "warnings": [...]}`. Fix any warnings.
 
 ### 5. Visual QA gate — render and LOOK (you)
 Call the **`render_check`** tool on the built file, passing your acceptance criteria:
@@ -114,19 +116,24 @@ Same pipeline, different builder. For a report or document, draft the content as
     {"type": "paragraph", "text": "..."},
     {"type": "bullets", "items": ["...", "..."]},
     {"type": "table", "headers": ["Metric", "Value"], "rows": [["Revenue", "1.2M"]]},
-    {"type": "pagebreak"},
+    {"type": "image", "path": "/abs/fig1.png", "caption": "Figure 1", "width_in": 6.0},
     {"type": "paragraph", "text": "..."}
   ]
 }
 ```
 
 Block types: `heading` (text, level 1–2) · `paragraph` (text) · `bullets` (items[])
-· `table` (headers[], rows[][]) · `pagebreak`. Named styles, margins and spacing are
-fixed by the template — you only supply content.
+· `table` (headers[], rows[][]) · `image` (path, caption?, width_in?) · `pagebreak`.
+Named styles, margins and spacing are fixed by the template — you only supply content.
+**Illustrations:** create the image files first with the `image_generate` tool (or
+matplotlib/PIL for a data chart), then reference them as `image` blocks. Prefer a
+continuous flow over `pagebreak` blocks — let content paginate naturally.
+
+Build with the **`build_document`** tool (in-process; do NOT run a terminal script or
+`import docx` yourself):
 
 ```
-python scripts/build_docx.py doc.json out.docx            # Word document
-python scripts/build_docx.py doc.json out.docx --pdf out.pdf   # also a PDF report
+build_document(spec={...doc spec...}, out_path="/abs/path/out.docx")
 ```
 
 Then run the **same `render_check` gate** on the result (`out.docx` or `out.pdf`) and

@@ -60,9 +60,12 @@ class TestInlineBuildBackstop:
         )
         assert is_inline_doc_build(code)
 
-    def test_flags_matplotlib_illustration(self):
+    def test_allows_matplotlib_illustration(self):
+        # Generating an illustration IMAGE is legitimate (embedded via an image
+        # block; the render_check gate verifies the final pages). Only inline
+        # python-docx/pptx DOCUMENT building is blocked.
         code = "import matplotlib.pyplot as plt\nplt.plot([1,2])\nplt.savefig('/tmp/x.png')\n"
-        assert is_inline_doc_build(code)
+        assert not is_inline_doc_build(code)
 
     def test_allows_reading_existing_docx(self):
         # Reading (no .save) must not be blocked — non-deliverable doc work.

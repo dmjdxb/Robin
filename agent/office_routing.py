@@ -98,11 +98,13 @@ def detect_document_deliverable_intent(text: str) -> bool:
 # --- inline-build backstop --------------------------------------------------
 
 def is_inline_doc_build(code: str) -> bool:
-    """True when execute_code is hand-building a document deliverable.
+    """True when execute_code is hand-building the DOCUMENT itself (the layout).
 
-    Matches importing python-docx/pptx and SAVING a constructed document, or
-    matplotlib writing an image to disk. Reading an existing .docx (no ``.save``)
-    does not match, so non-deliverable document work is unaffected.
+    Matches importing python-docx/pptx and SAVING a constructed document — the
+    blind-layout anti-pattern. Reading an existing .docx (no ``.save``) does not
+    match. Generating illustration IMAGES (matplotlib/PIL/image_generate) is NOT
+    blocked: those are legitimate content embedded via the template's image block,
+    and the render_check gate verifies the final pages.
     """
     if not code or not isinstance(code, str):
         return False
@@ -117,10 +119,7 @@ def is_inline_doc_build(code: str) -> bool:
         and ".save(" in cl
         and ("presentation(" in cl or ".slides" in cl)
     )
-    # matplotlib illustration written to disk — only meaningful during an office
-    # turn (the guard gates on that), so legit data charts elsewhere are unaffected.
-    mpl_build = "matplotlib" in cl and "savefig(" in cl
-    return docx_build or pptx_build or mpl_build
+    return docx_build or pptx_build
 
 
 # --- prompts ----------------------------------------------------------------
@@ -130,21 +129,23 @@ def office_directive() -> str:
     return (
         "[OFFICE PIPELINE — REQUIRED for this document deliverable]\n"
         "This request produces a document the user will open and use (a .docx / .pptx / "
-        ".pdf / report / deck). You MUST build it through the office pipeline, NOT by "
-        "hand-writing python-docx, python-pptx, or matplotlib — that produces unverified, "
-        "broken layouts (overflowing text, blank pages, mis-placed images) and is blocked "
-        "for deliverables.\n"
+        ".pdf / report / deck). Build it through the office tools, NOT by hand-writing "
+        "python-docx / python-pptx — that produces unverified, broken layouts (overflowing "
+        "text, blank pages, mis-placed images) and is blocked.\n"
         "Do this in order:\n"
-        "1. Load the skill now: skill_view(\"office\"). Follow it exactly.\n"
+        "1. Load the skill now: skill_view(\"office\") and follow it.\n"
         "2. Plan: outline + theme + one acceptance-criteria line per page/slide.\n"
         "3. Draft each section's CONTENT (not layout); for multi-section work delegate to "
         "parallel workers.\n"
-        "4. Build with the office scripts (scripts/build_docx.py / scripts/build_pptx.py) — "
-        "the designed templates own all layout; you supply only a content spec (JSON).\n"
-        "5. Gate: run render_check on the built file. It renders every page and visually "
+        "4. For illustrations, create the image files with the image_generate tool (or "
+        "matplotlib/PIL if a data chart) and reference them as image blocks — that is allowed.\n"
+        "5. Build with the in-process tools build_document (docx) or build_presentation (pptx): "
+        "pass a content spec; the designed templates own all layout. Do NOT run a terminal "
+        "python script for this and do NOT import docx/pptx yourself.\n"
+        "6. Gate: run render_check on the built file. It renders every page and visually "
         "checks it. Do NOT tell the user the document is done until render_check passes; "
         "fix flagged pages and re-check (max 2 passes).\n"
-        "6. Deliver the verified file path.\n"
+        "7. Deliver the verified file path.\n"
         "Hand-writing the document yourself is not an acceptable shortcut here."
     )
 
@@ -152,14 +153,16 @@ def office_directive() -> str:
 def office_redirect_message() -> str:
     """Returned by the execute_code guard when it blocks an inline doc build."""
     return (
-        "BLOCKED: building a document deliverable with inline python-docx / python-pptx / "
-        "matplotlib bypasses the office pipeline's designed templates and the render_check "
-        "vision gate — exactly what produces overflowing text, blank pages, and mis-placed "
-        "images. Use the pipeline instead:\n"
+        "BLOCKED: hand-building a document with inline python-docx / python-pptx bypasses the "
+        "office pipeline's designed templates and the render_check vision gate — exactly what "
+        "produces overflowing text, blank pages, and mis-placed images. Use the in-process "
+        "tools instead (they run where python-docx/pptx auto-install — a terminal script runs "
+        "the wrong Python and fails):\n"
         "1. skill_view(\"office\") and follow it.\n"
-        "2. Build via scripts/build_docx.py or scripts/build_pptx.py (templates own layout; "
-        "you supply a content spec). \n"
+        "2. Call build_document (docx) or build_presentation (pptx) with a content spec; the "
+        "templates own layout. For illustrations, make images with image_generate (or "
+        "matplotlib/PIL) and reference them as image blocks — that is allowed.\n"
         "3. Run render_check on the output and fix any flagged pages before delivering.\n"
-        "If this is genuinely NOT a polished deliverable (a one-off data chart, or batch "
-        "document automation), set HERMES_DISABLE_OFFICE_ROUTING=1 and re-run."
+        "If this is genuinely NOT a polished deliverable (batch document automation), set "
+        "HERMES_DISABLE_OFFICE_ROUTING=1 and re-run."
     )
