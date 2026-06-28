@@ -47,9 +47,16 @@ def _candidate_soffice_paths() -> list[Path]:
         Path("C:/Program Files/LibreOffice/program/soffice.exe"),  # Windows
         Path("C:/Program Files (x86)/LibreOffice/program/soffice.exe"),
     ]
-    runtime = home / ".robin" / "runtime"
-    if runtime.is_dir():
-        cands += list(runtime.rglob("soffice")) + list(runtime.rglob("soffice.exe"))
+    runtimes = [home / ".robin" / "runtime"]
+    try:  # the managed runtime lives under HERMES_HOME (may differ from ~/.robin)
+        from hermes_constants import get_hermes_home
+
+        runtimes.append(get_hermes_home() / "runtime")
+    except Exception:
+        pass
+    for runtime in runtimes:
+        if runtime.is_dir():
+            cands += list(runtime.rglob("soffice")) + list(runtime.rglob("soffice.exe"))
     return cands
 
 
