@@ -106,6 +106,13 @@ _TOOL_SEARCH_NEVER_DEFER = [
     "memory", "todo", "clarify",
     # Web search is the common research entrypoint (web_extract defers)
     "web_search",
+    # Office document pipeline — these are the ENFORCED path for "make me a
+    # doc/deck" requests (see agent/office_routing.py). They must be directly
+    # callable: when deferred, the model has to reach them through the tool_call
+    # bridge and reliably gets tangled (batched/duplicate tool_call invocations,
+    # "tool_call was not defined"), burning a dozen steps and stalling. Loading
+    # their schemas every turn is a small, worthwhile cost for a flagship flow.
+    "build_document", "build_presentation", "render_check",
 ]
 
 # Webhook events may originate from untrusted third-party content (for example,
