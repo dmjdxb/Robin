@@ -1,6 +1,6 @@
 ---
 name: office
-description: Build polished PowerPoint decks (Word and PDF coming) that actually look right. A manager plans, cheap parallel workers draft each section, designed templates own the layout, and a vision gate checks every rendered page before you deliver. Use this for any "make me a deck/presentation/slides" request.
+description: Build polished PowerPoint decks, Word documents and PDF reports that actually look right. A manager plans, cheap parallel workers draft each section, designed templates own the layout, and a vision gate checks every rendered page before you deliver. Use this for any "make me a deck/presentation/slides/report/document" request.
 license: Proprietary
 platforms: [linux, macos, windows]
 version: 1.0.0
@@ -97,6 +97,38 @@ LibreOffice will set up the renderer once.)
 ### 6. Synthesise and deliver (you)
 Read the deck end to end for one consistent voice and clean transitions, then hand
 over `out.pptx`. Mention briefly that it was visually checked.
+
+## Word documents and PDF reports
+
+Same pipeline, different builder. For a report or document, draft the content as a
+**doc spec** (ordered blocks) and build with `build_docx.py`:
+
+```json
+{
+  "title": "Operations Report", "subtitle": "Q2 2026", "theme": "light",
+  "blocks": [
+    {"type": "heading", "text": "Summary", "level": 1},
+    {"type": "paragraph", "text": "..."},
+    {"type": "bullets", "items": ["...", "..."]},
+    {"type": "table", "headers": ["Metric", "Value"], "rows": [["Revenue", "1.2M"]]},
+    {"type": "pagebreak"},
+    {"type": "paragraph", "text": "..."}
+  ]
+}
+```
+
+Block types: `heading` (text, level 1–2) · `paragraph` (text) · `bullets` (items[])
+· `table` (headers[], rows[][]) · `pagebreak`. Named styles, margins and spacing are
+fixed by the template — you only supply content.
+
+```
+python scripts/build_docx.py doc.json out.docx            # Word document
+python scripts/build_docx.py doc.json out.docx --pdf out.pdf   # also a PDF report
+```
+
+Then run the **same `render_check` gate** on the result (`out.docx` or `out.pdf`) and
+fix any flagged pages exactly as for decks. For multi-section reports, fan out the
+drafting to workers the same way.
 
 ## Why this works
 You never guess pixels (templates own layout), the slow drafting is parallel and
