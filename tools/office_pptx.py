@@ -22,6 +22,7 @@ Deck spec (JSON):
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -359,3 +360,60 @@ def build_deck(spec: dict, out_path: str) -> dict:
         fn(prs, theme, s)
     prs.save(out_path)
     return {"path": out_path, "slides": len(prs.slides._sldIdLst), "warnings": warnings}
+
+
+# ── in-process tool: build_presentation ────────────────────────────────────────
+# A TOOL (not a terminal script): runs in the Robin backend where python-pptx
+# auto-installs via lazy_deps. See office_docx.build_document for why.
+BUILD_PRESENTATION_SCHEMA = {
+    "name": "build_presentation",
+    "description": (
+        "Build a polished .pptx from a CONTENT spec using designed 16:9 templates that own all "
+        "layout — never hand-write python-pptx. You supply {title, theme: 'light'|'dark', "
+        "slides:[{layout, placeholders:{...}, notes?}]}; layouts: title, section, bullets, "
+        "two_column, quote, closing, table, chart, image. After building, ALWAYS run render_check "
+        "and fix flagged slides before delivering."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "spec": {"type": "object", "description": "The deck content spec (see description)."},
+            "out_path": {"type": "string", "description": "Absolute output path ending in .pptx"},
+        },
+        "required": ["spec", "out_path"],
+    },
+}
+
+
+async def _build_presentation_handler(args: dict, **_kw) -> str:
+    spec = args.get("spec")
+    out_path = str(args.get("out_path") or "").strip()
+    if isinstance(spec, str):
+        try:
+            spec = json.loads(spec)
+        except Exception:
+            return json.dumps({"error": "spec must be a JSON object"})
+    if not isinstance(spec, dict):
+        return json.dumps({"error": "spec must be an object with a 'slides' list"})
+    if not out_path.lower().endswith(".pptx"):
+        return json.dumps({"error": "out_path must end in .pptx"})
+    try:
+        res = build_deck(spec, out_path)
+    except Exception as e:  # noqa: BLE001
+        return json.dumps({"error": f"build_presentation failed: {e}"})
+    return json.dumps(res)
+
+
+try:  # best-effort registration (kept importable in tests)
+    from tools.registry import registry
+
+    registry.register(
+        name="build_presentation",
+        toolset="office",
+        schema=BUILD_PRESENTATION_SCHEMA,
+        handler=_build_presentation_handler,
+        check_fn=lambda: True,  # python-pptx lazy-installs on first use
+        emoji="📊",
+    )
+except Exception:  # pragma: no cover
+    pass

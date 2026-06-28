@@ -18,8 +18,8 @@ def test_skill_frontmatter():
     assert "name: office" in fm
     assert "description:" in fm
     assert "platforms:" in fm
-    # the playbook references the real builder + the QA gate tool
-    assert "build_pptx.py" in text and "render_check" in text
+    # the playbook references the in-process build tools + the QA gate tool
+    assert "build_presentation" in text and "build_document" in text and "render_check" in text
 
 
 def test_build_pptx_cli_roundtrip(tmp_path):
