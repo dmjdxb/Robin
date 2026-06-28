@@ -37,6 +37,8 @@ _HERMES_CORE_TOOLS = [
     "read_file", "write_file", "patch", "search_files",
     # Ask your document — grounded Q&A over PDF/DOCX/PPTX/XLSX
     "ask_document",
+    # Office documents — visual QA gate: render a generated deck/doc and look at every page
+    "render_check",
     # Vision + image generation
     "vision_analyze", "image_generate",
     # Skills

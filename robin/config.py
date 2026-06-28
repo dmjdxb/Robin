@@ -1734,7 +1734,7 @@ DEFAULT_CONFIG = {
                                        # Raise deliberately for genuinely long reasoning tasks.
         "reasoning_effort": "",  # reasoning effort for subagents: "xhigh", "high", "medium",
                                  # "low", "minimal", "none" (empty = inherit parent's level)
-        "max_concurrent_children": 3,  # max parallel children per batch; floor of 1 enforced, no ceiling
+        "max_concurrent_children": 6,  # max parallel children per batch; floor of 1 enforced, no ceiling (6 powers the office-mode "team of writers" fan-out)
         # Orchestrator role controls (see tools/delegate_tool.py:_get_max_spawn_depth
         # and _get_orchestrator_enabled).  Floored at 1, no upper ceiling —
         # raise deliberately, each level multiplies API cost.
