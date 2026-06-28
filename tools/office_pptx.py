@@ -28,6 +28,7 @@ from typing import Any, Optional
 # Lazy-bound python-pptx symbols (installed on first office use via document.pptx).
 Presentation = Inches = Pt = RGBColor = None
 PP_ALIGN = MSO_ANCHOR = MSO_AUTO_SIZE = MSO_SHAPE = None
+CategoryChartData = XL_CHART_TYPE = XL_LEGEND_POSITION = None
 
 # 16:9 canvas, in inches.
 SLIDE_W, SLIDE_H, MARGIN = 13.333, 7.5, 0.92
@@ -41,7 +42,10 @@ def _ensure_pptx() -> bool:
 
     def _imp() -> dict:
         from pptx import Presentation as _P
+        from pptx.chart.data import CategoryChartData as _CCD
         from pptx.dml.color import RGBColor as _RGB
+        from pptx.enum.chart import XL_CHART_TYPE as _CT
+        from pptx.enum.chart import XL_LEGEND_POSITION as _LP
         from pptx.enum.shapes import MSO_SHAPE as _SH
         from pptx.enum.text import MSO_ANCHOR as _AN
         from pptx.enum.text import MSO_AUTO_SIZE as _AS
@@ -52,6 +56,7 @@ def _ensure_pptx() -> bool:
         return {
             "Presentation": _P, "Inches": _I, "Pt": _Pt, "RGBColor": _RGB,
             "PP_ALIGN": _AL, "MSO_ANCHOR": _AN, "MSO_AUTO_SIZE": _AS, "MSO_SHAPE": _SH,
+            "CategoryChartData": _CCD, "XL_CHART_TYPE": _CT, "XL_LEGEND_POSITION": _LP,
         }
 
     from tools.lazy_deps import ensure_and_bind
@@ -216,6 +221,106 @@ def lay_closing(prs, theme, s):
         _add(tf, s["subtitle"], size=20, color=theme.muted, theme=theme)
 
 
+def lay_table(prs, theme, s):
+    sl = _blank(prs)
+    _set_bg(sl, theme)
+    _title_band(sl, theme, s.get("title"))
+    headers = _as_list(s.get("headers"))
+    rows = s.get("rows") or []
+    ncols = len(headers) or (len(rows[0]) if rows else 1)
+    nrows = (1 if headers else 0) + len(rows)
+    if nrows == 0:
+        return
+    top, h = 2.2, min(SLIDE_H - 2.2 - MARGIN, 0.5 * nrows + 0.4)
+    gt = sl.shapes.add_table(nrows, ncols, Inches(MARGIN), Inches(top),
+                             Inches(SLIDE_W - 2 * MARGIN), Inches(h))
+    tbl = gt.table
+    r0 = 0
+    if headers:
+        for c, head in enumerate(headers[:ncols]):
+            cell = tbl.cell(0, c)
+            cell.text = str(head)
+            for para in cell.text_frame.paragraphs:
+                for run in para.runs:
+                    run.font.bold = True
+                    run.font.size = Pt(14)
+                    run.font.name = theme.font
+                    run.font.color.rgb = _rgb("FFFFFF")
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = _rgb(theme.accent)
+        r0 = 1
+    for ri, row in enumerate(rows):
+        for c, val in enumerate(_as_list(row)[:ncols]):
+            cell = tbl.cell(r0 + ri, c)
+            cell.text = str(val)
+            for para in cell.text_frame.paragraphs:
+                for run in para.runs:
+                    run.font.size = Pt(13)
+                    run.font.name = theme.font
+                    run.font.color.rgb = _rgb(theme.body)
+
+
+_CHART_TYPES = {}  # filled lazily
+
+
+def lay_chart(prs, theme, s):
+    sl = _blank(prs)
+    _set_bg(sl, theme)
+    _title_band(sl, theme, s.get("title"))
+    global _CHART_TYPES
+    if not _CHART_TYPES:
+        _CHART_TYPES = {
+            "column": XL_CHART_TYPE.COLUMN_CLUSTERED,
+            "bar": XL_CHART_TYPE.BAR_CLUSTERED,
+            "line": XL_CHART_TYPE.LINE,
+            "pie": XL_CHART_TYPE.PIE,
+        }
+    cats = _as_list(s.get("categories"))
+    series = s.get("series") or {}
+    if not cats or not series:
+        _add(_box(sl, MARGIN, 2.4, SLIDE_W - 2 * MARGIN, 1.0),
+             "No chart data provided.", size=16, color=theme.muted, theme=theme, first=True)
+        return
+    data = CategoryChartData()
+    data.categories = cats
+    for name, vals in series.items():
+        nums = [float(v) for v in _as_list(vals)]
+        data.add_series(str(name), nums)
+    ctype = _CHART_TYPES.get(str(s.get("chart_type", "column")), _CHART_TYPES["column"])
+    gframe = sl.shapes.add_chart(ctype, Inches(MARGIN), Inches(2.2),
+                                 Inches(SLIDE_W - 2 * MARGIN), Inches(SLIDE_H - 2.2 - MARGIN), data)
+    chart = gframe.chart
+    chart.has_legend = len(series) > 1
+    if chart.has_legend:
+        chart.legend.position = XL_LEGEND_POSITION.BOTTOM
+        chart.legend.include_in_layout = False
+
+
+def lay_image(prs, theme, s):
+    sl = _blank(prs)
+    _set_bg(sl, theme)
+    _title_band(sl, theme, s.get("title"))
+    path = s.get("image_path") or s.get("image")
+    if not path:
+        return
+    import os
+
+    if not os.path.exists(path):
+        _add(_box(sl, MARGIN, 2.4, SLIDE_W - 2 * MARGIN, 1.0),
+             f"Image not found: {path}", size=14, color=theme.muted, theme=theme, first=True)
+        return
+    # Fit within the content area, preserving aspect (python-pptx scales from one dim).
+    avail_w = SLIDE_W - 2 * MARGIN
+    avail_h = SLIDE_H - 2.2 - MARGIN
+    pic = sl.shapes.add_picture(path, Inches(MARGIN), Inches(2.2), width=Inches(avail_w))
+    if pic.height > Inches(avail_h):
+        pic.width = int(pic.width * (Inches(avail_h) / pic.height))
+        pic.height = Inches(avail_h)
+    if s.get("caption"):
+        cap = _box(sl, MARGIN, SLIDE_H - MARGIN - 0.4, avail_w, 0.4, anchor="top")
+        _add(cap, s["caption"], size=12, color=theme.muted, theme=theme, italic=True, first=True)
+
+
 LAYOUTS = {
     "title": lay_title,
     "section": lay_section,
@@ -224,6 +329,9 @@ LAYOUTS = {
     "two_column": lay_two_column,
     "quote": lay_quote,
     "closing": lay_closing,
+    "table": lay_table,
+    "chart": lay_chart,
+    "image": lay_image,
 }
 
 

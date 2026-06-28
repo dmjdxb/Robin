@@ -67,7 +67,10 @@ Collect the workers' slide objects into ONE spec and write it to `deck.json`:
 
 **Layouts:** `title` (title, subtitle) · `section` (title) · `bullets` (title,
 bullets[]) · `two_column` (title, left_title, left[], right_title, right[]) ·
-`quote` (quote, attribution) · `closing` (title, subtitle). Keep bullets short
+`quote` (quote, attribution) · `closing` (title, subtitle) · `table` (title,
+headers[], rows[][]) · `chart` (title, chart_type: column|bar|line|pie,
+categories[], series:{name:[numbers]}) · `image` (title, image_path, caption).
+Keep bullets short
 (<= 5 per slide, one line each) — the template autofits, but brevity reads better.
 
 ### 4. Build (you)

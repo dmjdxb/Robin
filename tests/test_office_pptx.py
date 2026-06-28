@@ -55,3 +55,35 @@ def test_themes_exist():
 def test_bad_spec_raises(tmp_path):
     with pytest.raises(ValueError):
         build_deck({"no_slides": True}, str(tmp_path / "x.pptx"))
+
+
+def test_table_chart_image_layouts(tmp_path):
+    pymupdf = pytest.importorskip("pymupdf")
+    d = pymupdf.open()
+    pg = d.new_page(width=200, height=120)
+    pg.insert_text((10, 40), "img", fontsize=20)
+    img = tmp_path / "pic.png"
+    pg.get_pixmap().save(str(img))
+    d.close()
+
+    spec = {
+        "theme": "light",
+        "slides": [
+            {"layout": "table", "title": "T", "headers": ["A", "B"], "rows": [["1", "2"], ["3", "4"]]},
+            {"layout": "chart", "title": "C", "chart_type": "column",
+             "categories": ["Q1", "Q2"], "series": {"Rev": [10, 20]}},
+            {"layout": "image", "title": "I", "image_path": str(img), "caption": "cap"},
+        ],
+    }
+    out = tmp_path / "d.pptx"
+    res = build_deck(spec, str(out))
+    assert res["slides"] == 3 and res["warnings"] == []
+
+    from pptx import Presentation
+
+    prs = Presentation(str(out))
+    assert any(getattr(sh, "has_table", False) for sh in prs.slides[0].shapes)
+    assert any(getattr(sh, "has_chart", False) for sh in prs.slides[1].shapes)
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+    assert any(sh.shape_type == MSO_SHAPE_TYPE.PICTURE for sh in prs.slides[2].shapes)
