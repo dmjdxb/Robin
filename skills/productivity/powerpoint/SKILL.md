@@ -1,11 +1,16 @@
 ---
 name: powerpoint
-description: "Create, read, edit .pptx decks, slides, notes, templates."
+description: "Read and edit existing .pptx decks (slides, notes, templates). To CREATE a new deck, prefer the `office` skill — designed templates plus a visual QA gate produce far cleaner results than hand-positioning."
 license: Proprietary. LICENSE.txt has complete terms
 platforms: [linux, macos, windows]
 ---
 
 # Powerpoint Skill
+
+> **Creating a new deck? Use the `office` skill instead.** It fills designed,
+> tested templates (no hand-positioned coordinates) and visually checks every
+> rendered slide before delivery, which is dramatically more reliable than writing
+> layout by hand. Use THIS skill for **reading and editing existing** `.pptx` files.
 
 ## When to use
 
@@ -17,7 +22,8 @@ Use this skill any time a .pptx file is involved in any way — as input, output
 |------|-------|
 | Read/analyze content | `python -m markitdown presentation.pptx` |
 | Edit or create from template | Read [editing.md](editing.md) |
-| Create from scratch | Read [pptxgenjs.md](pptxgenjs.md) |
+| Create a new deck | Use the `office` skill (designed templates + visual QA) |
+| Create from scratch (legacy, discouraged) | Read [pptxgenjs.md](pptxgenjs.md) |
 
 ---
 
