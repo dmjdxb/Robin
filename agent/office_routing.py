@@ -1,0 +1,165 @@
+"""Route document-deliverable requests through the constrained office pipeline.
+
+A "make me a deck / Word doc / report" request must go through the office skill's
+designed templates + the ``render_check`` vision gate — NOT free-hand
+``python-docx`` / ``python-pptx`` / ``matplotlib``, which produce unverified,
+broken layouts (overflowing text, blank pages, mis-placed images — the exact
+failure office mode exists to prevent).
+
+Nothing previously forced this: the office skill is loaded on demand, so the model
+could (and did) skip it and free-code a document. This module supplies the three
+pieces that make the pipeline the reliable, hard-to-bypass path:
+
+  1. ``detect_document_deliverable_intent`` — cheap keyword intent check on the
+     user's message (run per turn in the conversation loop).
+  2. ``office_directive`` — the steering block injected into that turn so the
+     model loads + follows the office skill instead of hand-writing a document.
+  3. ``is_inline_doc_build`` + the ``_OFFICE_DELIVERABLE_TURN`` ContextVar — let the
+     ``execute_code`` guard recognise an inline document-build during an office
+     turn and redirect it to the pipeline (the bypass backstop).
+
+Set ``HERMES_DISABLE_OFFICE_ROUTING=1`` to turn the whole mechanism off (escape
+hatch for power users / batch document automation).
+"""
+
+from __future__ import annotations
+
+import os
+import re
+from contextvars import ContextVar
+
+# Per-turn flag: is the active turn a document-deliverable request? Set in the
+# conversation loop at turn start; read by the execute_code guard, which runs on
+# the tool-executor thread (ContextVars propagate to it).
+_OFFICE_DELIVERABLE_TURN: ContextVar[bool] = ContextVar(
+    "HERMES_OFFICE_DELIVERABLE_TURN", default=False
+)
+
+
+def routing_disabled() -> bool:
+    return os.environ.get("HERMES_DISABLE_OFFICE_ROUTING", "").strip() in {"1", "true", "yes"}
+
+
+def set_office_deliverable_turn(active: bool) -> None:
+    _OFFICE_DELIVERABLE_TURN.set(bool(active) and not routing_disabled())
+
+
+def is_office_deliverable_turn() -> bool:
+    try:
+        return bool(_OFFICE_DELIVERABLE_TURN.get())
+    except Exception:
+        return False
+
+
+# --- intent detection -------------------------------------------------------
+
+# Creation verbs (deliberately includes tense/casual variants).
+_CREATE_VERBS = (
+    "make ", "make me", "made ", "making ", "create", "build", "built", "generate",
+    "produce", "draft", "write me", "write up", "write a", "put together",
+    "putting together", "turn this into", "turn it into", "turn that into",
+    "assemble", "compile into", "format into", "design me", "design a",
+    "prepare a", "prepare me", "give me a", "i need a", "i want a",
+)
+
+# Document deliverable nouns, matched on WORD BOUNDARIES so identifiers like
+# "build_docx.py" don't false-fire (the "_" before "docx" is not a boundary).
+# Deliberately omits bare "document" (too generic — "document this code") but
+# keeps "word document" / "word doc".
+_DOC_NOUN_RE = re.compile(
+    r"\b("
+    r"deck|slide deck|slides|presentation|powerpoint|power point|pptx|keynote|"
+    r"docx|word doc|word document|"
+    r"report|white\s?paper|whitepaper|one[- ]pager|"
+    r"proposal|case study|brochure|fact\s?sheet"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def detect_document_deliverable_intent(text: str) -> bool:
+    """True when the message asks to produce a polished document deliverable.
+
+    Generous by design: a false positive only injects a steering paragraph and
+    (if the model then builds a document inline) redirects it to the pipeline —
+    both harmless. A false negative is the failure we care about, so err toward
+    firing.
+    """
+    if not text or not isinstance(text, str):
+        return False
+    if routing_disabled():
+        return False
+    if not _DOC_NOUN_RE.search(text):
+        return False
+    t = " " + text.lower() + " "
+    return any(v in t for v in _CREATE_VERBS)
+
+
+# --- inline-build backstop --------------------------------------------------
+
+def is_inline_doc_build(code: str) -> bool:
+    """True when execute_code is hand-building a document deliverable.
+
+    Matches importing python-docx/pptx and SAVING a constructed document, or
+    matplotlib writing an image to disk. Reading an existing .docx (no ``.save``)
+    does not match, so non-deliverable document work is unaffected.
+    """
+    if not code or not isinstance(code, str):
+        return False
+    cl = code.lower()
+    docx_build = (
+        ("import docx" in cl or "from docx" in cl)
+        and ".save(" in cl
+        and ("document(" in cl or ".add_paragraph" in cl or ".add_heading" in cl)
+    )
+    pptx_build = (
+        ("import pptx" in cl or "from pptx" in cl)
+        and ".save(" in cl
+        and ("presentation(" in cl or ".slides" in cl)
+    )
+    # matplotlib illustration written to disk — only meaningful during an office
+    # turn (the guard gates on that), so legit data charts elsewhere are unaffected.
+    mpl_build = "matplotlib" in cl and "savefig(" in cl
+    return docx_build or pptx_build or mpl_build
+
+
+# --- prompts ----------------------------------------------------------------
+
+def office_directive() -> str:
+    """The per-turn steering injected when a document deliverable is requested."""
+    return (
+        "[OFFICE PIPELINE — REQUIRED for this document deliverable]\n"
+        "This request produces a document the user will open and use (a .docx / .pptx / "
+        ".pdf / report / deck). You MUST build it through the office pipeline, NOT by "
+        "hand-writing python-docx, python-pptx, or matplotlib — that produces unverified, "
+        "broken layouts (overflowing text, blank pages, mis-placed images) and is blocked "
+        "for deliverables.\n"
+        "Do this in order:\n"
+        "1. Load the skill now: skill_view(\"office\"). Follow it exactly.\n"
+        "2. Plan: outline + theme + one acceptance-criteria line per page/slide.\n"
+        "3. Draft each section's CONTENT (not layout); for multi-section work delegate to "
+        "parallel workers.\n"
+        "4. Build with the office scripts (scripts/build_docx.py / scripts/build_pptx.py) — "
+        "the designed templates own all layout; you supply only a content spec (JSON).\n"
+        "5. Gate: run render_check on the built file. It renders every page and visually "
+        "checks it. Do NOT tell the user the document is done until render_check passes; "
+        "fix flagged pages and re-check (max 2 passes).\n"
+        "6. Deliver the verified file path.\n"
+        "Hand-writing the document yourself is not an acceptable shortcut here."
+    )
+
+
+def office_redirect_message() -> str:
+    """Returned by the execute_code guard when it blocks an inline doc build."""
+    return (
+        "BLOCKED: building a document deliverable with inline python-docx / python-pptx / "
+        "matplotlib bypasses the office pipeline's designed templates and the render_check "
+        "vision gate — exactly what produces overflowing text, blank pages, and mis-placed "
+        "images. Use the pipeline instead:\n"
+        "1. skill_view(\"office\") and follow it.\n"
+        "2. Build via scripts/build_docx.py or scripts/build_pptx.py (templates own layout; "
+        "you supply a content spec). \n"
+        "3. Run render_check on the output and fix any flagged pages before delivering.\n"
+        "If this is genuinely NOT a polished deliverable (a one-off data chart, or batch "
+        "document automation), set HERMES_DISABLE_OFFICE_ROUTING=1 and re-run."
+    )

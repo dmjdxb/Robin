@@ -1541,6 +1541,23 @@ def check_execute_code_guard(code: str, env_type: str) -> dict:
         "approval is one-shot for this run."
     )
 
+    # Office-pipeline backstop: during a document-deliverable turn, an inline
+    # python-docx/pptx/matplotlib build bypasses the designed templates + the
+    # render_check vision gate (the broken-layout failure office mode prevents).
+    # Redirect it to the pipeline. Fails open if the routing module is absent.
+    # Checked before the yolo/off bypasses so it can't be skipped — this is a
+    # quality guard, not a safety prompt (escape hatch: HERMES_DISABLE_OFFICE_ROUTING=1).
+    try:
+        from agent.office_routing import (
+            is_inline_doc_build,
+            is_office_deliverable_turn,
+            office_redirect_message,
+        )
+        if is_office_deliverable_turn() and is_inline_doc_build(code):
+            return {"approved": False, "message": office_redirect_message()}
+    except Exception:
+        pass
+
     # Isolated backends already sandbox the child — matches the container skip
     # in check_all_command_guards / check_dangerous_command.
     if env_type in {"docker", "singularity", "modal", "daytona", "vercel_sandbox"}:
