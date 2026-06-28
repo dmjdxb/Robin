@@ -32,7 +32,9 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-LO_VERSION = "25.2.5"  # Document Foundation "still" channel; bump deliberately
+LO_VERSION = "25.8.7"  # Document Foundation "still" channel; bump deliberately
+# NOTE: only versions currently in the /stable/ mirror tree resolve (old ones are pruned).
+# Verify the four matrix URLs return 200 before bumping.
 _BASE = "https://download.documentfoundation.org/libreoffice/stable"
 
 DIST = Path("dist")
@@ -72,8 +74,13 @@ def _make_zip(src_dir: Path, out: Path) -> None:
 
 
 def build_macos(work: Path) -> tuple[Path, str]:
-    arch = "aarch64" if _arch() == "arm64" else "x86-64"
-    url = f"{_BASE}/{LO_VERSION}/mac/{arch}/LibreOffice_{LO_VERSION}_MacOS_{arch}.dmg"
+    # The mirror's Intel path uses an underscore directory (mac/x86_64/) but a hyphen in
+    # the filename (..._MacOS_x86-64.dmg). Apple-Silicon uses "aarch64" for both.
+    if _arch() == "arm64":
+        dir_arch, file_arch = "aarch64", "aarch64"
+    else:
+        dir_arch, file_arch = "x86_64", "x86-64"
+    url = f"{_BASE}/{LO_VERSION}/mac/{dir_arch}/LibreOffice_{LO_VERSION}_MacOS_{file_arch}.dmg"
     dmg = work / "lo.dmg"
     _download(url, dmg)
     mnt = subprocess.run(
