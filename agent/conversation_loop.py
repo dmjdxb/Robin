@@ -549,6 +549,21 @@ def run_conversation(
     # Preserve the original user message (no nudge injection).
     original_user_message = persist_user_message if persist_user_message is not None else user_message
 
+    # Document-deliverable routing: if this turn asks for a polished document
+    # (deck/Word doc/report), flag it so (a) the office pipeline directive is
+    # injected into this turn and (b) the execute_code guard redirects any
+    # inline python-docx/pptx/matplotlib build to the pipeline. Set the
+    # ContextVar before any tool dispatch so it propagates to the tool thread.
+    try:
+        from agent.office_routing import (
+            detect_document_deliverable_intent,
+            set_office_deliverable_turn,
+        )
+        agent._office_deliverable_turn = detect_document_deliverable_intent(original_user_message)
+        set_office_deliverable_turn(agent._office_deliverable_turn)
+    except Exception:
+        agent._office_deliverable_turn = False
+
     # Track memory nudge trigger (turn-based, checked here).
     # Skill trigger is checked AFTER the agent loop completes, based on
     # how many tool iterations THIS turn used.
@@ -959,10 +974,24 @@ def run_conversation(
                         _injections.append(_fenced)
                 if _plugin_user_context:
                     _injections.append(_plugin_user_context)
+                # Office pipeline steer for document-deliverable turns (set above).
+                if getattr(agent, "_office_deliverable_turn", False):
+                    try:
+                        from agent.office_routing import office_directive
+                        _injections.append(office_directive())
+                    except Exception:
+                        pass
                 if _injections:
                     _base = api_msg.get("content", "")
                     if isinstance(_base, str):
                         api_msg["content"] = _base + "\n\n" + "\n\n".join(_injections)
+                    elif isinstance(_base, list):
+                        # Multimodal content (e.g. an attached screenshot + a
+                        # "make me a docx" ask): append the injections as a text part
+                        # so the steer still lands.
+                        api_msg["content"] = _base + [
+                            {"type": "text", "text": "\n\n".join(_injections)}
+                        ]
 
             # For ALL assistant messages, pass reasoning back to the API
             # This ensures multi-turn reasoning context is preserved
