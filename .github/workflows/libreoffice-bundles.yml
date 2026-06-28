@@ -1,0 +1,56 @@
+name: LibreOffice runtime bundles
+
+# Builds the self-contained per-OS LibreOffice bundles that Robin downloads on first
+# office use (robin/runtime_libreoffice.py + scripts/build-libreoffice-bundle.py).
+# Run manually; it publishes/updates the `libreoffice-runtime` release with the
+# bundles and a merged manifest.json that the provisioner reads. Heavy (~300MB
+# download + repackage per runner) — that is why it lives in CI, not on a laptop.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-13, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Build LibreOffice bundle
+        run: python scripts/build-libreoffice-bundle.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lo-${{ matrix.os }}
+          path: dist/*
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: all }
+      - name: Merge manifest fragments + collect bundles
+        run: |
+          python - <<'PY'
+          import json, glob, os, shutil
+          os.makedirs("out", exist_ok=True)
+          merged = {}
+          for f in glob.glob("all/**/manifest-*.json", recursive=True):
+              merged.update(json.load(open(f)))
+          for f in glob.glob("all/**/libreoffice-*", recursive=True):
+              shutil.copy(f, "out/")
+          json.dump(merged, open("out/manifest.json", "w"), indent=2)
+          print(merged)
+          PY
+      - name: Publish to the libreoffice-runtime release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: libreoffice-runtime
+          files: out/*
