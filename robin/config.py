@@ -1380,6 +1380,18 @@ DEFAULT_CONFIG = {
         ],
     },
 
+    # Capability manifest — tools that MUST be live for this product to do its job.
+    # The capability check (tools/capability_check.py) fails LOUDLY if any are MISSING
+    # (not registered → a registration/discovery bug) or, in the prod-availability mode,
+    # GATED OFF (registered but their backend/key isn't provisioned). This is the guard
+    # that turns "silently dead for weeks" into "caught before/at deploy". Each product
+    # (Robin/Emmy/Hilbert) sets its own list; Robin is a document coworker, so its
+    # reason-for-being tools are listed here.
+    "required_tools": [
+        "read_file", "write_file", "terminal", "execute_code",
+        "build_document", "build_presentation", "render_check",
+    ],
+
     "display": {
         "compact": False,
         "personality": "",
