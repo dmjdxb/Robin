@@ -28,7 +28,7 @@ def test_audit_classifies_missing_gated_available(monkeypatch):
     }
     import tools.capability_check as cc
     monkeypatch.setattr(cc, "_registered_entries", lambda: entries)
-    # tool_status uses _check_fn_cached for the gated one; patch it to call directly
+    monkeypatch.setattr(cc, "_model_visible", lambda n: True)  # isolate the backend dimension
     import tools.registry as reg
     monkeypatch.setattr(reg, "_check_fn_cached", lambda fn: fn())
 
@@ -40,6 +40,20 @@ def test_audit_classifies_missing_gated_available(monkeypatch):
     assert "GATED" in rep.summary() and "MISSING" in rep.summary()
 
 
+def test_invisible_when_registered_but_not_core(monkeypatch):
+    """The deliver_artifact bug class: registered + working, but not core → model can't see it."""
+    class _E:
+        def __init__(self, name):
+            self.name = name
+            self.check_fn = lambda: True
+    import tools.capability_check as cc
+    monkeypatch.setattr(cc, "_registered_entries", lambda: {"t": _E("t")})
+    monkeypatch.setattr(cc, "_model_visible", lambda n: False)  # not in core
+    rep = audit_required_tools(["t"], check_availability=False)  # caught even in CI mode
+    assert rep.invisible == ["t"] and not rep.ok
+    assert "INVISIBLE" in rep.summary()
+
+
 def test_registration_mode_ignores_backend(monkeypatch):
     class _E:
         def __init__(self, name, check):
@@ -49,6 +63,7 @@ def test_registration_mode_ignores_backend(monkeypatch):
     entries = {"keyed": _E("keyed", lambda: False)}
     import tools.capability_check as cc
     monkeypatch.setattr(cc, "_registered_entries", lambda: entries)
+    monkeypatch.setattr(cc, "_model_visible", lambda n: True)  # core; isolate the backend dimension
     # registration-only: a registered-but-gated tool counts as OK (CI can't probe keys)
     rep = audit_required_tools(["keyed"], check_availability=False)
     assert rep.ok and rep.available == ["keyed"]

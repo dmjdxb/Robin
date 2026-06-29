@@ -1390,6 +1390,8 @@ DEFAULT_CONFIG = {
     "required_tools": [
         "read_file", "write_file", "terminal", "execute_code",
         "build_document", "build_presentation", "render_check",
+    
+        "deliver_artifact",  # every product must be able to hand a produced file to the user
     ],
 
     "display": {

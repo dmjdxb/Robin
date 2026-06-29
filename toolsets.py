@@ -37,6 +37,10 @@ _HERMES_CORE_TOOLS = [
     "read_file", "write_file", "patch", "search_files",
     # Ask your document — grounded Q&A over PDF/DOCX/PPTX/XLSX
     "ask_document",
+    # deliver_artifact: universal file delivery — every agent that produces a file needs it,
+    # and it is the anti-hallucination guard. Must be ALWAYS available (a web user has no other
+    # way to download), so it lives in core, not the (sometimes-disabled) office toolset.
+    "deliver_artifact",
     # Office documents — build via designed templates (in-process; python-docx/pptx
     # lazy-install) + the visual QA gate that renders every page and looks at it.
     "build_document", "build_presentation", "render_check",
