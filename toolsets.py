@@ -37,6 +37,10 @@ _HERMES_CORE_TOOLS = [
     "read_file", "write_file", "patch", "search_files",
     # Ask your document — grounded Q&A over PDF/DOCX/PPTX/XLSX
     "ask_document",
+    # deliver_artifact: universal file delivery — every agent that produces a file needs it,
+    # and it is the anti-hallucination guard. Must be ALWAYS available (a web user has no other
+    # way to download), so it lives in core, not the (sometimes-disabled) office toolset.
+    "deliver_artifact",
     # Office documents — build via designed templates (in-process; python-docx/pptx
     # lazy-install) + the visual QA gate that renders every page and looks at it.
     "build_document", "build_presentation", "render_check",
@@ -107,12 +111,16 @@ _TOOL_SEARCH_NEVER_DEFER = [
     # Web search is the common research entrypoint (web_extract defers)
     "web_search",
     # Office document pipeline — these are the ENFORCED path for "make me a
-    # doc/deck" requests (see agent/office_routing.py). They must be directly
+    # doc/deck/email" requests (see agent/office_routing.py). They must be directly
     # callable: when deferred, the model has to reach them through the tool_call
     # bridge and reliably gets tangled (batched/duplicate tool_call invocations,
     # "tool_call was not defined"), burning a dozen steps and stalling. Loading
     # their schemas every turn is a small, worthwhile cost for a flagship flow.
-    "build_document", "build_presentation", "render_check",
+    # image_generate is here too so illustrations don't hit the bridge either.
+    "build_document", "build_presentation", "render_check", "draft_email", "image_generate",
+    # deliver_artifact: the ONLY way a web user can download a file the agent made — and the
+    # anti-hallucination guard (the agent reports the URL it returns, never a fabricated path).
+    "deliver_artifact",
 ]
 
 # Webhook events may originate from untrusted third-party content (for example,

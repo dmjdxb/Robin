@@ -16,6 +16,17 @@ Old approach (do NOT use): writing slide coordinates by hand. You cannot see the
 result, so text overflows and boxes overlap. **Instead you DESCRIBE the content;
 designed templates own the layout, and a vision gate checks the rendered pages.**
 
+## FAST PATH — use it whenever you can (seconds, not minutes)
+If the content already exists as a **markdown/text source**, you do NOT need the full
+pipeline. Call the builder DIRECTLY with the source:
+- Word doc: `build_document(markdown_path="/path.md", out_path="/out.docx", verify=true)`
+- Deck: `build_presentation(markdown_path="/path.md", out_path="/out.pptx", verify=true)`
+It parses the markdown into the designed template in one call; `verify=true` runs the
+vision gate for you. For an **email**, use `draft_email` (it drafts, never sends).
+For **illustrations**, use the `image_generate` tool (≤3–4, called per image — they run
+concurrently); never hand-draw matplotlib diagrams one at a time. Only fall through to
+the full multi-agent pipeline below when you must compose substantial new content.
+
 ## The pipeline (follow in order)
 
 ### 1. Plan (you, the manager)

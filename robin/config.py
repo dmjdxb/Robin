@@ -1380,6 +1380,20 @@ DEFAULT_CONFIG = {
         ],
     },
 
+    # Capability manifest — tools that MUST be live for this product to do its job.
+    # The capability check (tools/capability_check.py) fails LOUDLY if any are MISSING
+    # (not registered → a registration/discovery bug) or, in the prod-availability mode,
+    # GATED OFF (registered but their backend/key isn't provisioned). This is the guard
+    # that turns "silently dead for weeks" into "caught before/at deploy". Each product
+    # (Robin/Emmy/Hilbert) sets its own list; Robin is a document coworker, so its
+    # reason-for-being tools are listed here.
+    "required_tools": [
+        "read_file", "write_file", "terminal", "execute_code",
+        "build_document", "build_presentation", "render_check",
+    
+        "deliver_artifact",  # every product must be able to hand a produced file to the user
+    ],
+
     "display": {
         "compact": False,
         "personality": "",
@@ -1732,8 +1746,11 @@ DEFAULT_CONFIG = {
                                        # Lowered from 600: a child that times out produces NOTHING
                                        # yet bills every call it made first — bound the blast radius.
                                        # Raise deliberately for genuinely long reasoning tasks.
-        "reasoning_effort": "",  # reasoning effort for subagents: "xhigh", "high", "medium",
-                                 # "low", "minimal", "none" (empty = inherit parent's level)
+        "reasoning_effort": "low",  # subagents draft sections / do mechanical work — keep them
+                                 # cheap+fast. Empty "" would INHERIT a Max-effort parent's deep
+                                 # reasoning, multiplied across max_concurrent_children (the
+                                 # "cheap parallel workers" promise was silently broken). Values:
+                                 # "xhigh","high","medium","low","minimal","none" ("" = inherit).
         "max_concurrent_children": 6,  # max parallel children per batch; floor of 1 enforced, no ceiling (6 powers the office-mode "team of writers" fan-out)
         # Orchestrator role controls (see tools/delegate_tool.py:_get_max_spawn_depth
         # and _get_orchestrator_enabled).  Floored at 1, no upper ceiling —

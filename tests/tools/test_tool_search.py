@@ -90,13 +90,18 @@ class TestConfigParsing:
 
 class TestClassification:
     def test_core_tools_never_defer(self):
-        """The critical invariant from the OpenClaw report."""
+        """The critical invariant: the genuinely-core, turn-by-turn tools never defer.
+
+        Sample drawn from ``_TOOL_SEARCH_NEVER_DEFER`` (the small never-defer subset), NOT
+        the full ``_HERMES_CORE_TOOLS``. Heavier, occasionally-used tools (browser_*,
+        delegate_task, session_search, send_message, ...) DO defer behind the tool_search
+        bridge by design — see the toolsets.py decoupling note. Asserting only the subset
+        keeps this robust regardless of which list ``_core_tool_names`` resolves to.
+        """
         from tools.tool_search import is_deferrable_tool_name
-        # Sample of core tools from _HERMES_CORE_TOOLS.
         for core_name in ["terminal", "read_file", "write_file", "patch",
-                          "search_files", "todo", "memory", "browser_navigate",
-                          "web_search", "session_search", "clarify",
-                          "execute_code", "delegate_task", "send_message"]:
+                          "search_files", "todo", "memory",
+                          "web_search", "clarify", "execute_code"]:
             assert not is_deferrable_tool_name(core_name), (
                 f"Core tool '{core_name}' must NEVER be deferrable"
             )

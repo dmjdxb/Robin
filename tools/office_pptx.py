@@ -362,58 +362,161 @@ def build_deck(spec: dict, out_path: str) -> dict:
     return {"path": out_path, "slides": len(prs.slides._sldIdLst), "warnings": warnings}
 
 
+# ── markdown/outline → deck spec (the fast path for "make a deck from this") ──
+def markdown_to_deck(md: str, *, theme: str = "light", max_bullets: int = 6) -> dict:
+    """Turn a markdown outline into a deck spec (flat slide dicts the layouts read).
+
+    First H1 → a title slide; each subsequent #/## heading starts a new bullets
+    slide whose bullets are the list items / short lines under it; long sections
+    split across slides at `max_bullets`. Deterministic — no model reasoning.
+    """
+    import re as _re
+
+    lines = md.replace("\r\n", "\n").split("\n")
+    if lines and lines[0].strip() == "---":  # strip frontmatter
+        for i in range(1, len(lines)):
+            if lines[i].strip() == "---":
+                lines = lines[i + 1 :]
+                break
+
+    def _clean(s: str) -> str:
+        s = _re.sub(r"!\[[^\]]*\]\([^)]*\)", "", s)
+        s = _re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", s)
+        s = _re.sub(r"[*_`~]+", "", s)
+        return s.strip()
+
+    deck_title = None
+    slides: list[dict] = []
+    cur_title: str | None = None
+    cur_bullets: list[str] = []
+
+    def flush():
+        nonlocal cur_bullets
+        if cur_title is None and not cur_bullets:
+            return
+        bl = [b for b in cur_bullets if b]
+        if not bl:
+            slides.append({"layout": "section", "title": cur_title or ""})
+        else:
+            for k in range(0, len(bl), max_bullets):
+                slides.append({"layout": "bullets", "title": cur_title or "", "bullets": bl[k : k + max_bullets]})
+        cur_bullets = []
+
+    for raw in lines:
+        line = raw.strip()
+        hm = _re.match(r"^(#{1,6})\s+(.*)$", line)
+        if hm:
+            text = _clean(hm.group(2))
+            if len(hm.group(1)) == 1 and deck_title is None and not slides:
+                deck_title = text
+                slides.append({"layout": "title", "title": text})
+                cur_title = None
+                continue
+            flush()
+            cur_title = text
+            continue
+        lm = _re.match(r"^\s*(?:[-*+]|\d+[.)])\s+(.*)$", raw)
+        if lm:
+            cur_bullets.append(_clean(lm.group(1)))
+            continue
+        if line and not line.startswith("|") and not line.startswith("!["):
+            # short prose line becomes a bullet (keeps slides readable)
+            c = _clean(line)
+            if c:
+                cur_bullets.append(c)
+    flush()
+    if not slides:
+        slides = [{"layout": "title", "title": deck_title or "Untitled"}]
+    spec = {"theme": theme, "slides": slides}
+    if deck_title:
+        spec["title"] = deck_title
+    return spec
+
+
 # ── in-process tool: build_presentation ────────────────────────────────────────
 # A TOOL (not a terminal script): runs in the Robin backend where python-pptx
 # auto-installs via lazy_deps. See office_docx.build_document for why.
 BUILD_PRESENTATION_SCHEMA = {
     "name": "build_presentation",
     "description": (
-        "Build a polished .pptx from a CONTENT spec using designed 16:9 templates that own all "
-        "layout — never hand-write python-pptx. You supply {title, theme: 'light'|'dark', "
-        "slides:[{layout, placeholders:{...}, notes?}]}; layouts: title, section, bullets, "
-        "two_column, quote, closing, table, chart, image. After building, ALWAYS run render_check "
-        "and fix flagged slides before delivering."
+        "Build a polished .pptx using designed 16:9 templates that own all layout — never "
+        "hand-write python-pptx. FAST PATH: pass `markdown_path` (or `markdown`) to turn an "
+        "outline into a deck in one call. Or pass a `spec`: {title, theme:'light'|'dark', "
+        "slides:[{layout, ...flat keys}]}; layouts + their keys: title{title,subtitle}, "
+        "section{title}, bullets{title,bullets[]}, two_column{title,left_title,left[],right_title,"
+        "right[]}, quote{quote,attribution}, closing{title,subtitle}, table{title,headers[],rows[][]}, "
+        "chart{title,categories[],series{name:[nums]},chart_type}, image{title,image_path,caption}. "
+        "Set verify=true to auto-run the render_check gate. Provide one of markdown_path|markdown|spec."
     ),
     "parameters": {
         "type": "object",
         "properties": {
-            "spec": {"type": "object", "description": "The deck content spec (see description)."},
+            "markdown_path": {"type": "string", "description": "Path to a .md outline to convert (fast path)."},
+            "markdown": {"type": "string", "description": "Markdown outline text to convert (fast path)."},
+            "spec": {"type": "object", "description": "A deck spec (see description) for full control."},
             "out_path": {"type": "string", "description": "Absolute output path ending in .pptx"},
+            "theme": {"type": "string", "description": "'light' (default) or 'dark'."},
+            "verify": {"type": "boolean", "description": "If true, auto-run render_check and include the verdict."},
         },
-        "required": ["spec", "out_path"],
+        "required": ["out_path"],
     },
 }
 
 
-async def _build_presentation_handler(args: dict, **_kw) -> str:
+def _deck_spec_from_args(args: dict) -> dict | str:
+    import os
+    from pathlib import Path
+
+    theme = str(args.get("theme") or "light")
+    md_path = str(args.get("markdown_path") or "").strip()
+    md_text = args.get("markdown")
     spec = args.get("spec")
-    out_path = str(args.get("out_path") or "").strip()
+    if md_path:
+        try:
+            md_text = Path(os.path.expanduser(md_path)).read_text(encoding="utf-8")
+        except Exception as e:  # noqa: BLE001
+            return f"could not read markdown_path: {e}"
+    if isinstance(md_text, str) and md_text.strip():
+        return markdown_to_deck(md_text, theme=theme)
     if isinstance(spec, str):
         try:
             spec = json.loads(spec)
         except Exception:
-            return json.dumps({"error": "spec must be a JSON object"})
-    if not isinstance(spec, dict):
-        return json.dumps({"error": "spec must be an object with a 'slides' list"})
+            return "spec must be a JSON object"
+    if isinstance(spec, dict):
+        spec.setdefault("theme", theme)
+        return spec
+    return "provide one of markdown_path, markdown, or spec"
+
+
+async def _build_presentation_handler(args: dict, **_kw) -> str:
+    out_path = str(args.get("out_path") or "").strip()
     if not out_path.lower().endswith(".pptx"):
         return json.dumps({"error": "out_path must end in .pptx"})
+    spec = _deck_spec_from_args(args)
+    if isinstance(spec, str):
+        return json.dumps({"error": spec})
     try:
         res = build_deck(spec, out_path)
     except Exception as e:  # noqa: BLE001
         return json.dumps({"error": f"build_presentation failed: {e}"})
+    if args.get("verify"):
+        try:
+            from tools.document_qa import check_document
+            res["render_check"] = await check_document(out_path)
+        except Exception as e:  # noqa: BLE001
+            res["render_check"] = {"error": f"verify failed: {e}"}
     return json.dumps(res)
 
 
-try:  # best-effort registration (kept importable in tests)
-    from tools.registry import registry
+# Top-level registration so discover_builtin_tools() picks this up (see office_docx).
+from tools.registry import registry  # noqa: E402
 
-    registry.register(
-        name="build_presentation",
-        toolset="office",
-        schema=BUILD_PRESENTATION_SCHEMA,
-        handler=_build_presentation_handler,
-        check_fn=lambda: True,  # python-pptx lazy-installs on first use
-        emoji="📊",
-    )
-except Exception:  # pragma: no cover
-    pass
+registry.register(
+    name="build_presentation",
+    toolset="office",
+    schema=BUILD_PRESENTATION_SCHEMA,
+    handler=_build_presentation_handler,
+    check_fn=lambda: True,  # python-pptx lazy-installs on first use
+    emoji="📊",
+)
