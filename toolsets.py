@@ -114,6 +114,9 @@ _TOOL_SEARCH_NEVER_DEFER = [
     # their schemas every turn is a small, worthwhile cost for a flagship flow.
     # image_generate is here too so illustrations don't hit the bridge either.
     "build_document", "build_presentation", "render_check", "draft_email", "image_generate",
+    # deliver_artifact: the ONLY way a web user can download a file the agent made — and the
+    # anti-hallucination guard (the agent reports the URL it returns, never a fabricated path).
+    "deliver_artifact",
 ]
 
 # Webhook events may originate from untrusted third-party content (for example,

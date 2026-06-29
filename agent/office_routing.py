@@ -144,7 +144,10 @@ def office_directive() -> str:
         "it per image; they run concurrently), then referenced as image blocks. Do NOT hand-draw "
         "elaborate matplotlib diagrams one by one — keep it lean; the gate verifies the pages.\n"
         "EMAIL: use draft_email (it drafts, never sends; only send if the user explicitly asks).\n"
-        "Deliver the verified file path. Be fast — this is a coworker task, not a research project."
+        "DELIVERY: the user often CANNOT open a file on disk (on the web there is no shared disk). "
+        "After building, call deliver_artifact(path) and give the user the download_url it returns. "
+        "NEVER tell the user a file is 'saved' / 'at <path>' / 'done' unless deliver_artifact "
+        "returned a URL — if it errors, the file was NOT delivered; say so. Be fast."
     )
 
 
